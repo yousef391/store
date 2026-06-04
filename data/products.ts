@@ -1,0 +1,123 @@
+export interface ShowcaseProduct {
+  id: number;
+  name: string;
+  bg: string;
+  tag: string;
+  swatch: string;
+  desc: string;
+  review: string;
+  productType: string;
+  image: string;
+  colorName: string;
+}
+
+export const noctaProducts: ShowcaseProduct[] = [
+  {
+    id: 1,
+    name: "Nike Nocta Ensemble",
+    bg: "#050505",
+    tag: "Full Black",
+    swatch: "#111111",
+    desc: "Premium Nike Nocta ensemble featuring a lightweight tech tee and athletic shorts. Perfect for summer and training.",
+    review: '"The best streetwear fit I own." — Karim R.',
+    productType: "set",
+    image: "/products/nocta_2.png",
+    colorName: "Full Black",
+  },
+];
+
+export const linProducts: ShowcaseProduct[] = [
+  {
+    id: 3,
+    name: "Ensemble Lin Premium",
+    bg: "#0a0a0a",
+    tag: "Noir",
+    swatch: "#1f1d1d",
+    desc: "Ensemble en lin noir, élégance moderne et intemporelle. Léger, respirant et d'une classe absolue.",
+    review: '"Très élégant en noir, le tissu est top." — Karim R.',
+    productType: "set",
+    image: "/products/ens1.png",
+    colorName: "Noir",
+  },
+  {
+    id: 4,
+    name: "Ensemble Lin Premium",
+    bg: "#0a0a0a",
+    tag: "Noir",
+    swatch: "#1f1d1d",
+    desc: "Ensemble en lin noir, vue détaillée. Finition premium et coupe parfaite.",
+    review: '"La coupe est incroyable, je recommande." — Mehdi S.',
+    productType: "set",
+    image: "/products/ens2.png",
+    colorName: "Noir (Vue 2)",
+  },
+];
+
+// Simple product list for shop page and other components
+export interface Product {
+  id: number;
+  slug: string;
+  name: string;
+  description: string;
+  price: number;
+  bundlePrice: number;
+  images: string[];
+  category: string;
+  sizes: string[];
+  colors: { name: string; hex: string }[];
+  tag: string | null;
+  status: "active" | "out_of_stock" | "draft";
+  isFeatured: boolean;
+  rating: number;
+  reviewCount: number;
+  stock: number;
+  dateAdded: string;
+  showcaseType: "nocta" | "lin";
+}
+
+export const products: Product[] = [
+  {
+    id: 1,
+    slug: "nike-nocta-ensemble",
+    name: "Nike Nocta Ensemble",
+    description: "Premium Nike Nocta ensemble featuring a lightweight tech tee and athletic shorts. Perfect for summer and training.",
+    price: 5400,
+    bundlePrice: 8200,
+    images: ["/products/nocta_2.png", "/products/nocta_1.png", "/products/nocta_3.png"],
+    category: "ensembles",
+    sizes: ["M", "L", "XL"],
+    colors: [{ name: "Full Black", hex: "#111111" }],
+    tag: "Full Black",
+    status: "active",
+    isFeatured: true,
+    rating: 4.8,
+    reviewCount: 120,
+    stock: 45,
+    dateAdded: "2025-05-01",
+    showcaseType: "nocta",
+  },
+  {
+    id: 2,
+    slug: "ensemble-lin-premium",
+    name: "Ensemble Lin Premium",
+    description: "Ensemble en lin noir, élégance moderne et intemporelle. Léger, respirant et d'une classe absolue.",
+    price: 5400,
+    bundlePrice: 8200,
+    images: ["/products/ens1.png", "/products/ens2.png"],
+    category: "ensembles",
+    sizes: ["M", "L", "XL"],
+    colors: [{ name: "Noir", hex: "#1f1d1d" }],
+    tag: "Premium Lin",
+    status: "active",
+    isFeatured: true,
+    rating: 4.9,
+    reviewCount: 95,
+    stock: 38,
+    dateAdded: "2025-05-10",
+    showcaseType: "lin",
+  },
+];
+
+export function getProductBySlug(slug: string): Product | undefined {
+  return products.find((p) => p.slug === slug);
+}
