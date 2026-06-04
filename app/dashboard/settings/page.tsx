@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Save, DollarSign, Truck, Check } from "lucide-react";
+import { Save, DollarSign, Truck, Check, Lock } from "lucide-react";
 import { zonePrices as defaultZones, zoneLabels } from "@/data/wilayas";
 import { fetchStoreSettings, updateStoreSettings } from "@/lib/api";
 
@@ -27,6 +27,9 @@ export default function SettingsPage() {
   const [yalidineApiId, setYalidineApiId] = useState("");
   const [yalidineApiToken, setYalidineApiToken] = useState("");
 
+  // Admin Password
+  const [adminPassword, setAdminPassword] = useState("");
+
   useEffect(() => {
     fetchStoreSettings().then((data) => {
       if (data) {
@@ -40,6 +43,7 @@ export default function SettingsPage() {
         setMetaAccessToken(data.meta_access_token || "");
         setYalidineApiId(data.yalidine_api_id || "");
         setYalidineApiToken(data.yalidine_api_token || "");
+        setAdminPassword(data.admin_password || "");
       }
       setLoading(false);
     }).catch(() => setLoading(false));
@@ -60,6 +64,7 @@ export default function SettingsPage() {
         meta_access_token: metaAccessToken,
         yalidine_api_id: yalidineApiId,
         yalidine_api_token: yalidineApiToken,
+        admin_password: adminPassword,
       });
       setIsSaving(false);
       setSaved(true);
@@ -238,6 +243,27 @@ export default function SettingsPage() {
                 <input type="password" value={yalidineApiToken} onChange={(e) => setYalidineApiToken(e.target.value)} placeholder="8qh59J0iEao..."
                   className="w-full bg-white/5 border border-white/10 rounded-xl pl-4 pr-4 py-3 text-white text-sm font-mono focus:ring-2 focus:ring-rose-500 outline-none placeholder:text-gray-600" />
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Admin Password */}
+        <div className="bg-surface rounded-2xl border border-white/5 overflow-hidden relative">
+          <div className="absolute top-0 left-0 w-1 h-full bg-gray-500" />
+          <div className="p-6 md:p-8">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 bg-gray-500/10 rounded-xl flex items-center justify-center text-gray-400">
+                <Lock size={20} />
+              </div>
+              <div>
+                <h3 className="font-bold text-lg text-white font-heading">Admin Password</h3>
+                <p className="text-gray-500 text-sm">Change your dashboard login password.</p>
+              </div>
+            </div>
+            <div className="max-w-md flex flex-col gap-2">
+              <label className="text-sm font-bold text-gray-400">Password</label>
+              <input type="password" value={adminPassword} onChange={(e) => setAdminPassword(e.target.value)} placeholder="Enter new password"
+                className="w-full bg-white/5 border border-white/10 rounded-xl pl-4 pr-4 py-3 text-white text-sm font-mono focus:ring-2 focus:ring-gray-500 outline-none placeholder:text-gray-600" />
             </div>
           </div>
         </div>

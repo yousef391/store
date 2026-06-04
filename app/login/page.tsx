@@ -13,20 +13,29 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
 
-    setTimeout(() => {
-      if (password === "rova2025") {
+    try {
+      const res = await fetch("/api/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+      });
+
+      if (res.ok) {
         localStorage.setItem("rova_admin_auth", "true");
         router.push("/dashboard");
       } else {
         setError("Invalid password. Try again.");
         setLoading(false);
       }
-    }, 500);
+    } catch {
+      setError("Connection error. Try again.");
+      setLoading(false);
+    }
   };
 
   return (
