@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Save, DollarSign, Truck, Check, Lock } from "lucide-react";
 import { zonePrices as defaultZones, zoneLabels } from "@/data/wilayas";
 import { fetchStoreSettings, updateStoreSettings } from "@/lib/api";
+import { supabase } from "@/lib/supabase";
 
 export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
@@ -27,8 +28,10 @@ export default function SettingsPage() {
   const [yalidineApiId, setYalidineApiId] = useState("");
   const [yalidineApiToken, setYalidineApiToken] = useState("");
 
-  // Admin Password
-  const [adminPassword, setAdminPassword] = useState("");
+  // Admin Password (Supabase Auth)
+  const [newPassword, setNewPassword] = useState("");
+  const [passwordSaved, setPasswordSaved] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
 
   useEffect(() => {
     fetchStoreSettings().then((data) => {
@@ -43,7 +46,6 @@ export default function SettingsPage() {
         setMetaAccessToken(data.meta_access_token || "");
         setYalidineApiId(data.yalidine_api_id || "");
         setYalidineApiToken(data.yalidine_api_token || "");
-        setAdminPassword(data.admin_password || "");
       }
       setLoading(false);
     }).catch(() => setLoading(false));
@@ -64,7 +66,6 @@ export default function SettingsPage() {
         meta_access_token: metaAccessToken,
         yalidine_api_id: yalidineApiId,
         yalidine_api_token: yalidineApiToken,
-        admin_password: adminPassword,
       });
       setIsSaving(false);
       setSaved(true);
@@ -261,9 +262,29 @@ export default function SettingsPage() {
               </div>
             </div>
             <div className="max-w-md flex flex-col gap-2">
-              <label className="text-sm font-bold text-gray-400">Password</label>
-              <input type="password" value={adminPassword} onChange={(e) => setAdminPassword(e.target.value)} placeholder="Enter new password"
+              <label className="text-sm font-bold text-gray-400">New Password</label>
+              <input type="password" value={newPassword} onChange={(e) => { setNewPassword(e.target.value); setPasswordError(""); }} placeholder="Enter new password (min 6 chars)"
                 className="w-full bg-white/5 border border-white/10 rounded-xl pl-4 pr-4 py-3 text-white text-sm font-mono focus:ring-2 focus:ring-gray-500 outline-none placeholder:text-gray-600" />
+              {passwordError && <p className="text-xs text-red-400">{passwordError}</p>}
+              {passwordSaved && <p className="text-xs text-emerald-400 flex items-center gap-1"><Check size={12} /> Password updated</p>}
+              <button
+                type="button"
+                disabled={!newPassword || newPassword.length < 6}
+                onClick={async () => {
+                  setPasswordError("");
+                  const { error } = await supabase.auth.updateUser({ password: newPassword });
+                  if (error) {
+                    setPasswordError(error.message);
+                  } else {
+                    setPasswordSaved(true);
+                    setNewPassword("");
+                    setTimeout(() => setPasswordSaved(false), 3000);
+                  }
+                }}
+                className="w-fit px-5 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm text-gray-300 hover:text-white font-bold transition-all disabled:opacity-40"
+              >
+                Update Password
+              </button>
             </div>
           </div>
         </div>

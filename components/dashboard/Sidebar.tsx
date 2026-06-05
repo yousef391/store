@@ -5,6 +5,7 @@ import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { BarChart3, ShoppingBag, Package, UserX, Clock, Settings, LogOut, X, Menu } from "lucide-react";
 import { useState } from "react";
+import { supabase } from "@/lib/supabase";
 
 const navItems = [
   { href: "/dashboard", icon: BarChart3, label: "Statistics" },
@@ -20,8 +21,8 @@ export default function Sidebar() {
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const handleLogout = () => {
-    localStorage.removeItem("rova_admin_auth");
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     router.push("/login");
   };
 

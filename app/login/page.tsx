@@ -3,10 +3,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Lock, Eye, EyeOff } from "lucide-react";
+import { Lock, Mail, Eye, EyeOff } from "lucide-react";
 import { motion } from "framer-motion";
+import { supabase } from "@/lib/supabase";
 
 export default function LoginPage() {
+  const [email, setEmail] = useState("admin@rova.dz");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -18,23 +20,16 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
 
-    try {
-      const res = await fetch("/api/auth", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
-      });
+    const { error: authError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
-      if (res.ok) {
-        localStorage.setItem("rova_admin_auth", "true");
-        router.push("/dashboard");
-      } else {
-        setError("Invalid password. Try again.");
-        setLoading(false);
-      }
-    } catch {
-      setError("Connection error. Try again.");
+    if (authError) {
+      setError("Invalid credentials. Try again.");
       setLoading(false);
+    } else {
+      router.push("/dashboard");
     }
   };
 
@@ -52,6 +47,19 @@ export default function LoginPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="glass-card rounded-2xl p-6 md:p-8 space-y-5">
+          <div>
+            <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 block">Email</label>
+            <div className="relative">
+              <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500" />
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => { setEmail(e.target.value); setError(""); }}
+                placeholder="admin@rova.dz"
+                className="w-full bg-white/5 border border-white/10 rounded-xl pl-11 pr-4 py-3 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all"
+              />
+            </div>
+          </div>
           <div>
             <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 block">Password</label>
             <div className="relative">
@@ -84,7 +92,7 @@ export default function LoginPage() {
             {loading ? (
               <span className="flex items-center justify-center gap-2">
                 <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
-                Verifying...
+                Signing in...
               </span>
             ) : (
               "Sign In"
