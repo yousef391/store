@@ -1,24 +1,80 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { Search, Star, X } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import { products } from "@/data/products";
+import { products as staticProducts } from "@/data/products";
+import { fetchProducts } from "@/lib/api";
 import { useI18n } from "@/hooks/useI18n";
 
 type SortOption = "featured" | "price-asc" | "price-desc" | "newest" | "rating";
 
+interface ShopProduct {
+  id: number;
+  slug: string;
+  name: string;
+  description: string;
+  price: number;
+  bundlePrice: number;
+  images: string[];
+  category: string;
+  tag: string | null;
+  status: string;
+  isFeatured: boolean;
+  rating: number;
+  reviewCount: number;
+  stock: number;
+  dateAdded: string;
+}
+
 export default function ShopPage() {
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("featured");
+  const [productList, setProductList] = useState<ShopProduct[]>(
+    staticProducts.map((p) => ({ ...p }))
+  );
+  const [loading, setLoading] = useState(true);
   const { t } = useI18n();
 
+  // Fetch products from Supabase (overrides static data)
+  useEffect(() => {
+    fetchProducts()
+      .then((data) => {
+        if (data && data.length > 0) {
+          const mapped: ShopProduct[] = data.map((p: Record<string, unknown>) => {
+            // Find matching static product for fields not in DB
+            const staticMatch = staticProducts.find((sp) => sp.id === p.id);
+            return {
+              id: p.id as number,
+              slug: p.slug as string,
+              name: p.name as string,
+              description: p.description as string,
+              price: p.price as number,
+              bundlePrice: (p.bundle_price as number) || 0,
+              images: (p.images as string[]) || [],
+              category: (p.category as string) || "",
+              tag: staticMatch?.tag || null,
+              status: (p.status as string) || "active",
+              isFeatured: staticMatch?.isFeatured ?? true,
+              rating: staticMatch?.rating ?? 4.8,
+              reviewCount: staticMatch?.reviewCount ?? 0,
+              stock: (p.stock as number) || 0,
+              dateAdded: staticMatch?.dateAdded || "2025-01-01",
+            };
+          });
+          setProductList(mapped);
+        }
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
   const filtered = useMemo(() => {
-    let result = products.filter((p) => p.status !== "draft");
+    let result = productList.filter((p) => p.status !== "draft");
 
     if (search) {
       const q = search.toLowerCase();
@@ -36,7 +92,7 @@ export default function ShopPage() {
     }
 
     return result;
-  }, [search, sortBy]);
+  }, [search, sortBy, productList]);
 
   return (
     <>
@@ -102,7 +158,11 @@ export default function ShopPage() {
           </motion.div>
 
           {/* Product Grid */}
-          {filtered.length === 0 ? (
+          {loading ? (
+            <div className="flex items-center justify-center py-20">
+              <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+            </div>
+          ) : filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-center">
               <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mb-4">
                 <Search size={24} className="text-gray-600" />

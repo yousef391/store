@@ -1,17 +1,58 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
-import { products } from "@/data/products";
+import { products as staticProducts } from "@/data/products";
+import { fetchProducts } from "@/lib/api";
 import { Star } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
+
+interface DisplayProduct {
+  id: number;
+  slug: string;
+  name: string;
+  images: string[];
+  tag: string | null;
+  price: number;
+  rating: number;
+  reviewCount: number;
+  isFeatured: boolean;
+}
 
 export default function BestSellers() {
   const { ref, isVisible } = useScrollAnimation();
   const { t } = useI18n();
-  const featured = products.filter((p) => p.isFeatured);
+
+  const [featured, setFeatured] = useState<DisplayProduct[]>(
+    staticProducts.filter((p) => p.isFeatured)
+  );
+
+  useEffect(() => {
+    fetchProducts()
+      .then((data) => {
+        if (data && data.length > 0) {
+          const mapped: DisplayProduct[] = data.map((p: Record<string, unknown>) => {
+            const staticMatch = staticProducts.find((sp) => sp.id === p.id);
+            return {
+              id: p.id as number,
+              slug: p.slug as string,
+              name: p.name as string,
+              images: (p.images as string[]) || [],
+              tag: staticMatch?.tag || null,
+              price: p.price as number,
+              rating: staticMatch?.rating ?? 4.8,
+              reviewCount: staticMatch?.reviewCount ?? 0,
+              isFeatured: staticMatch?.isFeatured ?? true,
+            };
+          });
+          setFeatured(mapped.filter((p) => p.isFeatured));
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   return (
     <section ref={ref} className="py-16 md:py-24 px-4 max-w-7xl mx-auto">
