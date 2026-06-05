@@ -49,7 +49,7 @@ export interface MetaEventPayload {
  */
 export async function sendServerEvent(payload: MetaEventPayload): Promise<{ success: boolean; error?: string }> {
   // Fetch credentials from DB
-  const { data: settings } = await supabase.from("store_settings").select("meta_pixel_id, meta_access_token").eq("id", 1).single();
+  const { data: settings } = await supabase.from("store_settings").select("meta_pixel_id, meta_access_token, meta_test_event_code").eq("id", 1).single();
 
   const pixelId = settings?.meta_pixel_id;
   const accessToken = settings?.meta_access_token;
@@ -91,7 +91,10 @@ export async function sendServerEvent(payload: MetaEventPayload): Promise<{ succ
   if (customData.contentType) custom_data.content_type = customData.contentType;
   if (customData.orderId) custom_data.order_id = customData.orderId;
 
-  const body = {
+  // Test event code for Facebook Test Events tab (optional)
+  const testEventCode = settings?.meta_test_event_code || undefined;
+
+  const body: Record<string, unknown> = {
     data: [
       {
         event_name: eventName,
@@ -104,6 +107,10 @@ export async function sendServerEvent(payload: MetaEventPayload): Promise<{ succ
       },
     ],
   };
+
+  if (testEventCode) {
+    body.test_event_code = testEventCode;
+  }
 
   try {
     const url = `https://graph.facebook.com/v21.0/${pixelId}/events?access_token=${accessToken}`;
