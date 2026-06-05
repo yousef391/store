@@ -75,6 +75,9 @@ export function useMetaEvents(userInfo?: UserInfo) {
           if (customData?.contentType) pixelParams.content_type = customData.contentType;
 
           fbq("track", eventName, pixelParams, { eventID: eventId });
+          console.log(`[META PIXEL] ✅ ${eventName}`, pixelParams);
+        } else {
+          console.warn(`[META PIXEL] ❌ fbq not loaded — ${eventName} skipped`);
         }
       }
 
@@ -103,9 +106,18 @@ export function useMetaEvents(userInfo?: UserInfo) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
         keepalive: true,
-      }).catch((err) => {
-        console.error("[useMetaEvents] CAPI request failed:", err);
-      });
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success) {
+            console.log(`[META CAPI] ✅ ${eventName} sent to server`);
+          } else {
+            console.warn(`[META CAPI] ❌ ${eventName} failed:`, data.error);
+          }
+        })
+        .catch((err) => {
+          console.error(`[META CAPI] ❌ ${eventName} request failed:`, err);
+        });
     },
     [userInfo]
   );
