@@ -18,12 +18,13 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase
-      .from("products")
-      .select("*")
-      .eq("slug", params.slug)
-      .single()
-      .then(({ data }) => {
+    Promise.resolve(
+      supabase
+        .from("products")
+        .select("*")
+        .eq("slug", params.slug)
+        .single()
+    ).then(({ data }) => {
         if (data && staticProduct) {
           setProductData({
             ...staticProduct,
