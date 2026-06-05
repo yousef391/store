@@ -15,6 +15,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
   const staticProduct = defaultProducts.find((p) => p.slug === params.slug);
   const [productData, setProductData] = useState(staticProduct);
   const [dynamicVariants, setDynamicVariants] = useState<ShowcaseProduct[] | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     supabase
@@ -45,7 +46,6 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
           const dbDesc: string = data.description || staticProduct.description;
 
           if (dbImages.length > 0) {
-            // Create one variant per image, inheriting style from base variants
             const built: ShowcaseProduct[] = dbImages.map((img, idx) => {
               const base = baseVariants[idx] || baseVariants[0];
               return {
@@ -59,8 +59,19 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
             setDynamicVariants(built);
           }
         }
-      });
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
   }, [params.slug, staticProduct]);
+
+  // Show loading until Supabase data arrives (prevents flash of old static data)
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-black">
+        <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   if (!productData) notFound();
 
