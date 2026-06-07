@@ -4,7 +4,7 @@ import React, { useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ShowcaseProduct } from "@/data/products";
 import algeriaData from "@/data/algeria.json";
-import { zonePrices } from "@/data/wilayas";
+import { zonePrices as defaultZonePrices } from "@/data/wilayas";
 import { useMetaEvents } from "@/hooks/useMetaEvents";
 import Image from "next/image";
 
@@ -14,6 +14,7 @@ interface ProductShowcaseProps {
   bundlePrice: number;
   sizes?: string[];
   hasColorSelector?: boolean;
+  zonePrices?: Record<number, number>;
 }
 
 /* ──── SIZE GUIDE DATA ──── */
@@ -45,6 +46,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
   bundlePrice,
   sizes: sizesProp,
   hasColorSelector = false,
+  zonePrices = defaultZonePrices,
 }) => {
   const availableSizes = sizesProp && sizesProp.length > 0 ? sizesProp : ["M", "L", "XL"];
   const { sendEvent } = useMetaEvents();

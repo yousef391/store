@@ -15,16 +15,26 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
   const staticProduct = defaultProducts.find((p) => p.slug === params.slug);
   const [productData, setProductData] = useState(staticProduct);
   const [dynamicVariants, setDynamicVariants] = useState<ShowcaseProduct[] | null>(null);
+  const [zonePrices, setZonePrices] = useState<Record<number, number> | undefined>(undefined);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.resolve(
-      supabase
-        .from("products")
-        .select("*")
-        .eq("slug", params.slug)
-        .single()
-    ).then(({ data }) => {
+    // Fetch product data + store settings (zone prices) in parallel
+    const fetchProduct = supabase
+      .from("products")
+      .select("*")
+      .eq("slug", params.slug)
+      .single();
+
+    const fetchSettings = supabase
+      .from("store_settings")
+      .select("zone_prices")
+      .eq("id", 1)
+      .single();
+
+    Promise.all([fetchProduct, fetchSettings])
+      .then(([productRes, settingsRes]) => {
+        const data = productRes.data;
         if (data && staticProduct) {
           setProductData({
             ...staticProduct,
@@ -60,6 +70,12 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
             setDynamicVariants(built);
           }
         }
+
+        // Load zone prices from store_settings
+        if (settingsRes.data?.zone_prices) {
+          setZonePrices(settingsRes.data.zone_prices);
+        }
+
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -89,6 +105,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
       hasColorSelector={
         productData.showcaseType === "nocta" && variants.length > 1
       }
+      zonePrices={zonePrices}
     />
   );
 }
