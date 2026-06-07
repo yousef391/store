@@ -59,6 +59,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
   const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
   const [hasTrackedAddToCart, setHasTrackedAddToCart] = useState(false);
   const animating = useRef(false);
+  const abandonedLeadSent = useRef(false);
   const formNameRef = useRef("");
   const formPhoneRef = useRef("");
 
@@ -91,6 +92,55 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
 
   const productPrice = selectedQuantity === 2 ? bundlePrice : singlePrice;
   const totalPrice = productPrice + deliveryPrice;
+
+  // ── Abandoned Lead Detection ──
+  // Send lead data when user leaves without completing the order
+  const sendAbandonedLead = useCallback(() => {
+    const name = formNameRef.current;
+    const phone = formPhoneRef.current;
+    // Only send if user has entered both name and phone but hasn't ordered
+    if (!name || !phone || orderSuccess || isSubmitting || abandonedLeadSent.current) return;
+    abandonedLeadSent.current = true;
+
+    const wilayaObj = algeriaData.wilayas.find(
+      (w: { wilaya_id: string; wilaya_name_latin: string }) => w.wilaya_id.toString() === selectedWilaya
+    );
+    const payload = JSON.stringify({
+      name,
+      phone,
+      wilaya: wilayaObj ? `${wilayaObj.wilaya_id} - ${wilayaObj.wilaya_name_latin}` : selectedWilaya || null,
+      commune: selectedCommune || null,
+      item: variants[currentIndex]?.name,
+      color: variants[currentIndex]?.colorName || variants[currentIndex]?.tag,
+      size: selectedSize,
+      quantity: selectedQuantity,
+      price: `${productPrice.toLocaleString('en')} DA`,
+      delivery: deliveryPrice,
+      total: selectedWilaya ? `${totalPrice.toLocaleString('en')} DA` : null,
+    });
+
+    // Use sendBeacon for reliable delivery on page unload
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon('/api/abandoned-lead', new Blob([payload], { type: 'application/json' }));
+    } else {
+      fetch('/api/abandoned-lead', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload, keepalive: true }).catch(() => {});
+    }
+  }, [selectedWilaya, selectedCommune, selectedSize, selectedQuantity, productPrice, deliveryPrice, totalPrice, currentIndex, orderSuccess, isSubmitting, variants]);
+
+  useEffect(() => {
+    const handleBeforeUnload = () => sendAbandonedLead();
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') sendAbandonedLead();
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [sendAbandonedLead]);
 
   const navigate = useCallback(
     (dir: number) => {

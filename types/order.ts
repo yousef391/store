@@ -20,10 +20,23 @@ export interface AbandonedLead {
   id: string;
   name: string;
   phone: string;
-  wilaya: string;
-  product: string;
-  size: string;
+  wilaya: string | null;
+  commune: string | null;
+  item: string | null;
+  color: string | null;
+  size: string | null;
   quantity: number;
-  createdAt: string;
+  original_price: string | null;
+  delivery: number | null;
+  original_total: string | null;
+  reduced_price: string | null;
+  reduced_total: string | null;
+  status: string;
   contacted: boolean;
+  contact_notes: string | null;
+  converted: boolean;
+  converted_order_id: string | null;
+  ip_address: string | null;
+  created_at: string;
+  contacted_at: string | null;
 }

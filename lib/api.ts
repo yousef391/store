@@ -103,10 +103,15 @@ export async function fetchAbandonedLeads() {
 export async function createAbandonedLead(lead: {
   name: string;
   phone: string;
-  wilaya: string;
-  product: string;
-  size: string;
-  quantity: number;
+  wilaya?: string;
+  commune?: string;
+  item?: string;
+  color?: string;
+  size?: string;
+  quantity?: number;
+  original_price?: string;
+  delivery?: number;
+  original_total?: string;
 }) {
   const { data, error } = await supabase
     .from("abandoned_leads")
@@ -126,6 +131,11 @@ export async function updateAbandonedLead(id: string, updates: Record<string, un
     .single();
   if (error) throw error;
   return data;
+}
+
+export async function deleteAbandonedLead(id: string) {
+  const { error } = await supabase.from("abandoned_leads").delete().eq("id", id);
+  if (error) throw error;
 }
 
 // ──── HISTORY ────
