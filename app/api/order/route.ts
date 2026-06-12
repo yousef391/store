@@ -54,30 +54,52 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true, warning: "Telegram not configured" });
     }
 
-    // 3. Format price values
+    // 3. Resolve wilaya name from ID
+    let wilayaDisplay = wilaya;
+    try {
+      const algeriaData = await import("@/data/algeria.json");
+      const wilayaObj = algeriaData.wilayas.find(
+        (w: { wilaya_id: string; wilaya_name_latin: string }) => w.wilaya_id.toString() === String(wilaya)
+      );
+      if (wilayaObj) {
+        wilayaDisplay = `${wilayaObj.wilaya_id} - ${wilayaObj.wilaya_name_latin}`;
+      }
+    } catch {
+      // fallback to raw value
+    }
+
+    // 4. Format price values
     const formatPrice = (val: number | string) => {
       if (typeof val === "number") return val.toLocaleString("en");
       return val;
     };
 
-    // 4. Build Telegram message
+    // 5. Build Telegram message
     const message = `
-🛒 *NOUVELLE COMMANDE ROVA* 🛒
-━━━━━━━━━━━━━━━━━━
-👤 *Client*: ${name}
-📱 *Tél*: ${phone}
-🗺️ *Adresse*: ${wilaya} - ${commune}
+🛒  *NEW ORDER — ROVA*
+━━━━━━━━━━━━━━━━━━━━━
 
-👕 *Article*: ${item} (${color})
-🛍️ *Quantité*: ${quantity || 1} pièce(s)
-📐 *Taille*: ${size}
+👤  *Customer:*  ${name}
+📱  *Phone:*  ${phone}
 
-💶 *Prix*: ${formatPrice(price)} DA
-🚚 *Livraison*: ${delivery} DA
-💎 *Total*: *${formatPrice(total)} DA*
+📍  *Wilaya:*  ${wilayaDisplay}
+🏘️  *Commune:*  ${commune}
+
+━━━━━━━━━━━━━━━━━━━━━
+
+🏷️  *Product:*  ${item}
+🎨  *Color:*  ${color}
+📐  *Size:*  ${size}
+📦  *Qty:*  ${quantity || 1}
+
+━━━━━━━━━━━━━━━━━━━━━
+
+💰  *Price:*  ${formatPrice(price)} DA
+🚚  *Delivery:*  ${formatPrice(delivery)} DA
+✅  *Total:*  *${formatPrice(total)} DA*
 `;
 
-    // 5. Send to Telegram
+    // 6. Send to Telegram
     const telegramUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
     await fetch(telegramUrl, {
       method: "POST",

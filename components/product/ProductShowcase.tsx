@@ -15,6 +15,7 @@ interface ProductShowcaseProps {
   sizes?: string[];
   hasColorSelector?: boolean;
   zonePrices?: Record<number, number>;
+  showReviews?: boolean;
 }
 
 /* ──── SIZE GUIDE DATA ──── */
@@ -47,6 +48,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
   sizes: sizesProp,
   hasColorSelector = false,
   zonePrices = defaultZonePrices,
+  showReviews = true,
 }) => {
   const availableSizes = sizesProp && sizesProp.length > 0 ? sizesProp : ["M", "L", "XL"];
   const { sendEvent } = useMetaEvents();
@@ -436,10 +438,12 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                   {item.name}
                 </motion.h1>
               </AnimatePresence>
+              {showReviews && (
               <div className="flex items-center gap-1 mt-1.5">
                 <span className="text-[#fbbf24] text-[11px] tracking-widest">★★★★★</span>
                 <span className="text-white/40 text-[10px] ml-1 font-medium" style={{ fontFamily: "var(--font-dm)" }}>4.8 (120+ avis)</span>
               </div>
+              )}
             </div>
 
             <AnimatePresence mode="wait">
@@ -572,7 +576,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
               <TrustBadgesRow compact />
 
               {/* ──── CUSTOMER REVIEWS (Mobile) ──── */}
-              <CustomerReviewsSection compact />
+              {showReviews && <CustomerReviewsSection compact />}
             </div>
           </AnimatePresence>
         </div>
@@ -695,6 +699,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
       {/* Bottom bar — desktop */}
       <div className="hidden lg:flex absolute bottom-0 left-0 right-0 z-20 items-end justify-between px-10 pb-8">
         {/* Review */}
+        {showReviews && (
         <div className="max-w-[280px]">
           <div className="flex items-center gap-1 mb-1.5">
             {[1, 2, 3, 4].map((s) => (
@@ -709,6 +714,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
             </motion.p>
           </AnimatePresence>
         </div>
+        )}
 
         {/* Price + arrows */}
         <div className="flex flex-col items-center gap-3">

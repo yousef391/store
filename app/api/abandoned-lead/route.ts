@@ -85,21 +85,42 @@ export async function POST(request: Request) {
     const chatId = settings?.telegram_chat_id;
 
     if (botToken && chatId) {
+      // Resolve wilaya name from ID
+      let wilayaDisplay = wilaya || 'Not selected';
+      try {
+        if (wilaya) {
+          const algeriaData = await import("@/data/algeria.json");
+          const wilayaObj = algeriaData.wilayas.find(
+            (w: { wilaya_id: string; wilaya_name_latin: string }) => w.wilaya_id.toString() === String(wilaya)
+          );
+          if (wilayaObj) {
+            wilayaDisplay = `${wilayaObj.wilaya_id} - ${wilayaObj.wilaya_name_latin}`;
+          }
+        }
+      } catch {
+        // fallback to raw value
+      }
+
       const message = `
-⚠️ *LEAD ABANDONNÉ* ⚠️
-━━━━━━━━━━━━━━━━━━
-👤 *Nom*: ${name}
-📞 *Tél*: ${phone}
-📍 *Wilaya*: ${wilaya || 'Non sélectionnée'}
-🏘️ *Commune*: ${commune || 'Non sélectionnée'}
+⚠️  *ABANDONED LEAD — ROVA*
+━━━━━━━━━━━━━━━━━━━━━
 
-👕 *Article*: ${item || 'N/A'} (${color || 'N/A'})
-📏 *Taille*: ${size || 'N/A'}
-📦 *Quantité*: ${quantity || 1}
+👤  *Name:*  ${name}
+📞  *Phone:*  ${phone}
 
-💰 *Prix vu*: ${total || 'Non calculé'}
+📍  *Wilaya:*  ${wilayaDisplay}
+🏘️  *Commune:*  ${commune || 'Not selected'}
 
-_Le client a rempli ses infos mais n'a pas confirmé la commande._
+━━━━━━━━━━━━━━━━━━━━━
+
+🏷️  *Product:*  ${item || 'N/A'}
+🎨  *Color:*  ${color || 'N/A'}
+📐  *Size:*  ${size || 'N/A'}
+📦  *Qty:*  ${quantity || 1}
+
+💰  *Last seen price:*  ${total || 'Not calculated'}
+
+_⏳ Customer filled in their info but did not confirm the order._
 `;
 
       try {

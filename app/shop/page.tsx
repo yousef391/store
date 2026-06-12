@@ -57,13 +57,13 @@ export default function ShopPage() {
               bundlePrice: (p.bundle_price as number) || 0,
               images: (p.images as string[]) || [],
               category: (p.category as string) || "",
-              tag: staticMatch?.tag || null,
+              tag: (p.tag as string) || staticMatch?.tag || null,
               status: (p.status as string) || "active",
-              isFeatured: staticMatch?.isFeatured ?? true,
-              rating: staticMatch?.rating ?? 4.8,
-              reviewCount: staticMatch?.reviewCount ?? 0,
+              isFeatured: p.is_featured != null ? (p.is_featured as boolean) : (staticMatch?.isFeatured ?? true),
+              rating: (p.rating as number) ?? staticMatch?.rating ?? 4.8,
+              reviewCount: (p.review_count as number) ?? staticMatch?.reviewCount ?? 0,
               stock: (p.stock as number) || 0,
-              dateAdded: staticMatch?.dateAdded || "2025-01-01",
+              dateAdded: (p.date_added as string) || staticMatch?.dateAdded || "2025-01-01",
             };
           });
           setProductList(mapped);

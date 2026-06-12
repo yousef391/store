@@ -53,6 +53,45 @@ export const linProducts: ShowcaseProduct[] = [
   },
 ];
 
+export const tshirtProducts: ShowcaseProduct[] = [
+  {
+    id: 10,
+    name: "T-Shirt Oversize Rose",
+    bg: "#0a0a0a",
+    tag: "Oversize",
+    swatch: "#111111",
+    desc: "T-Shirt oversize noir avec design rose dorée. Coupe large et confortable, tissu premium 100% coton épais.",
+    review: '"القطعة فخامة حقيقية، القماش سميك والتصميم ممتاز 🔥" — أمين ب.',
+    productType: "tshirt",
+    image: "/products/tshirt.jpg",
+    colorName: "Noir",
+  },
+  {
+    id: 11,
+    name: "T-Shirt Oversize Rose",
+    bg: "#0a0a0a",
+    tag: "Oversize",
+    swatch: "#111111",
+    desc: "Vue avant et arrière. Design rose dorée imprimé sur le dos, coupe oversize streetwear.",
+    review: '"أحسن تي شيرت لبسته، الخياطة عالمية والقماش ممتاز" — سليم خ.',
+    productType: "tshirt",
+    image: "/products/tshirt2.png",
+    colorName: "Noir (Vue 2)",
+  },
+  {
+    id: 12,
+    name: "T-Shirt Oversize Rose",
+    bg: "#0a0a0a",
+    tag: "Oversize",
+    swatch: "#111111",
+    desc: "Détail du design avec la rose dorée sur le devant et le dos. Pièce unique et stylée.",
+    review: '"تصميم فريد وجودة عالية، شكراً ROVA!" — كريم ر.',
+    productType: "tshirt",
+    image: "/products/tshirt3.png",
+    colorName: "Noir (Vue 3)",
+  },
+];
+
 // Simple product list for shop page and other components
 export interface Product {
   id: number;
@@ -72,7 +111,7 @@ export interface Product {
   reviewCount: number;
   stock: number;
   dateAdded: string;
-  showcaseType: "nocta" | "lin";
+  showcaseType: "nocta" | "lin" | "tshirt";
 }
 
 export const products: Product[] = [
@@ -115,6 +154,26 @@ export const products: Product[] = [
     stock: 38,
     dateAdded: "2025-05-10",
     showcaseType: "lin",
+  },
+  {
+    id: 3,
+    slug: "tshirt-oversize-rose",
+    name: "T-Shirt Oversize Rose",
+    description: "T-Shirt oversize noir avec design rose dorée. Coupe large et confortable, tissu premium 100% coton épais.",
+    price: 3100,
+    bundlePrice: 5400,
+    images: ["/products/tshirt.jpg", "/products/tshirt2.png", "/products/tshirt3.png"],
+    category: "tshirts",
+    sizes: ["M", "L", "XL"],
+    colors: [{ name: "Noir", hex: "#111111" }],
+    tag: "Oversize",
+    status: "active",
+    isFeatured: true,
+    rating: 4.9,
+    reviewCount: 87,
+    stock: 60,
+    dateAdded: "2025-06-10",
+    showcaseType: "tshirt",
   },
 ];
 

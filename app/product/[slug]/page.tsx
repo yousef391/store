@@ -6,6 +6,7 @@ import {
   products as defaultProducts,
   noctaProducts,
   linProducts,
+  tshirtProducts,
   ShowcaseProduct,
 } from "@/data/products";
 import { supabase } from "@/lib/supabase";
@@ -49,8 +50,12 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
           });
 
           // Build dynamic variants from DB images so edits are reflected
-          const baseVariants =
-            staticProduct.showcaseType === "nocta" ? noctaProducts : linProducts;
+          const getBaseVariants = (type: string) => {
+            if (type === "tshirt") return tshirtProducts;
+            if (type === "lin") return linProducts;
+            return noctaProducts;
+          };
+          const baseVariants = getBaseVariants(staticProduct.showcaseType);
 
           const dbImages: string[] = data.images || [];
           const dbName: string = data.name || staticProduct.name;
@@ -93,7 +98,11 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
   if (!productData) notFound();
 
   const fallbackVariants =
-    productData.showcaseType === "nocta" ? noctaProducts : linProducts;
+    productData.showcaseType === "tshirt"
+      ? tshirtProducts
+      : productData.showcaseType === "nocta"
+      ? noctaProducts
+      : linProducts;
   const variants = dynamicVariants || fallbackVariants;
 
   return (
@@ -106,6 +115,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
         productData.showcaseType === "nocta" && variants.length > 1
       }
       zonePrices={zonePrices}
+      showReviews={productData.showcaseType !== "tshirt"}
     />
   );
 }
