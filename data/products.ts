@@ -92,6 +92,33 @@ export const tshirtProducts: ShowcaseProduct[] = [
   },
 ];
 
+export const bmwProducts: ShowcaseProduct[] = [
+  {
+    id: 20,
+    name: "BMW Motorsport Ensemble",
+    bg: "#0a0a0a",
+    tag: "Motorsport",
+    swatch: "#111111",
+    desc: "Ensemble Puma × BMW M Motorsport. T-shirt et short assortis avec détails signature M Motorsport. Style sportif premium.",
+    review: '"طقم BMW فخامة حقيقية، القماش ممتاز والتصميم عالمي 🔥" — أمين ب.',
+    productType: "set",
+    image: "/products/bmw1.png",
+    colorName: "Noir / Blanc",
+  },
+  {
+    id: 21,
+    name: "BMW Motorsport Ensemble",
+    bg: "#0a0a0a",
+    tag: "Motorsport",
+    swatch: "#0033a0",
+    desc: "Ensemble Puma × BMW M Motorsport avec liseré bleu. Coupe moderne et finition premium pour un look racing authentique.",
+    review: '"لبسته وكلش عجبهم، الجودة والتصميم ما يتقارنوش" — سليم خ.',
+    productType: "set",
+    image: "/products/bmw2.jpg",
+    colorName: "Noir / Bleu",
+  },
+];
+
 // Simple product list for shop page and other components
 export interface Product {
   id: number;
@@ -111,7 +138,7 @@ export interface Product {
   reviewCount: number;
   stock: number;
   dateAdded: string;
-  showcaseType: "nocta" | "lin" | "tshirt";
+  showcaseType: "nocta" | "lin" | "tshirt" | "bmw";
 }
 
 export const products: Product[] = [
@@ -174,6 +201,29 @@ export const products: Product[] = [
     stock: 60,
     dateAdded: "2025-06-10",
     showcaseType: "tshirt",
+  },
+  {
+    id: 4,
+    slug: "bmw-motorsport-ensemble",
+    name: "BMW Motorsport Ensemble",
+    description: "Ensemble Puma × BMW M Motorsport. T-shirt et short assortis avec détails signature M Motorsport. Style sportif premium.",
+    price: 5400,
+    bundlePrice: 8200,
+    images: ["/products/bmw1.png", "/products/bmw2.jpg"],
+    category: "ensembles",
+    sizes: ["M", "L", "XL"],
+    colors: [
+      { name: "Noir / Blanc", hex: "#111111" },
+      { name: "Noir / Bleu", hex: "#0033a0" },
+    ],
+    tag: "Motorsport",
+    status: "active",
+    isFeatured: true,
+    rating: 4.9,
+    reviewCount: 95,
+    stock: 50,
+    dateAdded: "2025-06-15",
+    showcaseType: "bmw",
   },
 ];
 

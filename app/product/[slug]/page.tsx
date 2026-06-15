@@ -7,6 +7,7 @@ import {
   noctaProducts,
   linProducts,
   tshirtProducts,
+  bmwProducts,
   ShowcaseProduct,
 } from "@/data/products";
 import { supabase } from "@/lib/supabase";
@@ -53,6 +54,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
           const getBaseVariants = (type: string) => {
             if (type === "tshirt") return tshirtProducts;
             if (type === "lin") return linProducts;
+            if (type === "bmw") return bmwProducts;
             return noctaProducts;
           };
           const baseVariants = getBaseVariants(staticProduct.showcaseType);
@@ -100,6 +102,8 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
   const fallbackVariants =
     productData.showcaseType === "tshirt"
       ? tshirtProducts
+      : productData.showcaseType === "bmw"
+      ? bmwProducts
       : productData.showcaseType === "nocta"
       ? noctaProducts
       : linProducts;
@@ -112,7 +116,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
       bundlePrice={productData.bundlePrice}
       sizes={productData.sizes}
       hasColorSelector={
-        productData.showcaseType === "nocta" && variants.length > 1
+        (productData.showcaseType === "nocta" || productData.showcaseType === "bmw") && variants.length > 1
       }
       zonePrices={zonePrices}
       showReviews={productData.showcaseType !== "tshirt"}

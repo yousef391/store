@@ -40,33 +40,40 @@ export default function ShopPage() {
   const [loading, setLoading] = useState(true);
   const { t } = useI18n();
 
-  // Fetch products from Supabase (overrides static data)
+  // Fetch products from Supabase (merges with static data)
   useEffect(() => {
     fetchProducts()
       .then((data) => {
         if (data && data.length > 0) {
-          const mapped: ShopProduct[] = data.map((p: Record<string, unknown>) => {
-            // Find matching static product for fields not in DB
-            const staticMatch = staticProducts.find((sp) => sp.id === p.id);
-            return {
-              id: p.id as number,
-              slug: p.slug as string,
-              name: p.name as string,
-              description: p.description as string,
-              price: p.price as number,
-              bundlePrice: (p.bundle_price as number) || 0,
-              images: (p.images as string[]) || [],
-              category: (p.category as string) || "",
-              tag: (p.tag as string) || staticMatch?.tag || null,
-              status: (p.status as string) || "active",
-              isFeatured: p.is_featured != null ? (p.is_featured as boolean) : (staticMatch?.isFeatured ?? true),
-              rating: (p.rating as number) ?? staticMatch?.rating ?? 4.8,
-              reviewCount: (p.review_count as number) ?? staticMatch?.reviewCount ?? 0,
-              stock: (p.stock as number) || 0,
-              dateAdded: (p.date_added as string) || staticMatch?.dateAdded || "2025-01-01",
-            };
+          const dbMap = new Map(data.map((p: Record<string, unknown>) => [p.id as number, p]));
+
+          // Start with static products, override with DB data when available
+          const merged: ShopProduct[] = staticProducts.map((sp) => {
+            const p = dbMap.get(sp.id);
+            if (p) {
+              return {
+                id: p.id as number,
+                slug: p.slug as string,
+                name: p.name as string,
+                description: p.description as string,
+                price: p.price as number,
+                bundlePrice: (p.bundle_price as number) || 0,
+                images: (p.images as string[]) || [],
+                category: (p.category as string) || "",
+                tag: (p.tag as string) || sp.tag || null,
+                status: (p.status as string) || "active",
+                isFeatured: p.is_featured != null ? (p.is_featured as boolean) : sp.isFeatured,
+                rating: (p.rating as number) ?? sp.rating ?? 4.8,
+                reviewCount: (p.review_count as number) ?? sp.reviewCount ?? 0,
+                stock: (p.stock as number) || 0,
+                dateAdded: (p.date_added as string) || sp.dateAdded || "2025-01-01",
+              };
+            }
+            // Product not in DB yet — use static data as-is
+            return { ...sp };
           });
-          setProductList(mapped);
+
+          setProductList(merged);
         }
         setLoading(false);
       })
