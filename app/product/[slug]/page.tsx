@@ -116,7 +116,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
       bundlePrice={productData.bundlePrice}
       sizes={productData.sizes}
       hasColorSelector={
-        (productData.showcaseType === "nocta" || productData.showcaseType === "bmw") && variants.length > 1
+        productData.showcaseType === "nocta" && variants.length > 1
       }
       zonePrices={zonePrices}
       showReviews={productData.showcaseType !== "tshirt"}
