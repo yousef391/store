@@ -8,7 +8,7 @@ import algeriaData from "@/data/algeria.json";
 import { zonePrices as defaultZonePrices } from "@/data/wilayas";
 import { useMetaEvents } from "@/hooks/useMetaEvents";
 import Image from "next/image";
-import { ShieldCheck, PackageOpen, Truck, Banknote, Ruler, Flame, Globe2, CheckCircle2, Eye, ArrowLeft } from "lucide-react";
+import { ShieldCheck, PackageOpen, Truck, Banknote, Ruler, Globe2, CheckCircle2, Eye, ArrowLeft } from "lucide-react";
 import Reviews from "@/components/home/Reviews";
 
 interface ProductShowcaseProps {
@@ -358,7 +358,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
             <ArrowLeft className="w-4 h-4" />
           </button>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="Logo" className="h-6 max-w-[100px] w-auto object-contain" style={{ width: "auto", height: "auto" }} />
+          <img src="/logo.png" alt="Logo" className="h-6 max-w-[100px] w-auto object-contain" />
           <div className="w-8" />
         </div>
 
@@ -740,7 +740,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
           </div>
           <AnimatePresence mode="wait">
             <motion.p key={`d-rev-${item.id}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.3 }} className="text-white/35 text-xs italic leading-relaxed" style={{ fontFamily: "var(--font-dm)" }} dir="rtl">
-              "منتج ممتاز، جودة عالية ومقاسات مضبوطة. خدمة التوصيل في المستوى 👍"
+              {"منتج ممتاز، جودة عالية ومقاسات مضبوطة. خدمة التوصيل في المستوى 👍"}
             </motion.p>
           </AnimatePresence>
         </div>

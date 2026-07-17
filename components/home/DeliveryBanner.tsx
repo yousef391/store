@@ -36,7 +36,7 @@ export default function DeliveryBanner() {
               Livraison 58 Wilayas
             </h3>
             <p className="text-white/40 text-xs md:text-sm font-dm tracking-wide">
-              Toutes les wilayas d'Algérie à votre porte
+              Toutes les wilayas d&apos;Algérie à votre porte
             </p>
           </div>
         </motion.div>
