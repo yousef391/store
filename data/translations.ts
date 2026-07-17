@@ -44,7 +44,7 @@ export const translations: Record<Locale, Record<string, string>> = {
     "trust.exchange_desc": "48h pour échanger",
 
     // Reviews
-    "reviews.subtitle": "Plus de 1 000 clients satisfaits",
+    "reviews.subtitle": "Plus de 100 clients satisfaits",
     "reviews.title": "ماذا يقول عملاؤنا",
     "reviews.verified": "Vérifié",
 
@@ -154,7 +154,7 @@ export const translations: Record<Locale, Record<string, string>> = {
     "trust.quality_desc": "أقمشة مختارة بعناية",
     "trust.exchange": "استبدال مجاني",
     "trust.exchange_desc": "48 ساعة للاستبدال",
-    "reviews.subtitle": "أكثر من 1,000 عميل سعيد",
+    "reviews.subtitle": "أكثر من 100 عميل سعيد",
     "reviews.title": "ماذا يقول عملاؤنا",
     "reviews.verified": "موثق",
     "newsletter.subtitle": "ابقَ على اطلاع",
@@ -252,7 +252,7 @@ export const translations: Record<Locale, Record<string, string>> = {
     "trust.quality_desc": "Selected fabrics",
     "trust.exchange": "Free Exchange",
     "trust.exchange_desc": "48h to exchange",
-    "reviews.subtitle": "Trusted by 1,000+",
+    "reviews.subtitle": "Trusted by 100+",
     "reviews.title": "ماذا يقول عملاؤنا",
     "reviews.verified": "Verified",
     "newsletter.subtitle": "Stay Updated",

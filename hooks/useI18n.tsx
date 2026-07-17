@@ -24,6 +24,12 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
     const saved = localStorage.getItem("rova_locale") as Locale | null;
     if (saved && translations[saved]) {
       setLocaleState(saved);
+    } else if (typeof navigator !== "undefined") {
+      // Auto-detect from browser if no saved preference
+      const browserLang = navigator.language.split("-")[0] as Locale;
+      if (translations[browserLang]) {
+        setLocaleState(browserLang);
+      }
     }
   }, []);
 
