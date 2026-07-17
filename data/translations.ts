@@ -125,6 +125,9 @@ export const translations: Record<Locale, Record<string, string>> = {
     "footer.contact": "Contact",
     "footer.payment": "Paiement",
     "footer.rights": "© 2025 ROVA. Tous droits réservés. Made in Algeria 🇩🇿",
+    "announcement.1": "Livraison 58 Wilayas — Paiement à la livraison 🇩🇿",
+    "announcement.2": "Expédition rapide par Yalidine & ZR Express 🚚",
+    "announcement.3": "Marque 100% Algérienne — Qualité Premium ✨",
   },
 
   ar: {
@@ -220,6 +223,9 @@ export const translations: Record<Locale, Record<string, string>> = {
     "footer.contact": "اتصل بنا",
     "footer.payment": "الدفع",
     "footer.rights": "© 2025 ROVA. جميع الحقوق محفوظة. صنع في الجزائر 🇩🇿",
+    "announcement.1": "توصيل متوفر لـ 58 ولاية — الدفع عند الاستلام 🇩🇿",
+    "announcement.2": "شحن سريع عبر ياليدين و ZR Express 🚚",
+    "announcement.3": "ماركة جزائرية 100% — جودة فاخرة ✨",
   },
 
   en: {
@@ -315,5 +321,8 @@ export const translations: Record<Locale, Record<string, string>> = {
     "footer.contact": "Contact",
     "footer.payment": "Payment",
     "footer.rights": "© 2025 ROVA. All rights reserved. Made in Algeria 🇩🇿",
+    "announcement.1": "Delivery to 58 Wilayas — Cash on Delivery 🇩🇿",
+    "announcement.2": "Fast shipping via Yalidine & ZR Express 🚚",
+    "announcement.3": "100% Algerian Brand — Premium Quality ✨",
   },
 };

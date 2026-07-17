@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import MobileMenu from "./MobileMenu";
 import { useI18n } from "@/hooks/useI18n";
 import { Locale, localeNames } from "@/data/translations";
+import AnnouncementBar from "./AnnouncementBar";
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -37,15 +38,18 @@ export default function Navbar() {
 
   return (
     <>
+      <div className="absolute top-0 left-0 right-0 w-full z-40">
+        <AnnouncementBar />
+      </div>
       <motion.header
         initial={{ y: -100 }}
         animate={{ y: 0 }}
         transition={{ duration: 0.5, ease: [0.2, 0, 0.2, 1] }}
         className={`
-          fixed top-0 left-0 right-0 z-40 transition-all duration-300
+          fixed left-0 right-0 z-40 transition-all duration-300
           ${scrolled
-            ? "bg-black/80 backdrop-blur-xl border-b border-white/5 shadow-lg shadow-black/20"
-            : "bg-transparent"
+            ? "top-0 bg-black/80 backdrop-blur-xl border-b border-white/5 shadow-lg shadow-black/20"
+            : "top-[37.5px] bg-transparent"
           }
         `}
       >
