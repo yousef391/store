@@ -17,7 +17,7 @@ export default function Reviews() {
   const { t } = useI18n();
 
   return (
-    <section ref={ref} className="py-16 md:py-24 px-4 max-w-7xl mx-auto overflow-hidden">
+    <section id="reviews" ref={ref} className="py-16 md:py-24 px-4 max-w-7xl mx-auto overflow-hidden">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={isVisible ? { opacity: 1, y: 0 } : {}}

@@ -23,6 +23,7 @@ export const translations: Record<Locale, Record<string, string>> = {
     "hero.cta": "Découvrir la collection",
     "hero.delivery": "Livraison 58 Wilayas",
     "hero.cod": "Paiement à la livraison",
+    "hero.reviews_btn": "Avis Clients ⭐",
 
     // Collections
     "collections.subtitle": "Collections",
@@ -141,6 +142,7 @@ export const translations: Record<Locale, Record<string, string>> = {
     "hero.cta": "اكتشف المجموعة",
     "hero.delivery": "توصيل 58 ولاية",
     "hero.cod": "الدفع عند الاستلام",
+    "hero.reviews_btn": "آراء العملاء ⭐",
     "collections.subtitle": "المجموعات",
     "collections.title": "مجموعاتنا",
     "bestsellers.subtitle": "الأكثر مبيعاً",
@@ -239,6 +241,7 @@ export const translations: Record<Locale, Record<string, string>> = {
     "hero.cta": "Discover the Collection",
     "hero.delivery": "Delivery 58 Wilayas",
     "hero.cod": "Cash on Delivery",
+    "hero.reviews_btn": "Client Reviews ⭐",
     "collections.subtitle": "Collections",
     "collections.title": "Our Collections",
     "bestsellers.subtitle": "Best Sellers",

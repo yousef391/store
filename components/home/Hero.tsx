@@ -67,7 +67,7 @@ export default function Hero() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.9 }}
-          className="flex items-center justify-center gap-4"
+          className="flex flex-wrap items-center justify-center gap-4"
         >
           <Link
             href="/shop"
@@ -77,10 +77,10 @@ export default function Hero() {
             <div className="absolute inset-0 bg-accent/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           </Link>
           <Link
-            href="/about"
+            href="#reviews"
             className="px-8 py-3.5 bg-black/40 backdrop-blur-md border border-white/20 text-white text-sm font-semibold rounded-full hover:bg-white/10 hover:border-white/40 transition-all duration-300 active:scale-[0.97]"
           >
-            {t("about.subtitle")}
+            {t("hero.reviews_btn")}
           </Link>
         </motion.div>
 
