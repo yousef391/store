@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nova-admin-v1';
+const CACHE_NAME = 'nova-admin-v2';
 const SHELL_ASSETS = [
   '/dashboard',
   '/dashboard/orders',
@@ -30,10 +30,11 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Never cache API calls or Supabase requests — always go to network
+  // Never cache API calls, Supabase requests, or non-http schemas
   if (
     url.pathname.startsWith('/api/') ||
-    url.hostname.includes('supabase')
+    url.hostname.includes('supabase') ||
+    !request.url.startsWith('http')
   ) {
     return;
   }

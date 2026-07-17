@@ -4,23 +4,27 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
 import { useI18n } from "@/hooks/useI18n";
+import { Globe2, Banknote } from "lucide-react";
 
 export default function Hero() {
   const { t } = useI18n();
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Background gradient mesh */}
-      <div className="absolute inset-0">
-        <div className="absolute inset-0 bg-gradient-to-b from-black via-black/95 to-background" />
-        <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-accent/5 rounded-full blur-[120px]" />
-        <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-accent/3 rounded-full blur-[100px]" />
+      {/* Background Image */}
+      <div className="absolute inset-0 z-0">
+        <Image 
+          src="/hero-bg.png" 
+          alt="Streetwear Clothing Hero" 
+          fill 
+          className="object-cover object-center opacity-80"
+          priority
+        />
+        {/* Dark Overlay for readability */}
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-black/60 to-black/40" />
       </div>
 
-      {/* Noise texture */}
-      <div className="absolute inset-0 noise-overlay pointer-events-none" />
-
-      <div className="relative z-10 text-center px-4 max-w-4xl mx-auto">
+      <div className="relative z-10 text-center px-4 max-w-4xl mx-auto pt-20">
         {/* Tagline */}
         <motion.p
           initial={{ opacity: 0, y: 20 }}
@@ -43,7 +47,7 @@ export default function Hero() {
             alt="ROVA"
             width={400}
             height={160}
-            className="mx-auto h-20 md:h-32 lg:h-40 w-auto brightness-110"
+            className="mx-auto h-20 md:h-32 lg:h-40 w-auto brightness-110 drop-shadow-2xl"
             priority
           />
         </motion.div>
@@ -53,7 +57,7 @@ export default function Hero() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.7 }}
-          className="text-base md:text-xl text-gray-400 max-w-lg mx-auto mb-10 leading-relaxed"
+          className="text-base md:text-xl text-white/90 font-medium max-w-lg mx-auto mb-10 leading-relaxed drop-shadow-lg"
         >
           {t("hero.title_line1")} {t("hero.title_line2")}
         </motion.p>
@@ -67,14 +71,14 @@ export default function Hero() {
         >
           <Link
             href="/shop"
-            className="group relative px-8 py-3.5 bg-white text-black text-sm font-bold rounded-full overflow-hidden transition-all duration-300 hover:shadow-lg hover:shadow-white/10 active:scale-[0.97]"
+            className="group relative px-8 py-3.5 bg-white text-black text-sm font-black uppercase tracking-wide rounded-full overflow-hidden transition-all duration-300 shadow-[0_0_40px_rgba(255,255,255,0.3)] hover:shadow-[0_0_60px_rgba(255,255,255,0.5)] hover:scale-105 active:scale-[0.97]"
           >
             <span className="relative z-10">{t("hero.cta")}</span>
-            <div className="absolute inset-0 bg-accent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <div className="absolute inset-0 bg-accent/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           </Link>
           <Link
             href="/about"
-            className="px-8 py-3.5 bg-transparent border border-white/15 text-white text-sm font-semibold rounded-full hover:bg-white/5 hover:border-white/25 transition-all duration-300 active:scale-[0.97]"
+            className="px-8 py-3.5 bg-black/40 backdrop-blur-md border border-white/20 text-white text-sm font-semibold rounded-full hover:bg-white/10 hover:border-white/40 transition-all duration-300 active:scale-[0.97]"
           >
             {t("about.subtitle")}
           </Link>
@@ -85,33 +89,17 @@ export default function Hero() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 1.1 }}
-          className="flex items-center justify-center gap-6 mt-10"
+          className="flex items-center justify-center gap-6 mt-12 backdrop-blur-md bg-white/5 border border-white/10 px-6 py-3 rounded-full w-fit mx-auto"
         >
-          <div className="flex items-center gap-2 text-gray-500 text-xs font-medium">
-            <span>🇩🇿</span>
+          <div className="flex items-center gap-2 text-white/80 text-xs font-bold uppercase tracking-wider">
+            <Globe2 className="w-4 h-4 text-accent" />
             <span>{t("hero.delivery")}</span>
           </div>
-          <div className="w-1 h-1 rounded-full bg-gray-600" />
-          <div className="flex items-center gap-2 text-gray-500 text-xs font-medium">
-            <span>💵</span>
+          <div className="w-1 h-1 rounded-full bg-white/30" />
+          <div className="flex items-center gap-2 text-white/80 text-xs font-bold uppercase tracking-wider">
+            <Banknote className="w-4 h-4 text-accent" />
             <span>{t("hero.cod")}</span>
           </div>
-        </motion.div>
-
-        {/* Scroll indicator */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.5 }}
-          className="absolute bottom-8 left-1/2 -translate-x-1/2"
-        >
-          <motion.div
-            animate={{ y: [0, 8, 0] }}
-            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-            className="w-5 h-8 rounded-full border border-white/20 flex items-start justify-center p-1.5"
-          >
-            <div className="w-1 h-2 rounded-full bg-white/40" />
-          </motion.div>
         </motion.div>
       </div>
     </section>

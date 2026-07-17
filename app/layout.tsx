@@ -86,6 +86,7 @@ export default async function RootLayout({
             style={{ display: "none" }}
             alt=""
             src={`https://www.facebook.com/tr?id=${pixelId}&ev=PageView&noscript=1`}
+            fetchPriority="low"
           />
         </noscript>
       </body>

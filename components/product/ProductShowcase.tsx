@@ -1,12 +1,15 @@
 "use client";
 
 import React, { useState, useCallback, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { ShowcaseProduct } from "@/data/products";
 import algeriaData from "@/data/algeria.json";
 import { zonePrices as defaultZonePrices } from "@/data/wilayas";
 import { useMetaEvents } from "@/hooks/useMetaEvents";
 import Image from "next/image";
+import { ShieldCheck, PackageOpen, Truck, Banknote, Ruler, Flame, Globe2, CheckCircle2, Eye, ArrowLeft } from "lucide-react";
+import Reviews from "@/components/home/Reviews";
 
 interface ProductShowcaseProps {
   variants: ShowcaseProduct[];
@@ -25,20 +28,14 @@ const sizeChart = [
   { size: "XL", height: "180–185 cm", weight: "80–90 kg", chest: "108 cm" },
 ];
 
-/* ──── CUSTOMER REVIEWS DATA ──── */
-const productReviews = [
-  { name: "كريم ر.", text: "أفضل طقم لبسته في حياتي. القماش ممتاز والخياطة عالمية 🔥", stars: 5, city: "وهران" },
-  { name: "مهدي س.", text: "القطعة فخامة من كل النواحي. التوصيل كان سريع. شكراً ROVA!", stars: 5, city: "الجزائر" },
-  { name: "أمين ب.", text: "جربت مواقع كثيرة بصح ROVA مختلفة. الجودة حقيقية والأسعار معقولة.", stars: 5, city: "قسنطينة" },
-  { name: "سليم خ.", text: "الطلب وصلني في 3 أيام. التغليف فاخر والقطعة أحسن من الصورة!", stars: 5, city: "سطيف" },
-];
+/* ──── CUSTOMER REVIEWS DATA (Removed, using Reviews component instead) ──── */
 
 /* ──── TRUST BADGES DATA ──── */
 const trustBadges = [
-  { icon: "🛡️", title: "ضمان الجودة", desc: "استبدال مجاني خلال 48 ساعة" },
-  { icon: "📦", title: "الفتح قبل الدفع", desc: "تقدر تفتح الطرد وتشوف قبل ما تدفع" },
-  { icon: "🚚", title: "توصيل 58 ولاية", desc: "لكل الولايات بأسعار مدروسة" },
-  { icon: "💵", title: "الدفع عند الاستلام", desc: "ما تدفع حتى توصلك القطعة" },
+  { icon: ShieldCheck, title: "ضمان الجودة", desc: "استبدال مجاني خلال 48 ساعة" },
+  { icon: PackageOpen, title: "الفتح قبل الدفع", desc: "تقدر تفتح الطرد وتشوف قبل ما تدفع" },
+  { icon: Truck, title: "توصيل 58 ولاية", desc: "لكل الولايات بأسعار مدروسة" },
+  { icon: Banknote, title: "الدفع عند الاستلام", desc: "ما تدفع حتى توصلك القطعة" },
 ];
 
 const ProductShowcase: React.FC<ProductShowcaseProps> = ({
@@ -50,6 +47,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
   zonePrices = defaultZonePrices,
   showReviews = true,
 }) => {
+  const router = useRouter();
   const availableSizes = sizesProp && sizesProp.length > 0 ? sizesProp : ["M", "L", "XL"];
   const { sendEvent } = useMetaEvents();
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -62,6 +60,8 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
   const [orderError, setOrderError] = useState("");
   const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
   const [hasTrackedAddToCart, setHasTrackedAddToCart] = useState(false);
+  const [isFormInView, setIsFormInView] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
   const animating = useRef(false);
   const abandonedLeadSent = useRef(false);
   const formNameRef = useRef("");
@@ -80,6 +80,16 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
       contentType: "product",
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ── Intersection Observer for Sticky CTA ──
+  useEffect(() => {
+    if (!formRef.current) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      setIsFormInView(entry.isIntersecting);
+    }, { threshold: 0.1 });
+    observer.observe(formRef.current);
+    return () => observer.disconnect();
   }, []);
 
   const communesForWilaya = selectedWilaya
@@ -230,9 +240,11 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
       {trustBadges.map((b, i) => (
         <div
           key={i}
-          className={`flex flex-col items-center text-center rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm ${compact ? "p-3 gap-1" : "p-4 gap-1.5"}`}
+          className={`flex flex-col items-center text-center rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm ${compact ? "p-3 gap-1.5" : "p-4 gap-2"}`}
         >
-          <span className={compact ? "text-xl" : "text-2xl"}>{b.icon}</span>
+          <div className={`text-accent ${compact ? "w-6 h-6" : "w-8 h-8"}`}>
+            <b.icon className="w-full h-full stroke-[1.5]" />
+          </div>
           <span className={`text-white font-bold ${compact ? "text-[10px]" : "text-xs"}`}>{b.title}</span>
           <span className={`text-white/40 ${compact ? "text-[8px] leading-tight" : "text-[10px] leading-tight"}`}>{b.desc}</span>
         </div>
@@ -240,40 +252,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
     </div>
   );
 
-  const CustomerReviewsSection = ({ compact = false }: { compact?: boolean }) => (
-    <div className="flex flex-col gap-2" dir="rtl">
-      <div className="flex items-center justify-between px-1 mb-1">
-        <span className="text-white font-black text-sm" style={{ fontFamily: "var(--font-heading)" }}>آراء العملاء</span>
-        <div className="flex items-center gap-1">
-          <span className="text-[#fbbf24] text-xs">★★★★★</span>
-          <span className="text-white/50 text-[10px]">4.8 (120+)</span>
-        </div>
-      </div>
-      <div className={`flex flex-col gap-2 ${compact ? "max-h-[200px] overflow-y-auto no-scrollbar" : ""}`}>
-        {productReviews.map((r, i) => (
-          <div key={i} className="bg-white/5 border border-white/10 rounded-xl p-3 backdrop-blur-sm">
-            <div className="flex items-center justify-between mb-1.5">
-              <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-full bg-accent/20 flex items-center justify-center text-accent text-[10px] font-bold">
-                  {r.name.charAt(0)}
-                </div>
-                <div>
-                  <span className="text-white text-xs font-bold">{r.name}</span>
-                  <span className="text-white/30 text-[9px] mr-2">• {r.city}</span>
-                </div>
-              </div>
-              <div className="flex items-center gap-0.5">
-                {Array.from({ length: r.stars }).map((_, j) => (
-                  <svg key={j} width="10" height="10" viewBox="0 0 24 24" fill="#fbbf24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14 2 9.27l6.91-1.01z" /></svg>
-                ))}
-              </div>
-            </div>
-            <p className="text-white/60 text-[11px] leading-relaxed">{r.text}</p>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+  /* CustomerReviewsSection removed */
 
   const SizeRecommender = ({ onClose }: { onClose: () => void }) => (
     <motion.div
@@ -352,30 +331,35 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
 
   return (
     <motion.div
-      className="relative w-screen min-h-screen lg:min-h-screen overflow-hidden flex flex-col"
+      className="relative w-full min-h-screen flex flex-col no-scrollbar"
       animate={{ backgroundColor: item.bg }}
       transition={{ duration: 0.6 }}
     >
-      {/* ────── HEADER (Desktop Only) ────── */}
-      <header className="hidden lg:flex relative z-30 justify-between items-center px-10 py-8 shrink-0 w-full">
+      <div className="hidden lg:block relative w-full h-[100dvh] shrink-0">
+        {/* ────── HEADER (Desktop Only) ────── */}
+        <header className="flex relative z-30 justify-between items-center px-10 py-8 shrink-0 w-full">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/logo.png" alt="Logo" className="h-20 w-auto object-contain drop-shadow-2xl" />
-        <div className="flex items-center bg-white/10 backdrop-blur-md rounded-full px-5 py-2.5 gap-3 border border-white/20 shadow-xl shadow-black/20">
-          <span className="text-2xl leading-none mt-[-2px]">🇩🇿</span>
+        <img src="/logo.png" alt="Logo" className="h-20 w-auto object-contain drop-shadow-2xl" style={{ width: "auto", height: "auto" }} />
+        <div className="flex items-center bg-white/10 backdrop-blur-md rounded-full px-5 py-2.5 gap-2.5 border border-white/20 shadow-xl shadow-black/20">
+          <Globe2 className="w-4 h-4 text-white/70" />
           <span className="text-white font-black tracking-widest uppercase text-sm" style={{ fontFamily: "var(--font-dm)" }}>
             Livraison 58 Wilayas
           </span>
-          <span className="text-2xl leading-none mt-[-2px]">🇩🇿</span>
         </div>
         <div className="w-20" />
       </header>
+      </div>
 
       {/* ────── MOBILE LAYOUT ────── */}
       <div className="flex flex-col lg:hidden flex-1 px-4 pt-3 pb-6 gap-4 overflow-y-auto no-scrollbar">
         {/* Mobile Header */}
-        <div className="flex items-center justify-center w-full flex-shrink-0 py-2">
+        <div className="flex items-center justify-between w-full flex-shrink-0 py-1">
+          <button onClick={() => router.back()} className="w-8 h-8 rounded-full bg-white/10 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white/70 active:scale-95 transition-all">
+            <ArrowLeft className="w-4 h-4" />
+          </button>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="Logo" className="h-[4.5rem] w-auto object-contain drop-shadow-xl scale-125" />
+          <img src="/logo.png" alt="Logo" className="h-6 max-w-[100px] w-auto object-contain" style={{ width: "auto", height: "auto" }} />
+          <div className="w-8" />
         </div>
 
         {/* Product Image Box */}
@@ -397,14 +381,14 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
               }}
               className="relative w-full h-full"
             >
-              <Image src={item.image} alt={item.name} fill className="object-cover pointer-events-none" priority />
+              <Image src={item.image} alt={item.name} fill sizes="(max-width: 1024px) 100vw, 480px" className="object-cover pointer-events-none" priority />
             </motion.div>
           </AnimatePresence>
 
           {/* Floating Badges */}
           <div className="absolute top-3 left-3 flex flex-col gap-2 pointer-events-none z-50">
             <div className="bg-white/90 backdrop-blur-md rounded-full px-2.5 py-1.5 flex items-center gap-1.5 shadow-md">
-              <span className="text-[12px] leading-none">🇩🇿</span>
+              <Globe2 className="w-3.5 h-3.5 text-black" />
               <span className="text-black font-black tracking-wider uppercase text-[9px]" style={{ fontFamily: "var(--font-dm)" }}>
                 Livraison 58 Wilayas
               </span>
@@ -438,6 +422,9 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                   {item.name}
                 </motion.h1>
               </AnimatePresence>
+              
+              {/* Removed Urgency badge as requested */}
+
               {showReviews && (
               <div className="flex items-center gap-1 mt-1.5">
                 <span className="text-[#fbbf24] text-[11px] tracking-widest">★★★★★</span>
@@ -461,126 +448,167 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                 {selectedQuantity === 2 && (
                   <span className="text-amber-400 text-[10px] font-bold tracking-wide" style={{ fontFamily: "var(--font-dm)" }}>وفّر {((singlePrice * 2) - bundlePrice).toLocaleString("en")} DA 🔥</span>
                 )}
+                
+                {/* Risk Reversal */}
+                <div className="flex flex-col items-end gap-1 mt-1.5" dir="rtl">
+                  <span className="text-emerald-400 text-[9px] font-bold flex items-center gap-1 bg-emerald-500/10 px-1.5 py-0.5 rounded-md"><CheckCircle2 className="w-3 h-3" /> 0 دج تسبيق</span>
+                  <span className="text-white/60 text-[9px] font-medium flex items-center gap-1"><Eye className="w-3 h-3" /> تأكد من طلبك قبل الدفع</span>
+                </div>
               </motion.div>
             </AnimatePresence>
           </div>
 
           {/* Variants & Form */}
-          <AnimatePresence mode="popLayout">
-            <div className="flex flex-col gap-3">
-              {/* Color selector (only for Nocta) */}
-              {hasColorSelector && variants.length > 1 && (
-                <div className="flex justify-between items-center bg-white/5 border border-white/10 rounded-[1.2rem] p-3.5 shadow-inner backdrop-blur-sm">
-                  <span className="text-white/60 text-[11px] uppercase tracking-widest font-bold font-dm">Color: <span className="text-white ml-1 font-black">{item.colorName}</span></span>
-                  <div className="flex gap-2.5">
-                    {variants.map((j, idx) => (
-                      <button key={j.id} type="button" onClick={() => switchTo(idx)} className={`w-7 h-7 rounded-full transition-all duration-300 border-2 ${idx === currentIndex ? "border-white scale-110 shadow-[0_0_15px_rgba(255,255,255,0.3)]" : "border-transparent scale-95 opacity-80"}`} style={{ backgroundColor: j.swatch }} />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Size + Size Guide */}
+          <div className="flex flex-col gap-3">
+            {/* Color selector (only for Nocta) */}
+            {hasColorSelector && variants.length > 1 && (
               <div className="flex justify-between items-center bg-white/5 border border-white/10 rounded-[1.2rem] p-3.5 shadow-inner backdrop-blur-sm">
-                <div className="flex items-center gap-2">
-                  <span className="text-white/60 text-[11px] uppercase tracking-widest font-bold font-dm">Size</span>
-                  <button
-                    type="button"
-                    onClick={() => setSizeGuideOpen(true)}
-                    className="text-accent text-[10px] font-bold underline underline-offset-2 hover:text-accent/80 transition-colors"
-                  >
-                    📏 دليل المقاسات
-                  </button>
-                </div>
-                <div className="flex gap-2">
-                  {availableSizes.map((s) => (
-                    <button key={s} type="button" onClick={() => setSelectedSize(s)} className={`w-10 h-10 rounded-xl flex items-center justify-center text-[13px] font-black transition-all duration-300 ${selectedSize === s ? "bg-white text-black shadow-[0_0_15px_rgba(255,255,255,0.2)]" : "bg-white/10 text-white"}`} style={{ fontFamily: "var(--font-dm)" }}>
-                      {s}
-                    </button>
+                <span className="text-white/60 text-[11px] uppercase tracking-widest font-bold font-dm">Color: <span className="text-white ml-1 font-black">{item.colorName}</span></span>
+                <div className="flex gap-2.5">
+                  {variants.map((j, idx) => (
+                    <button key={j.id} type="button" onClick={() => switchTo(idx)} className={`w-7 h-7 rounded-full transition-all duration-300 border-2 ${idx === currentIndex ? "border-white scale-110 shadow-[0_0_15px_rgba(255,255,255,0.3)]" : "border-transparent scale-95 opacity-80"}`} style={{ backgroundColor: j.swatch }} />
                   ))}
                 </div>
               </div>
+            )}
 
-              {/* Quantity */}
-              <div className="flex flex-col gap-2">
-                <span className="text-white/60 text-[11px] uppercase tracking-widest font-bold font-dm px-1">الكمية</span>
-                <div className="flex gap-2">
-                  <button type="button" onClick={() => setSelectedQuantity(1)} className={`flex-1 flex flex-col items-center justify-center gap-0.5 rounded-[1.2rem] p-3 transition-all duration-300 border ${selectedQuantity === 1 ? "bg-white text-black border-white shadow-[0_0_20px_rgba(255,255,255,0.2)]" : "bg-white/5 text-white border-white/10"}`}>
-                    <span className="text-[13px] font-black" style={{ fontFamily: "var(--font-dm)" }}>1 قطعة</span>
-                    <span className="text-[15px] font-black" style={{ fontFamily: "var(--font-heading)" }}>{singlePrice.toLocaleString("en")} DA</span>
-                  </button>
-                  <button type="button" onClick={() => setSelectedQuantity(2)} className={`flex-1 flex flex-col items-center justify-center gap-0.5 rounded-[1.2rem] p-3 transition-all duration-300 border relative overflow-hidden ${selectedQuantity === 2 ? "bg-gradient-to-r from-amber-400 to-orange-500 text-black border-amber-400 shadow-[0_0_25px_rgba(251,191,36,0.4)]" : "bg-white/5 text-white border-white/10"}`}>
-                    <span className="absolute -top-0 -right-0 bg-red-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-bl-lg rounded-tr-[1.1rem]">PROMO</span>
-                    <span className="text-[13px] font-black" style={{ fontFamily: "var(--font-dm)" }}>2 قطع 🔥</span>
-                    <span className="text-[15px] font-black" style={{ fontFamily: "var(--font-heading)" }}>{bundlePrice.toLocaleString("en")} DA</span>
-                    <span className={`text-[9px] font-bold ${selectedQuantity === 2 ? "text-black/60" : "text-amber-400"}`} style={{ fontFamily: "var(--font-dm)" }}>وفّر {((singlePrice * 2) - bundlePrice).toLocaleString("en")} DA</span>
-                  </button>
-                </div>
+            {/* Size + Size Guide */}
+            <div className="flex justify-between items-center bg-white/5 border border-white/10 rounded-[1.2rem] p-3.5 shadow-inner backdrop-blur-sm">
+              <div className="flex items-center gap-2">
+                <span className="text-white/60 text-[11px] uppercase tracking-widest font-bold font-dm">Size</span>
+                <button
+                  type="button"
+                  onClick={() => setSizeGuideOpen(true)}
+                  className="flex items-center gap-1 text-accent text-[10px] font-bold hover:text-accent/80 transition-colors"
+                >
+                  <Ruler className="w-3.5 h-3.5" />
+                  <span className="underline underline-offset-2">دليل المقاسات</span>
+                </button>
               </div>
-
-              {/* Order Form */}
-              <motion.form
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex flex-col gap-3 font-sans"
-                style={{ direction: "rtl" }}
-                onSubmit={handleOrderSubmit}
-              >
-                <div className="bg-white/10 p-5 rounded-3xl backdrop-blur-xl border border-white/10 mt-1 shadow-2xl flex flex-col gap-3">
-                  <input required name="name" placeholder="الاسم الكامل" onChange={(e) => { formNameRef.current = e.target.value; }} className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-[15px] text-white placeholder-white/40 focus:outline-none focus:border-white/40 transition-colors" />
-                  <input required type="tel" name="phone" placeholder="رقم الهاتف" onChange={(e) => { formPhoneRef.current = e.target.value; }} className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-[15px] text-white placeholder-white/40 focus:outline-none focus:border-white/40 transition-colors text-right" dir="ltr" />
-                  <div className="flex flex-col gap-2">
-                    <select required value={selectedWilaya} onChange={(e) => { setSelectedWilaya(e.target.value); setSelectedCommune(""); if (!hasTrackedAddToCart) { setHasTrackedAddToCart(true); sendEvent('AddToCart', { value: productPrice, currency: 'DZD', contentIds: [String(item.id)], contentName: item.name, contentCategory: item.productType, contentType: 'product' }); } }} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-[15px] text-white focus:outline-none focus:border-white/40 transition-colors appearance-none">
-                      <option value="" disabled className="text-black">اختر الولاية</option>
-                      {algeriaData.wilayas.map((w: { wilaya_id: string; wilaya_name_latin: string }) => (
-                        <option key={w.wilaya_id} value={w.wilaya_id} className="text-black text-left" dir="ltr">{w.wilaya_id} - {w.wilaya_name_latin}</option>
-                      ))}
-                    </select>
-                    <select required value={selectedCommune} onChange={(e) => setSelectedCommune(e.target.value)} disabled={!selectedWilaya} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-[15px] text-white focus:outline-none focus:border-white/40 transition-colors appearance-none disabled:opacity-50">
-                      <option value="" disabled className="text-black">البلدية</option>
-                      {communesForWilaya.map((c: { commune_id: number; commune_name_latin: string }) => (
-                        <option key={c.commune_id} value={c.commune_name_latin} className="text-black text-left" dir="ltr">{c.commune_name_latin}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Order Summary */}
-                  <div className="bg-white/5 border border-white/10 rounded-xl p-3 flex flex-col gap-1 mt-1 font-sans">
-                    <div className="flex justify-between text-white/70 text-xs">
-                      <span>المجموع ({selectedQuantity} قطعة - المقاس: {selectedSize})</span>
-                      <span dir="ltr">{productPrice.toLocaleString("en")} DA</span>
-                    </div>
-                    <div className="flex justify-between text-white/70 text-xs">
-                      <span>التوصيل</span>
-                      <span className="text-white font-medium" dir="ltr">{selectedWilaya ? `${deliveryPrice} DA` : "---"}</span>
-                    </div>
-                    <div className="h-[1px] w-full bg-white/10 my-1" />
-                    <div className="flex justify-between text-white text-sm font-bold">
-                      <span>السعر النهائي</span>
-                      <span dir="ltr">{selectedWilaya ? `${totalPrice.toLocaleString("en")} DA` : "---"}</span>
-                    </div>
-                  </div>
-
-                  <button disabled={isSubmitting || orderSuccess} type="submit" className="w-full py-4 mt-2 rounded-[1.2rem] bg-white text-black font-black uppercase text-[15px] tracking-tight shadow-[0_10px_40px_rgba(255,255,255,0.3)] active:scale-[0.98] transition-transform flex justify-center items-center gap-2 cursor-pointer disabled:opacity-75 disabled:scale-100">
-                    {isSubmitting ? "جاري الإرسال..." : orderSuccess ? "تم الطلب بنجاح ✓" : "تأكيد الطلب"}
+              <div className="flex gap-2">
+                {availableSizes.map((s) => (
+                  <button key={s} type="button" onClick={() => setSelectedSize(s)} className={`w-10 h-10 rounded-xl flex items-center justify-center text-[13px] font-black transition-all duration-300 ${selectedSize === s ? "bg-white text-black shadow-[0_0_15px_rgba(255,255,255,0.2)]" : "bg-white/10 text-white"}`} style={{ fontFamily: "var(--font-dm)" }}>
+                    {s}
                   </button>
-                  {orderError && (
-                    <div className="w-full text-center py-2 px-3 mt-2 rounded-xl bg-red-500/10 border border-red-500/20">
-                      <p className="text-xs font-bold text-red-400" dir="rtl">{orderError}</p>
-                    </div>
-                  )}
-                </div>
-              </motion.form>
-
-              {/* ──── TRUST BADGES (Mobile — after form) ──── */}
-              <TrustBadgesRow compact />
-
-              {/* ──── CUSTOMER REVIEWS (Mobile) ──── */}
-              {showReviews && <CustomerReviewsSection compact />}
+                ))}
+              </div>
             </div>
-          </AnimatePresence>
+
+            {/* Quantity */}
+            <div className="flex flex-col gap-2">
+              <span className="text-white/60 text-[11px] uppercase tracking-widest font-bold font-dm px-1">الكمية</span>
+              <div className="flex gap-2">
+                <button type="button" onClick={() => setSelectedQuantity(1)} className={`flex-1 flex flex-col items-center justify-center gap-0.5 rounded-[1.2rem] p-3 transition-all duration-300 border ${selectedQuantity === 1 ? "bg-white text-black border-white shadow-[0_0_20px_rgba(255,255,255,0.2)]" : "bg-white/5 text-white border-white/10"}`}>
+                  <span className="text-[13px] font-black" style={{ fontFamily: "var(--font-dm)" }}>1 قطعة</span>
+                  <span className="text-[15px] font-black" style={{ fontFamily: "var(--font-heading)" }}>{singlePrice.toLocaleString("en")} DA</span>
+                </button>
+                <button type="button" onClick={() => setSelectedQuantity(2)} className={`flex-1 flex flex-col items-center justify-center gap-0.5 rounded-[1.2rem] p-3 transition-all duration-300 border relative overflow-hidden ${selectedQuantity === 2 ? "bg-gradient-to-r from-amber-400 to-orange-500 text-black border-amber-400 shadow-[0_0_25px_rgba(251,191,36,0.4)]" : "bg-white/5 text-white border-white/10"}`}>
+                  <span className="absolute -top-0 -right-0 bg-red-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-bl-lg rounded-tr-[1.1rem]">PROMO</span>
+                  <span className="text-[13px] font-black" style={{ fontFamily: "var(--font-dm)" }}>2 قطع 🔥</span>
+                  <span className="text-[15px] font-black" style={{ fontFamily: "var(--font-heading)" }}>{bundlePrice.toLocaleString("en")} DA</span>
+                  <span className={`text-[9px] font-bold ${selectedQuantity === 2 ? "text-black/60" : "text-amber-400"}`} style={{ fontFamily: "var(--font-dm)" }}>وفّر {((singlePrice * 2) - bundlePrice).toLocaleString("en")} DA</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Order Form */}
+            <motion.form
+              id="order-form"
+              ref={formRef}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex flex-col gap-3 font-sans"
+              style={{ direction: "rtl" }}
+              onSubmit={handleOrderSubmit}
+            >
+              <div className="bg-white/10 p-5 rounded-3xl backdrop-blur-xl border border-white/10 mt-1 shadow-2xl flex flex-col gap-3">
+                <input required name="name" placeholder="الاسم الكامل" onChange={(e) => { formNameRef.current = e.target.value; }} className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-[15px] text-white placeholder-white/40 focus:outline-none focus:border-white/40 transition-colors" />
+                <input required type="tel" name="phone" placeholder="رقم الهاتف" pattern="^(05|06|07)[0-9]{8}$" maxLength={10} title="يرجى إدخال رقم هاتف جزائري صحيح (مثال: 0555123456)" onChange={(e) => { const val = e.target.value.replace(/\D/g, ''); e.target.value = val; formPhoneRef.current = val; }} className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-[15px] text-white placeholder-white/40 focus:outline-none focus:border-white/40 transition-colors text-right" dir="ltr" />
+                <div className="flex flex-col gap-2">
+                  <select required value={selectedWilaya} onChange={(e) => { setSelectedWilaya(e.target.value); setSelectedCommune(""); if (!hasTrackedAddToCart) { setHasTrackedAddToCart(true); sendEvent('AddToCart', { value: productPrice, currency: 'DZD', contentIds: [String(item.id)], contentName: item.name, contentCategory: item.productType, contentType: 'product' }); } }} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-[15px] text-white focus:outline-none focus:border-white/40 transition-colors appearance-none">
+                    <option value="" disabled className="text-black">اختر الولاية</option>
+                    {algeriaData.wilayas.map((w: { wilaya_id: string; wilaya_name_latin: string }) => (
+                      <option key={w.wilaya_id} value={w.wilaya_id} className="text-black text-left" dir="ltr">{w.wilaya_id} - {w.wilaya_name_latin}</option>
+                    ))}
+                  </select>
+                  <select required value={selectedCommune} onChange={(e) => setSelectedCommune(e.target.value)} disabled={!selectedWilaya} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-[15px] text-white focus:outline-none focus:border-white/40 transition-colors appearance-none disabled:opacity-50">
+                    <option value="" disabled className="text-black">البلدية</option>
+                    {communesForWilaya.map((c: { commune_id: number; commune_name_latin: string }) => (
+                      <option key={c.commune_id} value={c.commune_name_latin} className="text-black text-left" dir="ltr">{c.commune_name_latin}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Order Summary */}
+                <div className="bg-white/5 border border-white/10 rounded-xl p-3 flex flex-col gap-1 mt-1 font-sans">
+                  <div className="flex justify-between text-white/70 text-xs">
+                    <span>المجموع ({selectedQuantity} قطعة - المقاس: {selectedSize})</span>
+                    <span dir="ltr">{productPrice.toLocaleString("en")} DA</span>
+                  </div>
+                  <div className="flex justify-between text-white/70 text-xs">
+                    <span>التوصيل</span>
+                    <span className="text-white font-medium" dir="ltr">{selectedWilaya ? `${deliveryPrice} DA` : "---"}</span>
+                  </div>
+                  <div className="h-[1px] w-full bg-white/10 my-1" />
+                  <div className="flex justify-between text-white text-sm font-bold">
+                    <span>السعر النهائي</span>
+                    <span dir="ltr">{selectedWilaya ? `${totalPrice.toLocaleString("en")} DA` : "---"}</span>
+                  </div>
+                </div>
+
+                <button disabled={isSubmitting || orderSuccess} type="submit" className="w-full py-4 mt-2 rounded-[1.2rem] bg-white text-black font-black uppercase text-[15px] tracking-tight shadow-[0_10px_40px_rgba(255,255,255,0.3)] active:scale-[0.98] transition-transform flex justify-center items-center gap-2 cursor-pointer disabled:opacity-75 disabled:scale-100">
+                  {isSubmitting ? "جاري الإرسال..." : orderSuccess ? "تم الطلب بنجاح ✓" : "تأكيد الطلب"}
+                </button>
+                {orderError && (
+                  <div className="w-full text-center py-2 px-3 mt-2 rounded-xl bg-red-500/10 border border-red-500/20">
+                    <p className="text-xs font-bold text-red-400" dir="rtl">{orderError}</p>
+                  </div>
+                )}
+              </div>
+            </motion.form>
+
+            {/* ──── TRUST BADGES (Mobile — after form) ──── */}
+            <TrustBadgesRow compact />
+          </div>
+
+          {/* ──── CUSTOMER REVIEWS (Mobile) ──── */}
+          {showReviews && (
+            <div className="-mx-4 pb-12 mt-4">
+              <Reviews />
+            </div>
+          )}
         </div>
-      </div>
+
+      {/* ────── MOBILE STICKY CTA ────── */}
+      <AnimatePresence>
+        {!isFormInView && (
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 50 }}
+            className="lg:hidden fixed bottom-4 left-4 right-4 z-[60]"
+          >
+            <button
+              onClick={() => {
+                const form = document.getElementById('order-form');
+                if (form) {
+                  form.scrollIntoView({ behavior: 'smooth' });
+                  // Focus the name input after scrolling
+                  setTimeout(() => {
+                    const nameInput = form.querySelector('input[name="name"]') as HTMLInputElement;
+                    if (nameInput) nameInput.focus();
+                  }, 500);
+                }
+              }}
+              className="w-full py-4 rounded-[1.2rem] bg-gradient-to-r from-accent to-accent-hover text-black font-black uppercase text-[15px] tracking-tight shadow-[0_10px_40px_rgba(212,165,116,0.4)] active:scale-[0.98] transition-transform flex items-center justify-center gap-2"
+              dir="rtl"
+            >
+              أطلب الآن وادفع عند الاستلام
+              <Truck className="w-5 h-5" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ────── DESKTOP LAYOUT ────── */}
       {/* Floating tag */}
@@ -631,7 +659,9 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
         <div className="grid grid-cols-2 gap-2">
           {trustBadges.map((b, i) => (
             <div key={i} className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl p-2.5 backdrop-blur-sm" dir="rtl">
-              <span className="text-lg">{b.icon}</span>
+              <div className="text-accent w-5 h-5">
+                <b.icon className="w-full h-full stroke-[1.5]" />
+              </div>
               <div>
                 <p className="text-white text-[10px] font-bold">{b.title}</p>
                 <p className="text-white/30 text-[8px]">{b.desc}</p>
@@ -652,7 +682,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
             transition={{ type: "spring", stiffness: 260, damping: 20 }}
             className="relative w-[480px] h-[600px] rounded-[2.5rem] overflow-hidden shadow-[0_40px_80px_rgba(0,0,0,0.7)] border border-white/10 bg-white/5 pointer-events-auto"
           >
-            <Image src={item.image} alt={item.name} fill className="object-cover" priority />
+            <Image src={item.image} alt={item.name} fill sizes="(max-width: 1024px) 100vw, 480px" className="object-cover" priority />
           </motion.div>
         </AnimatePresence>
       </div>
@@ -671,9 +701,9 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
           <div className="flex items-center gap-2">
             <button
               onClick={() => setSizeGuideOpen(true)}
-              className="text-accent text-[9px] font-bold hover:underline transition-all"
+              className="text-accent text-[9px] font-bold hover:opacity-80 transition-all"
             >
-              📏
+              <Ruler className="w-4 h-4" />
             </button>
             <span className="text-white/60 text-xs uppercase tracking-[0.2em] font-bold" style={{ fontFamily: "var(--font-heading)" }}>Size</span>
           </div>
@@ -699,18 +729,18 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
       {/* Bottom bar — desktop */}
       <div className="hidden lg:flex absolute bottom-0 left-0 right-0 z-20 items-end justify-between px-10 pb-8">
         {/* Review */}
+        {/* Review */}
         {showReviews && (
         <div className="max-w-[280px]">
           <div className="flex items-center gap-1 mb-1.5">
-            {[1, 2, 3, 4].map((s) => (
+            {[1, 2, 3, 4, 5].map((s) => (
               <svg key={s} width="14" height="14" viewBox="0 0 24 24" fill="#fbbf24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14 2 9.27l6.91-1.01z" /></svg>
             ))}
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" strokeWidth="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14 2 9.27l6.91-1.01z" /></svg>
-            <span className="text-white/50 text-xs ml-1" style={{ fontFamily: "var(--font-dm)" }}>4.8</span>
+            <span className="text-white/50 text-xs ml-1" style={{ fontFamily: "var(--font-dm)" }}>4.9</span>
           </div>
           <AnimatePresence mode="wait">
             <motion.p key={`d-rev-${item.id}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.3 }} className="text-white/35 text-xs italic leading-relaxed" style={{ fontFamily: "var(--font-dm)" }} dir="rtl">
-              {item.review}
+              "منتج ممتاز، جودة عالية ومقاسات مضبوطة. خدمة التوصيل في المستوى 👍"
             </motion.p>
           </AnimatePresence>
         </div>
@@ -755,7 +785,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-[-1]" />
               <h3 className="text-white font-black tracking-tight text-2xl mb-1 relative z-10" style={{ fontFamily: "var(--font-heading)" }}>تأكيد الطلبية</h3>
               <input required name="name" placeholder="الاسم الكامل" onChange={(e) => { formNameRef.current = e.target.value; }} className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-white/50 transition-colors text-base relative z-10" />
-              <input required type="tel" name="phone" placeholder="رقم الهاتف" onChange={(e) => { formPhoneRef.current = e.target.value; }} className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-white/50 transition-colors text-right text-base relative z-10" dir="ltr" />
+              <input required type="tel" name="phone" placeholder="رقم الهاتف" pattern="^(05|06|07)[0-9]{8}$" maxLength={10} title="يرجى إدخال رقم هاتف جزائري صحيح (مثال: 0555123456)" onChange={(e) => { const val = e.target.value.replace(/\D/g, ''); e.target.value = val; formPhoneRef.current = val; }} className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-white/50 transition-colors text-right text-base relative z-10" dir="ltr" />
               <div className="flex gap-2 relative z-10">
                 <select required value={selectedWilaya} onChange={(e) => { setSelectedWilaya(e.target.value); setSelectedCommune(""); if (!hasTrackedAddToCart) { setHasTrackedAddToCart(true); sendEvent('AddToCart', { value: productPrice, currency: 'DZD', contentIds: [String(item.id)], contentName: item.name, contentCategory: item.productType, contentType: 'product' }); } }} className="w-[45%] bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-white/50 transition-colors appearance-none cursor-pointer text-base">
                   <option value="" disabled className="text-black">1. الولاية</option>
@@ -802,6 +832,14 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
           </AnimatePresence>
         </div>
       </div>
+      </div>
+
+      {/* ────── REVIEWS DESKTOP ────── */}
+      {showReviews && (
+        <div className="hidden lg:block w-full bg-black/20 backdrop-blur-3xl shrink-0 border-t border-white/5">
+          <Reviews />
+        </div>
+      )}
 
       {/* ────── SIZE GUIDE MODAL ────── */}
       <AnimatePresence>
