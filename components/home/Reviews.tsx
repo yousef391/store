@@ -8,7 +8,7 @@ import Image from "next/image";
 const avisImages = [
   "/avis/photo_5967660636512652734_y.jpg",
   "/avis/photo_5967660636512652735_y.jpg",
-  "/avis/photo_5967660636512652736_y.jpg",
+  "/avis/photo_5969912436326338031_y.jpg",
   "/avis/photo_5967660636512652737_y.jpg"
 ];
 
