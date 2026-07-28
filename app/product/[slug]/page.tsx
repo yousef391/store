@@ -158,6 +158,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
           productData.showcaseType === "bmw") &&
         variants.length > 1
       }
+      hasSizeSelector={productData.showcaseType !== "sacoche"}
       zonePrices={zonePrices}
       showReviews={productData.showcaseType !== "tshirt"}
     />

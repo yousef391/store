@@ -261,7 +261,7 @@ export const products: Product[] = [
     bundlePrice: 6900,
     images: ["/products/sacoche_lacoste_black.png", "/products/sacoche_lacoste_blue.png"],
     category: "accessoires",
-    sizes: ["Taille Unique"],
+    sizes: [],
     colors: [
       { name: "Noir", hex: "#111111" },
       { name: "Bleu", hex: "#1e3a8a" },

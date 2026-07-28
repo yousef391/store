@@ -17,6 +17,7 @@ interface ProductShowcaseProps {
   bundlePrice: number;
   sizes?: string[];
   hasColorSelector?: boolean;
+  hasSizeSelector?: boolean;
   zonePrices?: Record<number, number>;
   showReviews?: boolean;
 }
@@ -44,14 +45,16 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
   bundlePrice,
   sizes: sizesProp,
   hasColorSelector = false,
+  hasSizeSelector = true,
   zonePrices = defaultZonePrices,
   showReviews = true,
 }) => {
   const router = useRouter();
+  const showSizes = hasSizeSelector && sizesProp && sizesProp.length > 0;
   const availableSizes = sizesProp && sizesProp.length > 0 ? sizesProp : ["M", "L", "XL"];
   const { sendEvent } = useMetaEvents();
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [selectedSize, setSelectedSize] = useState(availableSizes[1] || availableSizes[0]);
+  const [selectedSize, setSelectedSize] = useState(availableSizes[1] || availableSizes[0] || "");
   const [selectedQuantity, setSelectedQuantity] = useState<1 | 2>(1);
   const [selectedWilaya, setSelectedWilaya] = useState("");
   const [selectedCommune, setSelectedCommune] = useState("");
@@ -473,26 +476,28 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
             )}
 
             {/* Size + Size Guide */}
-            <div className="flex justify-between items-center bg-white/5 border border-white/10 rounded-[1.2rem] p-3.5 shadow-inner backdrop-blur-sm">
-              <div className="flex items-center gap-2">
-                <span className="text-white/60 text-[11px] uppercase tracking-widest font-bold font-dm">Size</span>
-                <button
-                  type="button"
-                  onClick={() => setSizeGuideOpen(true)}
-                  className="flex items-center gap-1 text-accent text-[10px] font-bold hover:text-accent/80 transition-colors"
-                >
-                  <Ruler className="w-3.5 h-3.5" />
-                  <span className="underline underline-offset-2">دليل المقاسات</span>
-                </button>
-              </div>
-              <div className="flex gap-2">
-                {availableSizes.map((s) => (
-                  <button key={s} type="button" onClick={() => setSelectedSize(s)} className={`w-10 h-10 rounded-xl flex items-center justify-center text-[13px] font-black transition-all duration-300 ${selectedSize === s ? "bg-white text-black shadow-[0_0_15px_rgba(255,255,255,0.2)]" : "bg-white/10 text-white"}`} style={{ fontFamily: "var(--font-dm)" }}>
-                    {s}
+            {showSizes && (
+              <div className="flex justify-between items-center bg-white/5 border border-white/10 rounded-[1.2rem] p-3.5 shadow-inner backdrop-blur-sm">
+                <div className="flex items-center gap-2">
+                  <span className="text-white/60 text-[11px] uppercase tracking-widest font-bold font-dm">Size</span>
+                  <button
+                    type="button"
+                    onClick={() => setSizeGuideOpen(true)}
+                    className="flex items-center gap-1 text-accent text-[10px] font-bold hover:text-accent/80 transition-colors"
+                  >
+                    <Ruler className="w-3.5 h-3.5" />
+                    <span className="underline underline-offset-2">دليل المقاسات</span>
                   </button>
-                ))}
+                </div>
+                <div className="flex gap-2">
+                  {availableSizes.map((s) => (
+                    <button key={s} type="button" onClick={() => setSelectedSize(s)} className={`w-10 h-10 rounded-xl flex items-center justify-center text-[13px] font-black transition-all duration-300 ${selectedSize === s ? "bg-white text-black shadow-[0_0_15px_rgba(255,255,255,0.2)]" : "bg-white/10 text-white"}`} style={{ fontFamily: "var(--font-dm)" }}>
+                      {s}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Quantity */}
             <div className="flex flex-col gap-2">
@@ -542,7 +547,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                 {/* Order Summary */}
                 <div className="bg-white/5 border border-white/10 rounded-xl p-3 flex flex-col gap-1 mt-1 font-sans">
                   <div className="flex justify-between text-white/70 text-xs">
-                    <span>المجموع ({selectedQuantity} قطعة - المقاس: {selectedSize})</span>
+                    <span>المجموع ({selectedQuantity} قطعة{showSizes && selectedSize ? ` - المقاس: ${selectedSize}` : ""})</span>
                     <span dir="ltr">{productPrice.toLocaleString("en")} DA</span>
                   </div>
                   <div className="flex justify-between text-white/70 text-xs">
@@ -697,22 +702,24 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
             ))}
           </div>
         )}
-        <div className="flex flex-col gap-3 items-end">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setSizeGuideOpen(true)}
-              className="text-accent text-[9px] font-bold hover:opacity-80 transition-all"
-            >
-              <Ruler className="w-4 h-4" />
-            </button>
-            <span className="text-white/60 text-xs uppercase tracking-[0.2em] font-bold" style={{ fontFamily: "var(--font-heading)" }}>Size</span>
+        {showSizes && (
+          <div className="flex flex-col gap-3 items-end">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setSizeGuideOpen(true)}
+                className="text-accent text-[9px] font-bold hover:opacity-80 transition-all"
+              >
+                <Ruler className="w-4 h-4" />
+              </button>
+              <span className="text-white/60 text-xs uppercase tracking-[0.2em] font-bold" style={{ fontFamily: "var(--font-heading)" }}>Size</span>
+            </div>
+            {availableSizes.map((s) => (
+              <button key={s} onClick={() => setSelectedSize(s)} className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm transition-all ${selectedSize === s ? "bg-white text-black" : "bg-white/10 text-white hover:bg-white/20"}`} style={{ fontFamily: "var(--font-dm)" }}>
+                {s}
+              </button>
+            ))}
           </div>
-          {availableSizes.map((s) => (
-            <button key={s} onClick={() => setSelectedSize(s)} className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm transition-all ${selectedSize === s ? "bg-white text-black" : "bg-white/10 text-white hover:bg-white/20"}`} style={{ fontFamily: "var(--font-dm)" }}>
-              {s}
-            </button>
-          ))}
-        </div>
+        )}
         <div className="flex flex-col gap-3 items-end">
           <span className="text-white/60 text-xs uppercase tracking-[0.2em] font-bold" style={{ fontFamily: "var(--font-heading)" }}>Qty</span>
           <button onClick={() => setSelectedQuantity(1)} className={`h-auto px-3 py-2 rounded-xl flex flex-col items-center justify-center transition-all ${selectedQuantity === 1 ? "bg-white text-black" : "bg-white/10 text-white hover:bg-white/20"}`} style={{ fontFamily: "var(--font-dm)" }}>
