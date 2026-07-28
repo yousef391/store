@@ -129,7 +129,7 @@ export const sacocheProducts: ShowcaseProduct[] = [
     desc: "Sacoche Lacoste élégante et pratique. Cuir synthétique haute qualité, bandoulière ajustable signée Lacoste.",
     review: '"حقيبة ممتازة وعملية جداً، الجودة ما شاء الله" — ياسين م.',
     productType: "sacoche",
-    image: "/products/sacoche_lacoste_black.png",
+    image: "/products/sacoche_lacoste_black1.png",
     colorName: "Noir",
   },
   {
@@ -259,7 +259,7 @@ export const products: Product[] = [
     description: "Sacoche Lacoste élégante et pratique. Finitions soignées, bandoulière ajustable signée Lacoste et fermeture zippée sécurisée.",
     price: 3900,
     bundlePrice: 6900,
-    images: ["/products/sacoche_lacoste_black.png", "/products/sacoche_lacoste_blue.png"],
+    images: ["/products/sacoche_lacoste_black1.png", "/products/sacoche_lacoste_blue.png"],
     category: "accessoires",
     sizes: [],
     colors: [
