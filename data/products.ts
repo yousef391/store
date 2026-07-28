@@ -119,6 +119,33 @@ export const bmwProducts: ShowcaseProduct[] = [
   },
 ];
 
+export const sacocheProducts: ShowcaseProduct[] = [
+  {
+    id: 50,
+    name: "Sacoche Lacoste Premium",
+    bg: "#0a0a0a",
+    tag: "Noir",
+    swatch: "#111111",
+    desc: "Sacoche Lacoste élégante et pratique. Cuir synthétique haute qualité, bandoulière ajustable signée Lacoste.",
+    review: '"حقيبة ممتازة وعملية جداً، الجودة ما شاء الله" — ياسين م.',
+    productType: "sacoche",
+    image: "/products/sacoche_lacoste_black.png",
+    colorName: "Noir",
+  },
+  {
+    id: 51,
+    name: "Sacoche Lacoste Premium",
+    bg: "#0a0c14",
+    tag: "Bleu",
+    swatch: "#1e3a8a",
+    desc: "Sacoche Lacoste couleur bleu nuit. Style moderne et finitions haut de gamme.",
+    review: '"اللون الأزرق روعة والفينيسيون طوب" — رضا ك.',
+    productType: "sacoche",
+    image: "/products/sacoche_lacoste_blue.png",
+    colorName: "Bleu",
+  },
+];
+
 // Simple product list for shop page and other components
 export interface Product {
   id: number;
@@ -138,7 +165,7 @@ export interface Product {
   reviewCount: number;
   stock: number;
   dateAdded: string;
-  showcaseType: "nocta" | "lin" | "tshirt" | "bmw";
+  showcaseType: "nocta" | "lin" | "tshirt" | "bmw" | "sacoche";
 }
 
 export const products: Product[] = [
@@ -224,6 +251,29 @@ export const products: Product[] = [
     stock: 50,
     dateAdded: "2025-06-15",
     showcaseType: "bmw",
+  },
+  {
+    id: 5,
+    slug: "sacoche-lacoste",
+    name: "Sacoche Lacoste Premium",
+    description: "Sacoche Lacoste élégante et pratique. Finitions soignées, bandoulière ajustable signée Lacoste et fermeture zippée sécurisée.",
+    price: 3900,
+    bundlePrice: 6900,
+    images: ["/products/sacoche_lacoste_black.png", "/products/sacoche_lacoste_blue.png"],
+    category: "accessoires",
+    sizes: ["Taille Unique"],
+    colors: [
+      { name: "Noir", hex: "#111111" },
+      { name: "Bleu", hex: "#1e3a8a" },
+    ],
+    tag: "Sacoche",
+    status: "active",
+    isFeatured: true,
+    rating: 4.9,
+    reviewCount: 48,
+    stock: 50,
+    dateAdded: "2026-07-28",
+    showcaseType: "sacoche",
   },
 ];
 

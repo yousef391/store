@@ -8,6 +8,7 @@ import {
   linProducts,
   tshirtProducts,
   bmwProducts,
+  sacocheProducts,
   ShowcaseProduct,
 } from "@/data/products";
 import { supabase } from "@/lib/supabase";
@@ -35,46 +36,80 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
       .single();
 
     Promise.all([fetchProduct, fetchSettings])
-      .then(([productRes, settingsRes]) => {
+      .then(async ([productRes, settingsRes]) => {
         const data = productRes.data;
-        if (data && staticProduct) {
-          setProductData({
-            ...staticProduct,
-            price: data.price,
-            bundlePrice: data.bundle_price,
-            sizes: data.sizes,
-            stock: data.stock,
-            status: data.status,
-            images: data.images,
+        if (data) {
+          const currentProduct = {
+            id: data.id,
+            slug: data.slug,
             name: data.name,
             description: data.description,
-          });
-
-          // Build dynamic variants from DB images so edits are reflected
-          const getBaseVariants = (type: string) => {
-            if (type === "tshirt") return tshirtProducts;
-            if (type === "lin") return linProducts;
-            if (type === "bmw") return bmwProducts;
-            return noctaProducts;
+            price: data.price,
+            bundlePrice: data.bundle_price,
+            sizes: data.sizes || ["Taille Unique"],
+            stock: data.stock,
+            status: data.status,
+            images: data.images || [],
+            category: data.category,
+            colors: data.colors || [],
+            tag: data.tag,
+            isFeatured: data.is_featured,
+            rating: data.rating || 4.9,
+            reviewCount: data.review_count || 50,
+            dateAdded: data.date_added,
+            showcaseType: data.showcase_type || "sacoche",
           };
-          const baseVariants = getBaseVariants(staticProduct.showcaseType);
+          setProductData(currentProduct);
 
-          const dbImages: string[] = data.images || [];
-          const dbName: string = data.name || staticProduct.name;
-          const dbDesc: string = data.description || staticProduct.description;
+          // Try fetching showcase variants from database
+          const { data: dbVariants } = await supabase
+            .from("showcase_variants")
+            .select("*")
+            .eq("product_id", data.id)
+            .order("sort_order");
 
-          if (dbImages.length > 0) {
-            const built: ShowcaseProduct[] = dbImages.map((img, idx) => {
-              const base = baseVariants[idx] || baseVariants[0];
-              return {
-                ...base,
-                id: base.id + idx * 100,
-                name: dbName,
-                desc: dbDesc,
-                image: img,
-              };
-            });
+          if (dbVariants && dbVariants.length > 0) {
+            const built: ShowcaseProduct[] = dbVariants.map((v: Record<string, unknown>) => ({
+              id: v.id as number,
+              name: (v.name as string) || data.name,
+              bg: (v.bg as string) || "#0a0a0a",
+              tag: (v.tag as string) || (v.color_name as string) || "Noir",
+              swatch: (v.swatch as string) || "#111111",
+              desc: (v.description as string) || data.description,
+              review: (v.review as string) || "",
+              productType: (v.product_type as string) || "sacoche",
+              image: (v.image as string) || (data.images && data.images[0]) || "",
+              colorName: (v.color_name as string) || "Noir",
+            }));
             setDynamicVariants(built);
+          } else {
+            // Build dynamic variants from DB images so edits are reflected
+            const getBaseVariants = (type: string) => {
+              if (type === "tshirt") return tshirtProducts;
+              if (type === "lin") return linProducts;
+              if (type === "bmw") return bmwProducts;
+              if (type === "sacoche") return sacocheProducts;
+              return noctaProducts;
+            };
+            const baseVariants = getBaseVariants(currentProduct.showcaseType);
+
+            const dbImages: string[] = data.images || [];
+            const dbName: string = data.name || currentProduct.name;
+            const dbDesc: string = data.description || currentProduct.description;
+
+            if (dbImages.length > 0) {
+              const built: ShowcaseProduct[] = dbImages.map((img, idx) => {
+                const base = baseVariants[idx] || baseVariants[0];
+                return {
+                  ...base,
+                  id: base.id + idx * 100,
+                  name: dbName,
+                  desc: dbDesc,
+                  image: img,
+                };
+              });
+              setDynamicVariants(built);
+            }
           }
         }
 
@@ -104,6 +139,8 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
       ? tshirtProducts
       : productData.showcaseType === "bmw"
       ? bmwProducts
+      : productData.showcaseType === "sacoche"
+      ? sacocheProducts
       : productData.showcaseType === "nocta"
       ? noctaProducts
       : linProducts;
@@ -116,7 +153,10 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
       bundlePrice={productData.bundlePrice}
       sizes={productData.sizes}
       hasColorSelector={
-        productData.showcaseType === "nocta" && variants.length > 1
+        (productData.showcaseType === "nocta" ||
+          productData.showcaseType === "sacoche" ||
+          productData.showcaseType === "bmw") &&
+        variants.length > 1
       }
       zonePrices={zonePrices}
       showReviews={productData.showcaseType !== "tshirt"}
