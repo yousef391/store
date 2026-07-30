@@ -146,6 +146,21 @@ export const sacocheProducts: ShowcaseProduct[] = [
   },
 ];
 
+export const sacocheLvProducts: ShowcaseProduct[] = [
+  {
+    id: 60,
+    name: "Sacoche LV Premium",
+    bg: "#0a0a0a",
+    tag: "Noir",
+    swatch: "#111111",
+    desc: "Sacoche LV élégante et pratique. Cuir synthétique haute qualité, bandoulière ajustable.",
+    review: '"حقيبة ممتازة وعملية جداً، الجودة ما شاء الله" — ياسين م.',
+    productType: "sacoche",
+    image: "/products/sacoche_LV.png",
+    colorName: "Noir",
+  },
+];
+
 // Simple product list for shop page and other components
 export interface Product {
   id: number;
@@ -165,7 +180,7 @@ export interface Product {
   reviewCount: number;
   stock: number;
   dateAdded: string;
-  showcaseType: "nocta" | "lin" | "tshirt" | "bmw" | "sacoche";
+  showcaseType: "nocta" | "lin" | "tshirt" | "bmw" | "sacoche" | "sacoche-lv";
 }
 
 export const products: Product[] = [
@@ -274,6 +289,26 @@ export const products: Product[] = [
     stock: 50,
     dateAdded: "2026-07-28",
     showcaseType: "sacoche",
+  },
+  {
+    id: 6,
+    slug: "sacoche-lv",
+    name: "Sacoche LV Premium",
+    description: "Sacoche Louis Vuitton élégante et pratique. Finitions soignées, bandoulière ajustable et fermeture zippée sécurisée.",
+    price: 3900,
+    bundlePrice: 6900,
+    images: ["/products/sacoche_LV.png"],
+    category: "accessoires",
+    sizes: [],
+    colors: [{ name: "Noir", hex: "#111111" }],
+    tag: "Sacoche",
+    status: "active",
+    isFeatured: true,
+    rating: 4.9,
+    reviewCount: 48,
+    stock: 50,
+    dateAdded: "2026-07-30",
+    showcaseType: "sacoche-lv",
   },
 ];
 

@@ -9,6 +9,7 @@ import {
   tshirtProducts,
   bmwProducts,
   sacocheProducts,
+  sacocheLvProducts,
   ShowcaseProduct,
 } from "@/data/products";
 import { supabase } from "@/lib/supabase";
@@ -88,6 +89,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
               if (type === "tshirt") return tshirtProducts;
               if (type === "lin") return linProducts;
               if (type === "bmw") return bmwProducts;
+              if (type === "sacoche-lv") return sacocheLvProducts;
               if (type === "sacoche") return sacocheProducts;
               return noctaProducts;
             };
@@ -139,6 +141,8 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
       ? tshirtProducts
       : productData.showcaseType === "bmw"
       ? bmwProducts
+      : productData.showcaseType === "sacoche-lv"
+      ? sacocheLvProducts
       : productData.showcaseType === "sacoche"
       ? sacocheProducts
       : productData.showcaseType === "nocta"
@@ -155,10 +159,14 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
       hasColorSelector={
         (productData.showcaseType === "nocta" ||
           productData.showcaseType === "sacoche" ||
+          productData.showcaseType === "sacoche-lv" ||
           productData.showcaseType === "bmw") &&
         variants.length > 1
       }
-      hasSizeSelector={productData.showcaseType !== "sacoche"}
+      hasSizeSelector={
+        productData.showcaseType !== "sacoche" &&
+        productData.showcaseType !== "sacoche-lv"
+      }
       zonePrices={zonePrices}
       showReviews={productData.showcaseType !== "tshirt"}
     />
