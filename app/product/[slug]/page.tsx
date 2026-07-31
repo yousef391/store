@@ -10,6 +10,7 @@ import {
   bmwProducts,
   sacocheProducts,
   sacocheLvProducts,
+  lacosteSacocheProducts,
   ShowcaseProduct,
 } from "@/data/products";
 import { supabase } from "@/lib/supabase";
@@ -86,11 +87,12 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
           } else {
             // Build dynamic variants from DB images so edits are reflected
             const getBaseVariants = (type: string) => {
+              if (params.slug === "sacoche-lv" || type === "sacoche-lv") return sacocheLvProducts;
+              if (params.slug === "lacoste-sacoche") return lacosteSacocheProducts;
+              if (params.slug === "sacoche-lacoste" || type === "sacoche") return sacocheProducts;
               if (type === "tshirt") return tshirtProducts;
               if (type === "lin") return linProducts;
               if (type === "bmw") return bmwProducts;
-              if (type === "sacoche-lv") return sacocheLvProducts;
-              if (type === "sacoche") return sacocheProducts;
               return noctaProducts;
             };
             const baseVariants = getBaseVariants(currentProduct.showcaseType);
@@ -137,14 +139,16 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
   if (!productData) notFound();
 
   const fallbackVariants =
-    productData.showcaseType === "tshirt"
+    params.slug === "sacoche-lv" || productData.showcaseType === "sacoche-lv"
+      ? sacocheLvProducts
+      : params.slug === "lacoste-sacoche"
+      ? lacosteSacocheProducts
+      : params.slug === "sacoche-lacoste" || productData.showcaseType === "sacoche"
+      ? sacocheProducts
+      : productData.showcaseType === "tshirt"
       ? tshirtProducts
       : productData.showcaseType === "bmw"
       ? bmwProducts
-      : productData.showcaseType === "sacoche-lv"
-      ? sacocheLvProducts
-      : productData.showcaseType === "sacoche"
-      ? sacocheProducts
       : productData.showcaseType === "nocta"
       ? noctaProducts
       : linProducts;
@@ -164,8 +168,11 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
         variants.length > 1
       }
       hasSizeSelector={
+        productData.category !== "accessoires" &&
         productData.showcaseType !== "sacoche" &&
-        productData.showcaseType !== "sacoche-lv"
+        productData.showcaseType !== "sacoche-lv" &&
+        params.slug !== "sacoche-lv" &&
+        params.slug !== "sacoche-lacoste"
       }
       zonePrices={zonePrices}
       showReviews={productData.showcaseType !== "tshirt"}

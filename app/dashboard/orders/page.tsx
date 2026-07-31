@@ -42,9 +42,10 @@ export default function OrdersPage() {
   const [copiedPhone, setCopiedPhone] = useState<string | null>(null);
   const rowsPerPage = 10;
 
-  // Yalidine
+  // Dispatch (Yalidine & Ecom Delivery)
   const [pushingId, setPushingId] = useState<string | null>(null);
   const [editingDispatchOrder, setEditingDispatchOrder] = useState<Order | null>(null);
+  const [dispatchProvider, setDispatchProvider] = useState<"ecom" | "yalidine">("ecom");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [dispatchData, setDispatchData] = useState<any>({});
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -109,9 +110,10 @@ export default function OrdersPage() {
     }
   };
 
-  // Yalidine Dispatch
-  const openDispatchModal = (order: Order) => {
+  // Dispatch Modal
+  const openDispatchModal = (order: Order, provider: "ecom" | "yalidine" = "ecom") => {
     setEditingDispatchOrder(order);
+    setDispatchProvider(provider);
     const wilayaMatch = order.wilaya.match(/^(\d+)/);
     const defaultWilayaId = wilayaMatch ? wilayaMatch[1] : "";
     const priceNumber = typeof order.total === "number" ? order.total : parseInt(String(order.total).replace(/[^\d]/g, ""), 10) || 0;
@@ -131,7 +133,7 @@ export default function OrdersPage() {
       autorisation_ouverture: false
     });
 
-    // Fetch yalidine communes for this wilaya
+    // Fetch yalidine communes for this wilaya if using Yalidine
     fetchYalidineCommunes(defaultWilayaId || order.wilaya);
   };
 
@@ -151,26 +153,27 @@ export default function OrdersPage() {
 
   const deliverableCommunes = yalidineCommunes.filter(c => c.is_deliverable);
 
-  const pushToYalidine = async () => {
+  const handleDispatchPush = async () => {
     if (!editingDispatchOrder) return;
     setPushingId(editingDispatchOrder.id);
+    const endpoint = dispatchProvider === "ecom" ? "/api/ecom" : "/api/yalidine";
     try {
-      const res = await fetch("/api/yalidine", {
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ orderId: editingDispatchOrder.id, overrides: dispatchData })
       });
       const data = await res.json();
       if (!res.ok || data.error) {
-        alert(data.error || "Failed to push to Yalidine.");
+        alert(data.error || `Failed to push to ${dispatchProvider === "ecom" ? "Ecom Delivery" : "Yalidine"}.`);
       } else {
-        alert(`Successfully dispatched! Tracking ID: ${data.tracking_id}`);
+        alert(`Successfully dispatched to ${dispatchProvider === "ecom" ? "Ecom Delivery" : "Yalidine"}! Tracking ID: ${data.tracking_id}`);
         setOrders(orders.map(o => o.id === editingDispatchOrder.id ? { ...o, tracking_id: data.tracking_id } : o));
         setEditingDispatchOrder(null);
       }
     } catch (err) {
       console.error(err);
-      alert("Network error pushing to Yalidine.");
+      alert(`Network error pushing to ${dispatchProvider === "ecom" ? "Ecom Delivery" : "Yalidine"}.`);
     } finally {
       setPushingId(null);
     }
@@ -256,10 +259,16 @@ export default function OrdersPage() {
                     {order.tracking_id ? (
                       <span className="text-[9px] font-mono font-bold text-gray-500 bg-white/5 px-1.5 py-1.5 rounded truncate max-w-[80px]">{order.tracking_id}</span>
                     ) : (
-                      <button onClick={() => openDispatchModal(order)} disabled={pushingId === order.id}
-                        className="px-2 py-1.5 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[10px] font-bold rounded hover:bg-rose-500/20 transition-colors disabled:opacity-50">
-                        {pushingId === order.id ? "..." : "Yalidine"}
-                      </button>
+                      <div className="flex items-center gap-1">
+                        <button onClick={() => openDispatchModal(order, "ecom")} disabled={pushingId === order.id}
+                          className="px-2 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold rounded hover:bg-emerald-500/20 transition-colors disabled:opacity-50">
+                          Ecom
+                        </button>
+                        <button onClick={() => openDispatchModal(order, "yalidine")} disabled={pushingId === order.id}
+                          className="px-2 py-1 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[10px] font-bold rounded hover:bg-rose-500/20 transition-colors disabled:opacity-50">
+                          Yalidine
+                        </button>
+                      </div>
                     )}
                     <button onClick={() => handleDelete(order.id, order.tracking_id)} disabled={deletingId === order.id} className="p-1.5 bg-white/5 hover:bg-red-500/10 text-gray-600 hover:text-red-400 rounded transition-colors disabled:opacity-50">
                       <Trash2 size={12} />
@@ -320,11 +329,18 @@ export default function OrdersPage() {
                             <span className="text-xs font-mono font-bold text-gray-300 bg-white/5 px-2 py-1 rounded">{order.tracking_id}</span>
                           </div>
                         ) : (
-                          <button onClick={() => openDispatchModal(order)} disabled={pushingId === order.id}
-                            className="px-3 py-1.5 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[11px] font-bold rounded-lg hover:bg-rose-500/20 transition-colors flex items-center gap-1.5 mx-auto disabled:opacity-50">
-                            <Truck size={13} />
-                            {pushingId === order.id ? "Pushing..." : "Send Yalidine"}
-                          </button>
+                          <div className="flex items-center justify-center gap-1.5">
+                            <button onClick={() => openDispatchModal(order, "ecom")} disabled={pushingId === order.id}
+                              className="px-2.5 py-1.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] font-bold rounded-lg hover:bg-emerald-500/20 transition-colors flex items-center gap-1 disabled:opacity-50">
+                              <Truck size={13} />
+                              {pushingId === order.id && dispatchProvider === "ecom" ? "Pushing..." : "Ecom"}
+                            </button>
+                            <button onClick={() => openDispatchModal(order, "yalidine")} disabled={pushingId === order.id}
+                              className="px-2.5 py-1.5 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[11px] font-bold rounded-lg hover:bg-rose-500/20 transition-colors flex items-center gap-1 disabled:opacity-50">
+                              <Truck size={13} />
+                              {pushingId === order.id && dispatchProvider === "yalidine" ? "Pushing..." : "Yalidine"}
+                            </button>
+                          </div>
                         )}
                       </td>
                       <td className="px-4 py-3 text-center">
@@ -367,7 +383,19 @@ export default function OrdersPage() {
         <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center md:p-4 bg-black/60 backdrop-blur-sm">
           <div className="bg-[#141720] rounded-t-[1.5rem] md:rounded-2xl w-full md:max-w-xl max-h-[95vh] md:max-h-[90vh] overflow-y-auto shadow-2xl p-5 md:p-8 border border-white/5">
             <div className="flex justify-between items-center mb-5 md:mb-6">
-              <h3 className="text-lg md:text-xl font-bold text-white font-heading">Confirm Dispatch</h3>
+              <div>
+                <h3 className="text-lg md:text-xl font-bold text-white font-heading">Confirm Dispatch</h3>
+                <div className="flex items-center gap-2 mt-2">
+                  <button type="button" onClick={() => setDispatchProvider("ecom")}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-colors ${dispatchProvider === "ecom" ? "bg-emerald-500 text-black" : "bg-white/5 text-gray-400 hover:text-white"}`}>
+                    🚚 Ecom Delivery
+                  </button>
+                  <button type="button" onClick={() => setDispatchProvider("yalidine")}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-colors ${dispatchProvider === "yalidine" ? "bg-rose-500 text-white" : "bg-white/5 text-gray-400 hover:text-white"}`}>
+                    📦 Yalidine Express
+                  </button>
+                </div>
+              </div>
               <button onClick={() => setEditingDispatchOrder(null)} className="p-2 bg-white/5 hover:bg-white/10 rounded-full text-gray-400 transition-colors">
                 <X size={20} />
               </button>
@@ -508,9 +536,9 @@ export default function OrdersPage() {
               <button onClick={() => setEditingDispatchOrder(null)} className="px-5 py-2.5 rounded-xl text-sm font-bold text-gray-400 bg-white/5 hover:bg-white/10 transition-colors">
                 Cancel
               </button>
-              <button onClick={pushToYalidine} disabled={pushingId === editingDispatchOrder.id}
-                className="px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-[#e11d48] hover:bg-[#be123c] transition-colors flex items-center justify-center min-w-[140px]">
-                {pushingId === editingDispatchOrder.id ? "Dispatching..." : "Confirm & Send"}
+              <button onClick={handleDispatchPush} disabled={pushingId === editingDispatchOrder.id}
+                className={`px-5 py-2.5 rounded-xl text-sm font-bold text-white transition-colors flex items-center justify-center min-w-[140px] ${dispatchProvider === "ecom" ? "bg-emerald-600 hover:bg-emerald-700" : "bg-[#e11d48] hover:bg-[#be123c]"}`}>
+                {pushingId === editingDispatchOrder.id ? "Dispatching..." : `Confirm & Send (${dispatchProvider === "ecom" ? "Ecom" : "Yalidine"})`}
               </button>
             </div>
           </div>

@@ -161,6 +161,34 @@ export const sacocheLvProducts: ShowcaseProduct[] = [
   },
 ];
 
+export const lacosteSacocheProducts: ShowcaseProduct[] = [
+  {
+    id: 70,
+    name: "Sacoche Lacoste",
+    bg: "#0a0a0a",
+    tag: "Noir",
+    swatch: "#111111",
+    desc: "Sacoche Lacoste compacte et stylée. Finitions soignées, bandoulière ajustable et style moderne.",
+    review: '"حقيبة ممتازة وعملية جداً، الجودة ما شاء الله" — ياسين م.',
+    productType: "sacoche",
+    image: "/products/lacoste_sacoche_m2.png",
+    colorName: "Noir",
+  },
+  {
+    id: 71,
+    name: "Sacoche Lacoste",
+    bg: "#0a0a0a",
+    tag: "Vue 2",
+    swatch: "#111111",
+    desc: "Vue détaillée de la sacoche Lacoste. Cuir haute qualité et fermeture sécurisée.",
+    review: '"الخياطة والفينيسيون طوب، روعة" — كريم ر.',
+    productType: "sacoche",
+    image: "/products/lacoste_sacoche_m2_2.jpg",
+    colorName: "Noir (Vue 2)",
+  },
+];
+
+
 // Simple product list for shop page and other components
 export interface Product {
   id: number;
@@ -309,6 +337,26 @@ export const products: Product[] = [
     stock: 50,
     dateAdded: "2026-07-30",
     showcaseType: "sacoche-lv",
+  },
+  {
+    id: 8,
+    slug: "lacoste-sacoche",
+    name: "Sacoche Lacoste",
+    description: "Sacoche Lacoste compacte et stylée. Finitions soignées, bandoulière ajustable et fermeture zippée sécurisée.",
+    price: 2900,
+    bundlePrice: 4900,
+    images: ["/products/lacoste_sacoche_m2.png", "/products/lacoste_sacoche_m2_2.jpg"],
+    category: "accessoires",
+    sizes: [],
+    colors: [{ name: "Noir", hex: "#111111" }],
+    tag: "Sacoche",
+    status: "active",
+    isFeatured: true,
+    rating: 4.9,
+    reviewCount: 35,
+    stock: 50,
+    dateAdded: "2026-07-31",
+    showcaseType: "sacoche",
   },
 ];
 
