@@ -176,6 +176,11 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
       }
       zonePrices={zonePrices}
       showReviews={productData.showcaseType !== "tshirt"}
+      productId={productData.id}
+      productSlug={productData.slug}
+      productName={productData.name}
+      productCategory={productData.category}
     />
   );
 }
+
