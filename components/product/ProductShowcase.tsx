@@ -69,7 +69,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
   const effectiveTriplePrice = triplePrice ?? (productSlug === "debardeur-nike-dri-fit" || productName?.includes("Débardeur") || variants[0]?.name?.includes("Débardeur") ? 4500 : undefined);
   const effectiveBundlePrice = (productSlug === "debardeur-nike-dri-fit" || productName?.includes("Débardeur") || variants[0]?.name?.includes("Débardeur")) && (bundlePrice === 4500 || !bundlePrice) ? 3100 : bundlePrice;
 
-  const [selectedQuantity, setSelectedQuantity] = useState<1 | 2 | 3>(effectiveTriplePrice ? 3 : 1);
+  const [selectedQuantity, setSelectedQuantity] = useState<1 | 2 | 3>(1);
   const [selectedWilaya, setSelectedWilaya] = useState("");
   const [selectedCommune, setSelectedCommune] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
