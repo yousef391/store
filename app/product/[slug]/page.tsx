@@ -8,10 +8,7 @@ import {
   linProducts,
   tshirtProducts,
   bmwProducts,
-  sacocheProducts,
-  sacocheLvProducts,
-  lacosteSacocheProducts,
-  sacocheMetalProducts,
+  debardeurProducts,
   ShowcaseProduct,
 } from "@/data/products";
 import { supabase } from "@/lib/supabase";
@@ -48,8 +45,9 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
             name: data.name,
             description: data.description,
             price: data.price,
-            bundlePrice: data.bundle_price,
-            sizes: data.sizes || ["Taille Unique"],
+            bundlePrice: data.slug === "debardeur-nike-dri-fit" && data.bundle_price === 4500 ? 3100 : (data.bundle_price || staticProduct?.bundlePrice || 3100),
+            triplePrice: data.triple_price || staticProduct?.triplePrice || (data.slug === "debardeur-nike-dri-fit" ? 4500 : undefined),
+            sizes: (data.sizes || staticProduct?.sizes || ["M", "L", "XL"]).filter((s: string) => s !== "XXL"),
             stock: data.stock,
             status: data.status,
             images: data.images || [],
@@ -60,7 +58,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
             rating: data.rating || 4.9,
             reviewCount: data.review_count || 50,
             dateAdded: data.date_added,
-            showcaseType: data.showcase_type || "sacoche",
+            showcaseType: data.showcase_type || "nocta",
           };
           setProductData(currentProduct);
 
@@ -80,7 +78,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
               swatch: (v.swatch as string) || "#111111",
               desc: (v.description as string) || data.description,
               review: (v.review as string) || "",
-              productType: (v.product_type as string) || "sacoche",
+              productType: (v.product_type as string) || "set",
               image: (v.image as string) || (data.images && data.images[0]) || "",
               colorName: (v.color_name as string) || "Noir",
             }));
@@ -88,10 +86,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
           } else {
             // Build dynamic variants from DB images so edits are reflected
             const getBaseVariants = (type: string) => {
-              if (params.slug === "sacoche-lv" || type === "sacoche-lv") return sacocheLvProducts;
-              if (params.slug === "sacoche-lacoste-metal") return sacocheMetalProducts;
-              if (params.slug === "lacoste-sacoche") return lacosteSacocheProducts;
-              if (params.slug === "sacoche-lacoste" || type === "sacoche") return sacocheProducts;
+              if (type === "debardeur" || params.slug === "debardeur-nike-dri-fit") return debardeurProducts;
               if (type === "tshirt") return tshirtProducts;
               if (type === "lin") return linProducts;
               if (type === "bmw") return bmwProducts;
@@ -127,7 +122,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, [params.slug, staticProduct]);
+  }, [params.slug]);
 
   // Show loading until Supabase data arrives (prevents flash of old static data)
   if (loading) {
@@ -141,14 +136,8 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
   if (!productData) notFound();
 
   const fallbackVariants =
-    params.slug === "sacoche-lv" || productData.showcaseType === "sacoche-lv"
-      ? sacocheLvProducts
-      : params.slug === "sacoche-lacoste-metal"
-      ? sacocheMetalProducts
-      : params.slug === "lacoste-sacoche"
-      ? lacosteSacocheProducts
-      : params.slug === "sacoche-lacoste" || productData.showcaseType === "sacoche"
-      ? sacocheProducts
+    params.slug === "debardeur-nike-dri-fit" || productData.showcaseType === "debardeur"
+      ? debardeurProducts
       : productData.showcaseType === "tshirt"
       ? tshirtProducts
       : productData.showcaseType === "bmw"
@@ -163,22 +152,14 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
       variants={variants}
       singlePrice={productData.price}
       bundlePrice={productData.bundlePrice}
+      triplePrice={productData.triplePrice}
       sizes={productData.sizes}
       hasColorSelector={
         (productData.showcaseType === "nocta" ||
-          productData.showcaseType === "sacoche" ||
-          productData.showcaseType === "sacoche-lv" ||
           productData.showcaseType === "bmw") &&
         variants.length > 1
       }
-      hasSizeSelector={
-        productData.category !== "accessoires" &&
-        productData.showcaseType !== "sacoche" &&
-        productData.showcaseType !== "sacoche-lv" &&
-        params.slug !== "sacoche-lv" &&
-        params.slug !== "lacoste-sacoche" &&
-        params.slug !== "sacoche-lacoste-metal"
-      }
+      hasSizeSelector={productData.category !== "accessoires"}
       zonePrices={zonePrices}
       showReviews={productData.showcaseType !== "tshirt"}
       productId={productData.id}

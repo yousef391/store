@@ -15,6 +15,7 @@ interface ProductShowcaseProps {
   variants: ShowcaseProduct[];
   singlePrice: number;
   bundlePrice: number;
+  triplePrice?: number;
   sizes?: string[];
   hasColorSelector?: boolean;
   hasSizeSelector?: boolean;
@@ -48,6 +49,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
   variants,
   singlePrice,
   bundlePrice,
+  triplePrice,
   sizes: sizesProp,
   hasColorSelector = false,
   hasSizeSelector = true,
@@ -64,7 +66,10 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
   const { sendEvent } = useMetaEvents();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedSize, setSelectedSize] = useState(availableSizes[1] || availableSizes[0] || "");
-  const [selectedQuantity, setSelectedQuantity] = useState<1 | 2>(1);
+  const effectiveTriplePrice = triplePrice ?? (productSlug === "debardeur-nike-dri-fit" || productName?.includes("Débardeur") || variants[0]?.name?.includes("Débardeur") ? 4500 : undefined);
+  const effectiveBundlePrice = (productSlug === "debardeur-nike-dri-fit" || productName?.includes("Débardeur") || variants[0]?.name?.includes("Débardeur")) && (bundlePrice === 4500 || !bundlePrice) ? 3100 : bundlePrice;
+
+  const [selectedQuantity, setSelectedQuantity] = useState<1 | 2 | 3>(effectiveTriplePrice ? 3 : 1);
   const [selectedWilaya, setSelectedWilaya] = useState("");
   const [selectedCommune, setSelectedCommune] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -120,7 +125,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
     ? (zonePrices[(selectedWilayaObj as { zone: number }).zone] ?? 900)
     : 0;
 
-  const productPrice = selectedQuantity === 2 ? bundlePrice : singlePrice;
+  const productPrice = selectedQuantity === 3 && effectiveTriplePrice ? effectiveTriplePrice : selectedQuantity === 2 ? effectiveBundlePrice : singlePrice;
   const totalPrice = productPrice + deliveryPrice;
 
   // ── Abandoned Lead Detection ──
@@ -355,20 +360,263 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
       animate={{ backgroundColor: item.bg }}
       transition={{ duration: 0.6 }}
     >
+      {/* ────── DESKTOP VIEW ────── */}
       <div className="hidden lg:block relative w-full h-[100dvh] shrink-0">
         {/* ────── HEADER (Desktop Only) ────── */}
         <header className="flex relative z-30 justify-between items-center px-10 py-8 shrink-0 w-full">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/logo.png" alt="Logo" className="h-20 w-auto object-contain drop-shadow-2xl" style={{ width: "auto", height: "auto" }} />
-        <div className="flex items-center bg-white/10 backdrop-blur-md rounded-full px-5 py-2.5 gap-2.5 border border-white/20 shadow-xl shadow-black/20">
-          <Globe2 className="w-4 h-4 text-white/70" />
-          <span className="text-white font-black tracking-widest uppercase text-sm" style={{ fontFamily: "var(--font-dm)" }}>
-            Livraison 58 Wilayas
-          </span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="Logo" className="h-20 w-auto object-contain drop-shadow-2xl" style={{ width: "auto", height: "auto" }} />
+          <div className="flex items-center bg-white/10 backdrop-blur-md rounded-full px-5 py-2.5 gap-2.5 border border-white/20 shadow-xl shadow-black/20">
+            <Globe2 className="w-4 h-4 text-white/70" />
+            <span className="text-white font-black tracking-widest uppercase text-sm" style={{ fontFamily: "var(--font-dm)" }}>
+              Livraison 58 Wilayas
+            </span>
+          </div>
+          <div className="w-20" />
+        </header>
+
+        {/* Floating tag */}
+        <div className="hidden lg:block absolute top-36 left-10 z-20">
+          <AnimatePresence mode="wait">
+            <motion.span
+              key={item.tag + "-d"}
+              initial={{ opacity: 0, scale: 0.7, y: -5 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.7, y: 5 }}
+              transition={{ type: "spring", stiffness: 400, damping: 22 }}
+              className="inline-block px-4 py-2 rounded-full text-sm font-semibold tracking-wide backdrop-blur-md border border-white/10 bg-white/5"
+              style={{ color: "white", fontFamily: "var(--font-dm)" }}
+            >
+              {item.tag}
+            </motion.span>
+          </AnimatePresence>
         </div>
-        <div className="w-20" />
-      </header>
+
+        {/* Hero text — left */}
+        <div className="hidden lg:flex absolute left-10 top-1/2 -translate-y-1/2 z-20 max-w-[380px] flex-col">
+          <AnimatePresence mode="wait">
+            <motion.h1
+              key={`d-name-${item.id}`}
+              initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -30 }}
+              transition={{ duration: 0.35, ease: "easeOut" }}
+              className="text-white text-5xl xl:text-6xl leading-[1.05] tracking-tighter uppercase font-black mb-5"
+              style={{ fontFamily: "var(--font-heading)" }}
+            >
+              {item.name.split(" ").map((word, i) => (
+                <span key={i} className="block">{word}</span>
+              ))}
+            </motion.h1>
+          </AnimatePresence>
+          <AnimatePresence mode="wait">
+            <motion.p
+              key={`d-desc-${item.id}`}
+              initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -14 }}
+              transition={{ duration: 0.3, delay: 0.1 }}
+              className="text-white/40 text-sm leading-relaxed mb-6"
+              style={{ fontFamily: "var(--font-dm)" }}
+            >
+              {item.desc}
+            </motion.p>
+          </AnimatePresence>
+
+          {/* Desktop Trust Badges (below description) */}
+          <div className="grid grid-cols-2 gap-2">
+            {trustBadges.map((b, i) => (
+              <div key={i} className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl p-2.5 backdrop-blur-sm" dir="rtl">
+                <div className="text-accent w-5 h-5">
+                  <b.icon className="w-full h-full stroke-[1.5]" />
+                </div>
+                <div>
+                  <p className="text-white text-[10px] font-bold">{b.title}</p>
+                  <p className="text-white/30 text-[8px]">{b.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Center image — desktop */}
+        <div className="hidden lg:flex absolute inset-0 items-center justify-center z-10 pointer-events-none">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={item.id + "-d"}
+              initial={{ opacity: 0, y: -40, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -40, scale: 0.9 }}
+              transition={{ type: "spring", stiffness: 260, damping: 20 }}
+              className="relative w-[480px] h-[600px] rounded-[2.5rem] overflow-hidden shadow-[0_40px_80px_rgba(0,0,0,0.7)] border border-white/10 bg-white/5 pointer-events-auto"
+            >
+              <Image src={item.image} alt={item.name} fill sizes="(max-width: 1024px) 100vw, 480px" className="object-cover" priority />
+            </motion.div>
+          </AnimatePresence>
+        </div>
+
+        {/* Right Sidebar — desktop */}
+        <div className="hidden lg:flex absolute right-10 top-1/2 -translate-y-1/2 z-20 flex-col gap-10 w-[120px] items-end">
+          {hasColorSelector && variants.length > 1 && (
+            <div className="flex flex-col gap-4 items-end">
+              <span className="text-white/60 text-xs uppercase tracking-[0.2em] font-bold" style={{ fontFamily: "var(--font-heading)" }}>Color</span>
+              {variants.map((j, idx) => (
+                <motion.button key={j.id} onClick={() => switchTo(idx)} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} className={`w-8 h-8 rounded-full border-2 transition-all ${idx === currentIndex ? "border-white scale-110" : "border-transparent scale-100"}`} style={{ backgroundColor: j.swatch }} />
+              ))}
+            </div>
+          )}
+          {showSizes && (
+            <div className="flex flex-col gap-3 items-end">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setSizeGuideOpen(true)}
+                  className="text-accent text-[9px] font-bold hover:opacity-80 transition-all"
+                >
+                  <Ruler className="w-4 h-4" />
+                </button>
+                <span className="text-white/60 text-xs uppercase tracking-[0.2em] font-bold" style={{ fontFamily: "var(--font-heading)" }}>Size</span>
+              </div>
+              {availableSizes.map((s) => (
+                <button key={s} onClick={() => setSelectedSize(s)} className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm transition-all ${selectedSize === s ? "bg-white text-black" : "bg-white/10 text-white hover:bg-white/20"}`} style={{ fontFamily: "var(--font-dm)" }}>
+                  {s}
+                </button>
+              ))}
+            </div>
+          )}
+          <div className="flex flex-col gap-3 items-end">
+            <span className="text-white/60 text-xs uppercase tracking-[0.2em] font-bold" style={{ fontFamily: "var(--font-heading)" }}>Qty</span>
+            <button onClick={() => setSelectedQuantity(1)} className={`h-auto px-3 py-2 rounded-xl flex flex-col items-center justify-center transition-all ${selectedQuantity === 1 ? "bg-white text-black" : "bg-white/10 text-white hover:bg-white/20"}`} style={{ fontFamily: "var(--font-dm)" }}>
+              <span className="text-xs font-bold">1 pc</span>
+              <span className="text-[10px] font-bold opacity-70">{singlePrice.toLocaleString("en")}</span>
+            </button>
+            <button onClick={() => setSelectedQuantity(2)} className={`h-auto px-3 py-2 rounded-xl flex flex-col items-center justify-center transition-all relative ${selectedQuantity === 2 ? "bg-gradient-to-r from-amber-400 to-orange-500 text-black shadow-[0_0_15px_rgba(251,191,36,0.4)]" : "bg-white/10 text-white hover:bg-white/20"}`} style={{ fontFamily: "var(--font-dm)" }}>
+              <span className="text-xs font-bold">2 pcs 🔥</span>
+              <span className="text-[10px] font-bold opacity-70">{effectiveBundlePrice.toLocaleString("en")}</span>
+            </button>
+            {effectiveTriplePrice && (
+            <button onClick={() => setSelectedQuantity(3)} className={`h-auto px-3 py-2 rounded-xl flex flex-col items-center justify-center transition-all relative ${selectedQuantity === 3 ? "bg-gradient-to-r from-red-500 to-orange-600 text-white shadow-[0_0_15px_rgba(239,68,68,0.4)]" : "bg-white/10 text-white hover:bg-white/20"}`} style={{ fontFamily: "var(--font-dm)" }}>
+              <span className="text-xs font-bold">3 pcs 🔥🔥</span>
+              <span className="text-[10px] font-bold opacity-70">{effectiveTriplePrice.toLocaleString("en")}</span>
+            </button>
+            )}
+          </div>
+        </div>
+
+        {/* Bottom bar — desktop */}
+        <div className="hidden lg:flex absolute bottom-0 left-0 right-0 z-20 items-end justify-between px-10 pb-8">
+          {/* Review */}
+          {showReviews && (
+          <div className="max-w-[280px]">
+            <div className="flex items-center gap-1 mb-1.5">
+              {[1, 2, 3, 4, 5].map((s) => (
+                <svg key={s} width="14" height="14" viewBox="0 0 24 24" fill="#fbbf24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14 2 9.27l6.91-1.01z" /></svg>
+              ))}
+              <span className="text-white/50 text-xs ml-1" style={{ fontFamily: "var(--font-dm)" }}>4.9</span>
+            </div>
+            <AnimatePresence mode="wait">
+              <motion.p key={`d-rev-${item.id}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.3 }} className="text-white/35 text-xs italic leading-relaxed" style={{ fontFamily: "var(--font-dm)" }} dir="rtl">
+                {"منتج ممتاز، جودة عالية ومقاسات مضبوطة. خدمة التوصيل في المستوى 👍"}
+              </motion.p>
+            </AnimatePresence>
+          </div>
+          )}
+
+          {/* Price + arrows */}
+          <div className="flex flex-col items-center gap-3">
+            <AnimatePresence mode="wait">
+              <motion.div key={`d-price-${item.id}-${selectedQuantity}`} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} transition={{ duration: 0.3 }} className="flex flex-col items-center">
+                {selectedQuantity === 2 && (
+                  <span className="text-white/40 text-sm line-through" style={{ fontFamily: "var(--font-dm)" }}>{(singlePrice * 2).toLocaleString("en")} DA</span>
+                )}
+                {selectedQuantity === 3 && effectiveTriplePrice && (
+                  <span className="text-white/40 text-sm line-through" style={{ fontFamily: "var(--font-dm)" }}>{(singlePrice * 3).toLocaleString("en")} DA</span>
+                )}
+                <span className="text-white text-3xl font-bold tracking-tight" style={{ fontFamily: "var(--font-heading)" }}>
+                  {productPrice.toLocaleString("en")} DA
+                </span>
+                {selectedQuantity === 2 && (
+                  <span className="text-amber-400 text-xs font-bold mt-0.5" style={{ fontFamily: "var(--font-dm)" }}>وفّر {((singlePrice * 2) - effectiveBundlePrice).toLocaleString("en")} DA 🔥</span>
+                )}
+                {selectedQuantity === 3 && effectiveTriplePrice && (
+                  <span className="text-amber-400 text-xs font-bold mt-0.5" style={{ fontFamily: "var(--font-dm)" }}>وفّر {((singlePrice * 3) - effectiveTriplePrice).toLocaleString("en")} DA 🔥🔥</span>
+                )}
+              </motion.div>
+            </AnimatePresence>
+            <div className="flex items-center gap-3">
+              <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => navigate(-1)} className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round"><path d="M10 3L5 8L10 13" /></svg>
+              </motion.button>
+              <span className="text-white/50 text-xs tabular-nums" style={{ fontFamily: "var(--font-dm)" }}>{currentIndex + 1} / {variants.length}</span>
+              <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => navigate(1)} className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round"><path d="M6 3L11 8L6 13" /></svg>
+              </motion.button>
+            </div>
+          </div>
+
+          {/* Desktop Form */}
+          <div className="relative">
+            <AnimatePresence mode="wait">
+              <motion.form
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                className="absolute bottom-0 right-0 w-[400px] flex flex-col gap-3 bg-white/10 p-6 rounded-[2rem] backdrop-blur-2xl border border-white/20 shadow-[0_30px_60px_rgba(0,0,0,0.6)] z-50 overflow-hidden"
+                style={{ fontFamily: "var(--font-dm)", direction: "rtl" }}
+                onSubmit={handleOrderSubmit}
+              >
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-[-1]" />
+                <h3 className="text-white font-black tracking-tight text-2xl mb-1 relative z-10" style={{ fontFamily: "var(--font-heading)" }}>تأكيد الطلبية</h3>
+                <input required name="name" placeholder="الاسم الكامل" onChange={(e) => { formNameRef.current = e.target.value; }} className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-white/50 transition-colors text-base relative z-10" />
+                <input required type="tel" name="phone" placeholder="رقم الهاتف" pattern="^(05|06|07)[0-9]{8}$" maxLength={10} title="يرجى إدخال رقم هاتف جزائري صحيح (مثال: 0555123456)" onChange={(e) => { const val = e.target.value.replace(/\D/g, ''); e.target.value = val; formPhoneRef.current = val; }} className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-white/50 transition-colors text-right text-base relative z-10" dir="ltr" />
+                <div className="flex gap-2 relative z-10">
+                  <select required value={selectedWilaya} onChange={(e) => { setSelectedWilaya(e.target.value); setSelectedCommune(""); if (!hasTrackedAddToCart) { setHasTrackedAddToCart(true); sendEvent('AddToCart', { value: productPrice, currency: 'DZD', contentIds: [String(productId ?? productSlug ?? item.id)], contentName: productName ?? item.name, contentCategory: productCategory ?? item.productType, contentType: 'product' }); } }} className="w-[45%] bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-white/50 transition-colors appearance-none cursor-pointer text-base">
+                    <option value="" disabled className="text-black">1. الولاية</option>
+                    {algeriaData.wilayas.map((w: { wilaya_id: string; wilaya_name_latin: string }) => (
+                      <option key={w.wilaya_id} value={w.wilaya_id} className="text-black text-left" dir="ltr">{w.wilaya_id} - {w.wilaya_name_latin}</option>
+                    ))}
+                  </select>
+                  <select required value={selectedCommune} onChange={(e) => setSelectedCommune(e.target.value)} disabled={!selectedWilaya} className="w-[55%] bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-white/50 transition-colors appearance-none disabled:opacity-50 cursor-pointer text-base">
+                    <option value="" disabled className="text-black">2. البلدية</option>
+                    {communesForWilaya.map((c: { commune_id: number; commune_name_latin: string }) => (
+                      <option key={c.commune_id} value={c.commune_name_latin} className="text-black text-left" dir="ltr">{c.commune_name_latin}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Desktop Order Summary */}
+                <div className="bg-white/5 border border-white/10 rounded-xl p-4 flex flex-col gap-2 mt-1 font-sans relative z-10">
+                  <div className="flex justify-between text-white/70 text-sm">
+                    <span>المجموع ({selectedQuantity} {selectedQuantity === 1 ? "قطعة" : "قطع"} - المقاس: {selectedSize})</span>
+                    <span dir="ltr">{productPrice.toLocaleString("en")} DA</span>
+                  </div>
+                  <div className="flex justify-between text-white/70 text-sm">
+                    <span>التوصيل</span>
+                    <span className="text-white font-medium" dir="ltr">{selectedWilaya ? `${deliveryPrice} DA` : "---"}</span>
+                  </div>
+                  <div className="h-[1px] w-full bg-white/10 my-1" />
+                  <div className="flex justify-between text-white text-lg font-black">
+                    <span>السعر النهائي</span>
+                    <span dir="ltr">{selectedWilaya ? `${totalPrice.toLocaleString("en")} DA` : "---"}</span>
+                  </div>
+                </div>
+
+                <div className="flex gap-3 mt-3 font-sans relative z-10 w-full flex-col" dir="ltr">
+                  <button disabled={isSubmitting || orderSuccess} type="submit" className="w-full py-4 rounded-xl bg-white text-black font-black uppercase text-sm tracking-wider hover:bg-white/90 transition-transform active:scale-[0.98] shadow-[0_0_20px_rgba(255,255,255,0.3)] cursor-pointer disabled:opacity-75 disabled:scale-100 flex items-center justify-center">
+                    {isSubmitting ? "جاري الإرسال..." : orderSuccess ? "تم الطلب بنجاح ✓" : "تأكيد الطلب"}
+                  </button>
+                  {orderError && (
+                    <div className="w-full text-center py-2 px-3 rounded-xl bg-red-500/10 border border-red-500/20">
+                      <p className="text-xs font-bold text-red-400" dir="rtl">{orderError}</p>
+                    </div>
+                  )}
+                </div>
+              </motion.form>
+            </AnimatePresence>
+          </div>
+        </div>
       </div>
+
+      {/* ────── REVIEWS DESKTOP ────── */}
+      {showReviews && (
+        <div className="hidden lg:block w-full bg-black/20 backdrop-blur-3xl shrink-0 border-t border-white/5">
+          <Reviews />
+        </div>
+      )}
 
       {/* ────── MOBILE LAYOUT ────── */}
       <div className="flex flex-col lg:hidden flex-1 px-4 pt-3 pb-6 gap-4 overflow-y-auto no-scrollbar">
@@ -442,8 +690,6 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                   {item.name}
                 </motion.h1>
               </AnimatePresence>
-              
-              {/* Removed Urgency badge as requested */}
 
               {showReviews && (
               <div className="flex items-center gap-1 mt-1.5">
@@ -462,11 +708,17 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                 {selectedQuantity === 2 && (
                   <span className="text-white/40 text-[0.85rem] line-through" style={{ fontFamily: "var(--font-dm)" }}>{(singlePrice * 2).toLocaleString("en")} DA</span>
                 )}
+                {selectedQuantity === 3 && triplePrice && (
+                  <span className="text-white/40 text-[0.85rem] line-through" style={{ fontFamily: "var(--font-dm)" }}>{(singlePrice * 3).toLocaleString("en")} DA</span>
+                )}
                 <span className="text-white text-[1.6rem] font-bold tracking-tight whitespace-nowrap" style={{ fontFamily: "var(--font-heading)" }}>
                   {productPrice.toLocaleString("en")} DA
                 </span>
                 {selectedQuantity === 2 && (
-                  <span className="text-amber-400 text-[10px] font-bold tracking-wide" style={{ fontFamily: "var(--font-dm)" }}>وفّر {((singlePrice * 2) - bundlePrice).toLocaleString("en")} DA 🔥</span>
+                  <span className="text-amber-400 text-[10px] font-bold tracking-wide" style={{ fontFamily: "var(--font-dm)" }}>وفّر 700 DA! 🔥</span>
+                )}
+                {selectedQuantity === 3 && effectiveTriplePrice && (
+                  <span className="text-amber-400 text-[10px] font-bold tracking-wide" style={{ fontFamily: "var(--font-dm)" }}>وفّر 2200 DA! 🔥🔥</span>
                 )}
                 
                 {/* Risk Reversal */}
@@ -527,9 +779,17 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                 <button type="button" onClick={() => setSelectedQuantity(2)} className={`flex-1 flex flex-col items-center justify-center gap-0.5 rounded-[1.2rem] p-3 transition-all duration-300 border relative overflow-hidden ${selectedQuantity === 2 ? "bg-gradient-to-r from-amber-400 to-orange-500 text-black border-amber-400 shadow-[0_0_25px_rgba(251,191,36,0.4)]" : "bg-white/5 text-white border-white/10"}`}>
                   <span className="absolute -top-0 -right-0 bg-red-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-bl-lg rounded-tr-[1.1rem]">PROMO</span>
                   <span className="text-[13px] font-black" style={{ fontFamily: "var(--font-dm)" }}>2 قطع 🔥</span>
-                  <span className="text-[15px] font-black" style={{ fontFamily: "var(--font-heading)" }}>{bundlePrice.toLocaleString("en")} DA</span>
-                  <span className={`text-[9px] font-bold ${selectedQuantity === 2 ? "text-black/60" : "text-amber-400"}`} style={{ fontFamily: "var(--font-dm)" }}>وفّر {((singlePrice * 2) - bundlePrice).toLocaleString("en")} DA</span>
+                  <span className="text-[15px] font-black" style={{ fontFamily: "var(--font-heading)" }}>{effectiveBundlePrice.toLocaleString("en")} DA</span>
+                  <span className={`text-[9px] font-bold ${selectedQuantity === 2 ? "text-black/60" : "text-amber-400"}`} style={{ fontFamily: "var(--font-dm)" }}>وفّر 700 دج!</span>
                 </button>
+                {effectiveTriplePrice && (
+                <button type="button" onClick={() => setSelectedQuantity(3)} className={`flex-1 flex flex-col items-center justify-center gap-0.5 rounded-[1.2rem] p-3 transition-all duration-300 border relative overflow-hidden ${selectedQuantity === 3 ? "bg-gradient-to-r from-red-500 to-orange-600 text-white border-red-500 shadow-[0_0_25px_rgba(239,68,68,0.4)]" : "bg-white/5 text-white border-white/10"}`}>
+                  <span className="absolute -top-0 -right-0 bg-emerald-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-bl-lg rounded-tr-[1.1rem]">BEST</span>
+                  <span className="text-[13px] font-black" style={{ fontFamily: "var(--font-dm)" }}>3 قطع 🔥🔥</span>
+                  <span className="text-[15px] font-black" style={{ fontFamily: "var(--font-heading)" }}>{effectiveTriplePrice.toLocaleString("en")} DA</span>
+                  <span className={`text-[9px] font-bold ${selectedQuantity === 3 ? "text-white/70" : "text-emerald-400"}`} style={{ fontFamily: "var(--font-dm)" }}>وفّر 2200 دج! 🔥</span>
+                </button>
+                )}
               </div>
             </div>
 
@@ -564,7 +824,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                 {/* Order Summary */}
                 <div className="bg-white/5 border border-white/10 rounded-xl p-3 flex flex-col gap-1 mt-1 font-sans">
                   <div className="flex justify-between text-white/70 text-xs">
-                    <span>المجموع ({selectedQuantity} قطعة{showSizes && selectedSize ? ` - المقاس: ${selectedSize}` : ""})</span>
+                    <span>المجموع ({selectedQuantity} {selectedQuantity === 1 ? "قطعة" : "قطع"}{showSizes && selectedSize ? ` - المقاس: ${selectedSize}` : ""})</span>
                     <span dir="ltr">{productPrice.toLocaleString("en")} DA</span>
                   </div>
                   <div className="flex justify-between text-white/70 text-xs">
@@ -600,6 +860,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
             </div>
           )}
         </div>
+      </div>
 
       {/* ────── MOBILE STICKY CTA ────── */}
       <AnimatePresence>
@@ -631,239 +892,6 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* ────── DESKTOP LAYOUT ────── */}
-      {/* Floating tag */}
-      <div className="hidden lg:block absolute top-36 left-10 z-20">
-        <AnimatePresence mode="wait">
-          <motion.span
-            key={item.tag + "-d"}
-            initial={{ opacity: 0, scale: 0.7, y: -5 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.7, y: 5 }}
-            transition={{ type: "spring", stiffness: 400, damping: 22 }}
-            className="inline-block px-4 py-2 rounded-full text-sm font-semibold tracking-wide backdrop-blur-md border border-white/10 bg-white/5"
-            style={{ color: "white", fontFamily: "var(--font-dm)" }}
-          >
-            {item.tag}
-          </motion.span>
-        </AnimatePresence>
-      </div>
-
-      {/* Hero text — left */}
-      <div className="hidden lg:flex absolute left-10 top-1/2 -translate-y-1/2 z-20 max-w-[380px] flex-col">
-        <AnimatePresence mode="wait">
-          <motion.h1
-            key={`d-name-${item.id}`}
-            initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -30 }}
-            transition={{ duration: 0.35, ease: "easeOut" }}
-            className="text-white text-5xl xl:text-6xl leading-[1.05] tracking-tighter uppercase font-black mb-5"
-            style={{ fontFamily: "var(--font-heading)" }}
-          >
-            {item.name.split(" ").map((word, i) => (
-              <span key={i} className="block">{word}</span>
-            ))}
-          </motion.h1>
-        </AnimatePresence>
-        <AnimatePresence mode="wait">
-          <motion.p
-            key={`d-desc-${item.id}`}
-            initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -14 }}
-            transition={{ duration: 0.3, delay: 0.1 }}
-            className="text-white/40 text-sm leading-relaxed mb-6"
-            style={{ fontFamily: "var(--font-dm)" }}
-          >
-            {item.desc}
-          </motion.p>
-        </AnimatePresence>
-
-        {/* Desktop Trust Badges (below description) */}
-        <div className="grid grid-cols-2 gap-2">
-          {trustBadges.map((b, i) => (
-            <div key={i} className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl p-2.5 backdrop-blur-sm" dir="rtl">
-              <div className="text-accent w-5 h-5">
-                <b.icon className="w-full h-full stroke-[1.5]" />
-              </div>
-              <div>
-                <p className="text-white text-[10px] font-bold">{b.title}</p>
-                <p className="text-white/30 text-[8px]">{b.desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Center image — desktop */}
-      <div className="hidden lg:flex absolute inset-0 items-center justify-center z-10 pointer-events-none">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={item.id + "-d"}
-            initial={{ opacity: 0, y: -40, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -40, scale: 0.9 }}
-            transition={{ type: "spring", stiffness: 260, damping: 20 }}
-            className="relative w-[480px] h-[600px] rounded-[2.5rem] overflow-hidden shadow-[0_40px_80px_rgba(0,0,0,0.7)] border border-white/10 bg-white/5 pointer-events-auto"
-          >
-            <Image src={item.image} alt={item.name} fill sizes="(max-width: 1024px) 100vw, 480px" className="object-cover" priority />
-          </motion.div>
-        </AnimatePresence>
-      </div>
-
-      {/* Right Sidebar — desktop */}
-      <div className="hidden lg:flex absolute right-10 top-1/2 -translate-y-1/2 z-20 flex-col gap-10 w-[120px] items-end">
-        {hasColorSelector && variants.length > 1 && (
-          <div className="flex flex-col gap-4 items-end">
-            <span className="text-white/60 text-xs uppercase tracking-[0.2em] font-bold" style={{ fontFamily: "var(--font-heading)" }}>Color</span>
-            {variants.map((j, idx) => (
-              <motion.button key={j.id} onClick={() => switchTo(idx)} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} className={`w-8 h-8 rounded-full border-2 transition-all ${idx === currentIndex ? "border-white scale-110" : "border-transparent scale-100"}`} style={{ backgroundColor: j.swatch }} />
-            ))}
-          </div>
-        )}
-        {showSizes && (
-          <div className="flex flex-col gap-3 items-end">
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setSizeGuideOpen(true)}
-                className="text-accent text-[9px] font-bold hover:opacity-80 transition-all"
-              >
-                <Ruler className="w-4 h-4" />
-              </button>
-              <span className="text-white/60 text-xs uppercase tracking-[0.2em] font-bold" style={{ fontFamily: "var(--font-heading)" }}>Size</span>
-            </div>
-            {availableSizes.map((s) => (
-              <button key={s} onClick={() => setSelectedSize(s)} className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm transition-all ${selectedSize === s ? "bg-white text-black" : "bg-white/10 text-white hover:bg-white/20"}`} style={{ fontFamily: "var(--font-dm)" }}>
-                {s}
-              </button>
-            ))}
-          </div>
-        )}
-        <div className="flex flex-col gap-3 items-end">
-          <span className="text-white/60 text-xs uppercase tracking-[0.2em] font-bold" style={{ fontFamily: "var(--font-heading)" }}>Qty</span>
-          <button onClick={() => setSelectedQuantity(1)} className={`h-auto px-3 py-2 rounded-xl flex flex-col items-center justify-center transition-all ${selectedQuantity === 1 ? "bg-white text-black" : "bg-white/10 text-white hover:bg-white/20"}`} style={{ fontFamily: "var(--font-dm)" }}>
-            <span className="text-xs font-bold">1 pc</span>
-            <span className="text-[10px] font-bold opacity-70">{singlePrice.toLocaleString("en")}</span>
-          </button>
-          <button onClick={() => setSelectedQuantity(2)} className={`h-auto px-3 py-2 rounded-xl flex flex-col items-center justify-center transition-all relative ${selectedQuantity === 2 ? "bg-gradient-to-r from-amber-400 to-orange-500 text-black shadow-[0_0_15px_rgba(251,191,36,0.4)]" : "bg-white/10 text-white hover:bg-white/20"}`} style={{ fontFamily: "var(--font-dm)" }}>
-            <span className="text-xs font-bold">2 pcs 🔥</span>
-            <span className="text-[10px] font-bold opacity-70">{bundlePrice.toLocaleString("en")}</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Bottom bar — desktop */}
-      <div className="hidden lg:flex absolute bottom-0 left-0 right-0 z-20 items-end justify-between px-10 pb-8">
-        {/* Review */}
-        {/* Review */}
-        {showReviews && (
-        <div className="max-w-[280px]">
-          <div className="flex items-center gap-1 mb-1.5">
-            {[1, 2, 3, 4, 5].map((s) => (
-              <svg key={s} width="14" height="14" viewBox="0 0 24 24" fill="#fbbf24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14 2 9.27l6.91-1.01z" /></svg>
-            ))}
-            <span className="text-white/50 text-xs ml-1" style={{ fontFamily: "var(--font-dm)" }}>4.9</span>
-          </div>
-          <AnimatePresence mode="wait">
-            <motion.p key={`d-rev-${item.id}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.3 }} className="text-white/35 text-xs italic leading-relaxed" style={{ fontFamily: "var(--font-dm)" }} dir="rtl">
-              {"منتج ممتاز، جودة عالية ومقاسات مضبوطة. خدمة التوصيل في المستوى 👍"}
-            </motion.p>
-          </AnimatePresence>
-        </div>
-        )}
-
-        {/* Price + arrows */}
-        <div className="flex flex-col items-center gap-3">
-          <AnimatePresence mode="wait">
-            <motion.div key={`d-price-${item.id}-${selectedQuantity}`} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} transition={{ duration: 0.3 }} className="flex flex-col items-center">
-              {selectedQuantity === 2 && (
-                <span className="text-white/40 text-sm line-through" style={{ fontFamily: "var(--font-dm)" }}>{(singlePrice * 2).toLocaleString("en")} DA</span>
-              )}
-              <span className="text-white text-3xl font-bold tracking-tight" style={{ fontFamily: "var(--font-heading)" }}>
-                {productPrice.toLocaleString("en")} DA
-              </span>
-              {selectedQuantity === 2 && (
-                <span className="text-amber-400 text-xs font-bold mt-0.5" style={{ fontFamily: "var(--font-dm)" }}>وفّر {((singlePrice * 2) - bundlePrice).toLocaleString("en")} DA 🔥</span>
-              )}
-            </motion.div>
-          </AnimatePresence>
-          <div className="flex items-center gap-3">
-            <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => navigate(-1)} className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors">
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round"><path d="M10 3L5 8L10 13" /></svg>
-            </motion.button>
-            <span className="text-white/50 text-xs tabular-nums" style={{ fontFamily: "var(--font-dm)" }}>{currentIndex + 1} / {variants.length}</span>
-            <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => navigate(1)} className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors">
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round"><path d="M6 3L11 8L6 13" /></svg>
-            </motion.button>
-          </div>
-        </div>
-
-        {/* Desktop Form */}
-        <div className="relative">
-          <AnimatePresence mode="wait">
-            <motion.form
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              className="absolute bottom-0 right-0 w-[400px] flex flex-col gap-3 bg-white/10 p-6 rounded-[2rem] backdrop-blur-2xl border border-white/20 shadow-[0_30px_60px_rgba(0,0,0,0.6)] z-50 overflow-hidden"
-              style={{ fontFamily: "var(--font-dm)", direction: "rtl" }}
-              onSubmit={handleOrderSubmit}
-            >
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-[-1]" />
-              <h3 className="text-white font-black tracking-tight text-2xl mb-1 relative z-10" style={{ fontFamily: "var(--font-heading)" }}>تأكيد الطلبية</h3>
-              <input required name="name" placeholder="الاسم الكامل" onChange={(e) => { formNameRef.current = e.target.value; }} className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-white/50 transition-colors text-base relative z-10" />
-              <input required type="tel" name="phone" placeholder="رقم الهاتف" pattern="^(05|06|07)[0-9]{8}$" maxLength={10} title="يرجى إدخال رقم هاتف جزائري صحيح (مثال: 0555123456)" onChange={(e) => { const val = e.target.value.replace(/\D/g, ''); e.target.value = val; formPhoneRef.current = val; }} className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-white/50 transition-colors text-right text-base relative z-10" dir="ltr" />
-              <div className="flex gap-2 relative z-10">
-                <select required value={selectedWilaya} onChange={(e) => { setSelectedWilaya(e.target.value); setSelectedCommune(""); if (!hasTrackedAddToCart) { setHasTrackedAddToCart(true); sendEvent('AddToCart', { value: productPrice, currency: 'DZD', contentIds: [String(productId ?? productSlug ?? item.id)], contentName: productName ?? item.name, contentCategory: productCategory ?? item.productType, contentType: 'product' }); } }} className="w-[45%] bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-white/50 transition-colors appearance-none cursor-pointer text-base">
-                  <option value="" disabled className="text-black">1. الولاية</option>
-                  {algeriaData.wilayas.map((w: { wilaya_id: string; wilaya_name_latin: string }) => (
-                    <option key={w.wilaya_id} value={w.wilaya_id} className="text-black text-left" dir="ltr">{w.wilaya_id} - {w.wilaya_name_latin}</option>
-                  ))}
-                </select>
-                <select required value={selectedCommune} onChange={(e) => setSelectedCommune(e.target.value)} disabled={!selectedWilaya} className="w-[55%] bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-white/50 transition-colors appearance-none disabled:opacity-50 cursor-pointer text-base">
-                  <option value="" disabled className="text-black">2. البلدية</option>
-                  {communesForWilaya.map((c: { commune_id: number; commune_name_latin: string }) => (
-                    <option key={c.commune_id} value={c.commune_name_latin} className="text-black text-left" dir="ltr">{c.commune_name_latin}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Desktop Order Summary */}
-              <div className="bg-white/5 border border-white/10 rounded-xl p-4 flex flex-col gap-2 mt-1 font-sans relative z-10">
-                <div className="flex justify-between text-white/70 text-sm">
-                  <span>المجموع ({selectedQuantity} قطعة - المقاس: {selectedSize})</span>
-                  <span dir="ltr">{productPrice.toLocaleString("en")} DA</span>
-                </div>
-                <div className="flex justify-between text-white/70 text-sm">
-                  <span>التوصيل</span>
-                  <span className="text-white font-medium" dir="ltr">{selectedWilaya ? `${deliveryPrice} DA` : "---"}</span>
-                </div>
-                <div className="h-[1px] w-full bg-white/10 my-1" />
-                <div className="flex justify-between text-white text-lg font-black">
-                  <span>السعر النهائي</span>
-                  <span dir="ltr">{selectedWilaya ? `${totalPrice.toLocaleString("en")} DA` : "---"}</span>
-                </div>
-              </div>
-
-              <div className="flex gap-3 mt-3 font-sans relative z-10 w-full flex-col" dir="ltr">
-                <button disabled={isSubmitting || orderSuccess} type="submit" className="w-full py-4 rounded-xl bg-white text-black font-black uppercase text-sm tracking-wider hover:bg-white/90 transition-transform active:scale-[0.98] shadow-[0_0_20px_rgba(255,255,255,0.3)] cursor-pointer disabled:opacity-75 disabled:scale-100 flex items-center justify-center">
-                  {isSubmitting ? "جاري الإرسال..." : orderSuccess ? "تم الطلب بنجاح ✓" : "تأكيد الطلب"}
-                </button>
-                {orderError && (
-                  <div className="w-full text-center py-2 px-3 rounded-xl bg-red-500/10 border border-red-500/20">
-                    <p className="text-xs font-bold text-red-400" dir="rtl">{orderError}</p>
-                  </div>
-                )}
-              </div>
-            </motion.form>
-          </AnimatePresence>
-        </div>
-      </div>
-      </div>
-
-      {/* ────── REVIEWS DESKTOP ────── */}
-      {showReviews && (
-        <div className="hidden lg:block w-full bg-black/20 backdrop-blur-3xl shrink-0 border-t border-white/5">
-          <Reviews />
-        </div>
-      )}
 
       {/* ────── SIZE GUIDE MODAL ────── */}
       <AnimatePresence>

@@ -119,91 +119,56 @@ export const bmwProducts: ShowcaseProduct[] = [
   },
 ];
 
-export const sacocheProducts: ShowcaseProduct[] = [
+export const debardeurProducts: ShowcaseProduct[] = [
   {
-    id: 50,
-    name: "Sacoche Lacoste Premium",
+    id: 100,
+    name: "Débardeur Nike Dri-FIT Premium",
     bg: "#0a0a0a",
-    tag: "Noir",
+    tag: "Face",
     swatch: "#111111",
-    desc: "Sacoche Lacoste élégante et pratique. Cuir synthétique haute qualité, bandoulière ajustable signée Lacoste.",
-    review: '"حقيبة ممتازة وعملية جداً، الجودة ما شاء الله" — ياسين م.',
-    productType: "sacoche",
-    image: "/products/sacoche_lacoste_black1.png",
+    desc: "Débardeur Nike Dri-FIT Premium pour le sport et la musculation. Tissu léger, respirant et séchage rapide.",
+    review: '"قماش خفيف ومرن ممتاز للتمرين، الجودة ما شاء الله" — أمين ب.',
+    productType: "tshirt",
+    image: "/products/debardeur_nike_1.jpg",
     colorName: "Noir",
   },
   {
-    id: 51,
-    name: "Sacoche Lacoste Premium",
-    bg: "#0a0c14",
-    tag: "Bleu",
-    swatch: "#1e3a8a",
-    desc: "Sacoche Lacoste couleur bleu nuit. Style moderne et finitions haut de gamme.",
-    review: '"اللون الأزرق روعة والفينيسيون طوب" — رضا ك.',
-    productType: "sacoche",
-    image: "/products/sacoche_lacoste_blue.png",
-    colorName: "Bleu",
-  },
-];
-
-export const sacocheLvProducts: ShowcaseProduct[] = [
-  {
-    id: 60,
-    name: "Sacoche LV Premium",
+    id: 101,
+    name: "Débardeur Nike Dri-FIT Premium",
     bg: "#0a0a0a",
-    tag: "Noir",
+    tag: "Dos",
     swatch: "#111111",
-    desc: "Sacoche LV élégante et pratique. Cuir synthétique haute qualité, bandoulière ajustable.",
-    review: '"حقيبة ممتازة وعملية جداً، الجودة ما شاء الله" — ياسين م.',
-    productType: "sacoche",
-    image: "/products/sacoche_LV.png",
-    colorName: "Noir",
-  },
-];
-
-export const lacosteSacocheProducts: ShowcaseProduct[] = [
-  {
-    id: 70,
-    name: "Sacoche Lacoste",
-    bg: "#0a0a0a",
-    tag: "Noir",
-    swatch: "#111111",
-    desc: "Sacoche Lacoste compacte et stylée. Finitions soignées, bandoulière ajustable et style moderne.",
-    review: '"حقيبة ممتازة وعملية جداً، الجودة ما شاء الله" — ياسين م.',
-    productType: "sacoche",
-    image: "/products/lacoste_sacoche_m2.png",
-    colorName: "Noir",
+    desc: "Coupe athlétique offrant une liberté de mouvement maximale pendant vos séances.",
+    review: '"القصة في الظهر هايلة بزاف وعملية" — سليم خ.',
+    productType: "tshirt",
+    image: "/products/debardeur_nike_2.jpg",
+    colorName: "Noir (Dos)",
   },
   {
-    id: 71,
-    name: "Sacoche Lacoste",
+    id: 102,
+    name: "Débardeur Nike Dri-FIT Premium",
     bg: "#0a0a0a",
-    tag: "Vue 2",
+    tag: "Détails",
     swatch: "#111111",
-    desc: "Vue détaillée de la sacoche Lacoste. Cuir haute qualité et fermeture sécurisée.",
-    review: '"الخياطة والفينيسيون طوب، روعة" — كريم ر.',
-    productType: "sacoche",
-    image: "/products/lacoste_sacoche_m2_2.jpg",
-    colorName: "Noir (Vue 2)",
+    desc: "Détails et finition du tissu Dri-FIT respirant haute performance.",
+    review: '"الخياطة والفينيسيون طوب، ينشف بسرعة" — كريم ر.',
+    productType: "tshirt",
+    image: "/products/debardeur_nike_3.jpg",
+    colorName: "Noir (Flat)",
   },
-];
-
-export const sacocheMetalProducts: ShowcaseProduct[] = [
   {
-    id: 80,
-    name: "Sacoche Lacoste Boucles Métalliques",
+    id: 103,
+    name: "Débardeur Nike Dri-FIT Premium",
     bg: "#0a0a0a",
-    tag: "Noir Monogramme",
+    tag: "Pack 3",
     swatch: "#111111",
-    desc: "Sacoche Lacoste d'exception avec boucles métalliques argentées double, motif monogramme relief et bandoulière large gravée Lacoste.",
-    review: '"حقيبة روعة وفخامة عالية، الجودة ما شاء الله" — ياسين م.',
-    productType: "sacoche",
-    image: "/products/sacoche_lacoste_metal.jpg",
-    colorName: "Noir Monogramme",
+    desc: "Offre spéciale: 3 débardeurs pour 4500 DA au lieu de 5700 DA. التوصيل لجميع الولايات.",
+    review: '"العرض تع 3 حبات حقيقة ما يتفلتش" — ياسين م.',
+    productType: "tshirt",
+    image: "/products/debardeur_nike_4.jpg",
+    colorName: "Pack 3",
   },
 ];
-
-
 
 // Simple product list for shop page and other components
 export interface Product {
@@ -213,6 +178,7 @@ export interface Product {
   description: string;
   price: number;
   bundlePrice: number;
+  triplePrice?: number;
   images: string[];
   category: string;
   sizes: string[];
@@ -224,7 +190,7 @@ export interface Product {
   reviewCount: number;
   stock: number;
   dateAdded: string;
-  showcaseType: "nocta" | "lin" | "tshirt" | "bmw" | "sacoche" | "sacoche-lv";
+  showcaseType: "nocta" | "lin" | "tshirt" | "bmw" | "debardeur";
 }
 
 export const products: Product[] = [
@@ -312,87 +278,30 @@ export const products: Product[] = [
     showcaseType: "bmw",
   },
   {
-    id: 5,
-    slug: "sacoche-lacoste",
-    name: "Sacoche Lacoste Premium",
-    description: "Sacoche Lacoste élégante et pratique. Finitions soignées, bandoulière ajustable signée Lacoste et fermeture zippée sécurisée.",
-    price: 3900,
-    bundlePrice: 6900,
-    images: ["/products/sacoche_lacoste_black1.png", "/products/sacoche_lacoste_blue.png"],
-    category: "accessoires",
-    sizes: [],
-    colors: [
-      { name: "Noir", hex: "#111111" },
-      { name: "Bleu", hex: "#1e3a8a" },
+    id: 10,
+    slug: "debardeur-nike-dri-fit",
+    name: "Débardeur Nike Dri-FIT Premium",
+    description: "Débardeur Nike Dri-FIT Premium pour le sport et la musculation. Tissu léger, respirant et séchage rapide. Coupe athlétique pour une liberté totale de mouvement.",
+    price: 1900,
+    bundlePrice: 3100,
+    triplePrice: 4500,
+    images: [
+      "/products/debardeur_nike_1.jpg",
+      "/products/debardeur_nike_2.jpg",
+      "/products/debardeur_nike_3.jpg",
+      "/products/debardeur_nike_4.jpg",
     ],
-    tag: "Sacoche",
-    status: "active",
-    isFeatured: true,
-    rating: 4.9,
-    reviewCount: 48,
-    stock: 50,
-    dateAdded: "2026-07-28",
-    showcaseType: "sacoche",
-  },
-  {
-    id: 6,
-    slug: "sacoche-lv",
-    name: "Sacoche LV Premium",
-    description: "Sacoche Louis Vuitton élégante et pratique. Finitions soignées, bandoulière ajustable et fermeture zippée sécurisée.",
-    price: 3900,
-    bundlePrice: 6900,
-    images: ["/products/sacoche_LV.png"],
-    category: "accessoires",
-    sizes: [],
+    category: "tshirts",
+    sizes: ["M", "L", "XL"],
     colors: [{ name: "Noir", hex: "#111111" }],
-    tag: "Sacoche",
+    tag: "Dri-FIT",
     status: "active",
     isFeatured: true,
     rating: 4.9,
-    reviewCount: 48,
-    stock: 50,
-    dateAdded: "2026-07-30",
-    showcaseType: "sacoche-lv",
-  },
-  {
-    id: 8,
-    slug: "lacoste-sacoche",
-    name: "Sacoche Lacoste",
-    description: "Sacoche Lacoste compacte et stylée. Finitions soignées, bandoulière ajustable et fermeture zippée sécurisée.",
-    price: 2900,
-    bundlePrice: 4900,
-    images: ["/products/lacoste_sacoche_m2.png", "/products/lacoste_sacoche_m2_2.jpg"],
-    category: "accessoires",
-    sizes: [],
-    colors: [{ name: "Noir", hex: "#111111" }],
-    tag: "Sacoche",
-    status: "active",
-    isFeatured: true,
-    rating: 4.9,
-    reviewCount: 35,
-    stock: 50,
-    dateAdded: "2026-07-31",
-    showcaseType: "sacoche",
-  },
-  {
-    id: 9,
-    slug: "sacoche-lacoste-metal",
-    name: "Sacoche Lacoste Boucles Métalliques",
-    description: "Sacoche Lacoste design monogramme d'une élégance absolue. Finitions soignées avec boucles métalliques argentées, bandoulière large signée Lacoste et fermeture zippée sécurisée.",
-    price: 3900,
-    bundlePrice: 6900,
-    images: ["/products/sacoche_lacoste_metal.jpg"],
-    category: "accessoires",
-    sizes: [],
-    colors: [{ name: "Noir Monogramme", hex: "#111111" }],
-    tag: "Nouveau",
-    status: "active",
-    isFeatured: true,
-    rating: 4.9,
-    reviewCount: 42,
+    reviewCount: 64,
     stock: 50,
     dateAdded: "2026-08-03",
-    showcaseType: "sacoche",
+    showcaseType: "debardeur",
   },
 ];
 
