@@ -87,9 +87,9 @@ export default function ContactPage() {
                       <input
                         type="tel"
                         required
-                        pattern="^(05|06|07)[0-9]{8}$"
-                        maxLength={10}
-                        title="Please enter a valid Algerian phone number (e.g., 0555123456)"
+                        pattern="[0-9]{10,}"
+                        minLength={10}
+                        title="Please enter a valid phone number (at least 10 digits)"
                         value={formData.phone}
                         onChange={(e) => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, '') })}
                         className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all font-mono"
