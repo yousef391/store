@@ -188,6 +188,22 @@ export const lacosteSacocheProducts: ShowcaseProduct[] = [
   },
 ];
 
+export const sacocheMetalProducts: ShowcaseProduct[] = [
+  {
+    id: 80,
+    name: "Sacoche Lacoste Boucles Métalliques",
+    bg: "#0a0a0a",
+    tag: "Noir Monogramme",
+    swatch: "#111111",
+    desc: "Sacoche Lacoste d'exception avec boucles métalliques argentées double, motif monogramme relief et bandoulière large gravée Lacoste.",
+    review: '"حقيبة روعة وفخامة عالية، الجودة ما شاء الله" — ياسين م.',
+    productType: "sacoche",
+    image: "/products/sacoche_lacoste_metal.jpg",
+    colorName: "Noir Monogramme",
+  },
+];
+
+
 
 // Simple product list for shop page and other components
 export interface Product {
@@ -356,6 +372,26 @@ export const products: Product[] = [
     reviewCount: 35,
     stock: 50,
     dateAdded: "2026-07-31",
+    showcaseType: "sacoche",
+  },
+  {
+    id: 9,
+    slug: "sacoche-lacoste-metal",
+    name: "Sacoche Lacoste Boucles Métalliques",
+    description: "Sacoche Lacoste design monogramme d'une élégance absolue. Finitions soignées avec boucles métalliques argentées, bandoulière large signée Lacoste et fermeture zippée sécurisée.",
+    price: 3900,
+    bundlePrice: 6900,
+    images: ["/products/sacoche_lacoste_metal.jpg"],
+    category: "accessoires",
+    sizes: [],
+    colors: [{ name: "Noir Monogramme", hex: "#111111" }],
+    tag: "Nouveau",
+    status: "active",
+    isFeatured: true,
+    rating: 4.9,
+    reviewCount: 42,
+    stock: 50,
+    dateAdded: "2026-08-03",
     showcaseType: "sacoche",
   },
 ];

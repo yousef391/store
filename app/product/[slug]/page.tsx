@@ -11,6 +11,7 @@ import {
   sacocheProducts,
   sacocheLvProducts,
   lacosteSacocheProducts,
+  sacocheMetalProducts,
   ShowcaseProduct,
 } from "@/data/products";
 import { supabase } from "@/lib/supabase";
@@ -88,6 +89,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
             // Build dynamic variants from DB images so edits are reflected
             const getBaseVariants = (type: string) => {
               if (params.slug === "sacoche-lv" || type === "sacoche-lv") return sacocheLvProducts;
+              if (params.slug === "sacoche-lacoste-metal") return sacocheMetalProducts;
               if (params.slug === "lacoste-sacoche") return lacosteSacocheProducts;
               if (params.slug === "sacoche-lacoste" || type === "sacoche") return sacocheProducts;
               if (type === "tshirt") return tshirtProducts;
@@ -141,6 +143,8 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
   const fallbackVariants =
     params.slug === "sacoche-lv" || productData.showcaseType === "sacoche-lv"
       ? sacocheLvProducts
+      : params.slug === "sacoche-lacoste-metal"
+      ? sacocheMetalProducts
       : params.slug === "lacoste-sacoche"
       ? lacosteSacocheProducts
       : params.slug === "sacoche-lacoste" || productData.showcaseType === "sacoche"
@@ -172,7 +176,8 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
         productData.showcaseType !== "sacoche" &&
         productData.showcaseType !== "sacoche-lv" &&
         params.slug !== "sacoche-lv" &&
-        params.slug !== "sacoche-lacoste"
+        params.slug !== "lacoste-sacoche" &&
+        params.slug !== "sacoche-lacoste-metal"
       }
       zonePrices={zonePrices}
       showReviews={productData.showcaseType !== "tshirt"}
