@@ -9,6 +9,8 @@ import {
   tshirtProducts,
   bmwProducts,
   debardeurProducts,
+  gtaProducts,
+  jordanProducts,
   ShowcaseProduct,
 } from "@/data/products";
 import { supabase } from "@/lib/supabase";
@@ -86,6 +88,8 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
           } else {
             // Build dynamic variants from DB images so edits are reflected
             const getBaseVariants = (type: string) => {
+              if (params.slug === "tshirt-oversize-jordan-minimalist" || type === "jordan") return jordanProducts;
+              if (params.slug === "tshirt-oversize-san-andreas" || type === "gta") return gtaProducts;
               if (type === "debardeur" || params.slug === "debardeur-nike-dri-fit") return debardeurProducts;
               if (type === "tshirt") return tshirtProducts;
               if (type === "lin") return linProducts;
@@ -122,6 +126,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
         setLoading(false);
       })
       .catch(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.slug]);
 
   // Show loading until Supabase data arrives (prevents flash of old static data)
@@ -136,7 +141,11 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
   if (!productData) notFound();
 
   const fallbackVariants =
-    params.slug === "debardeur-nike-dri-fit" || productData.showcaseType === "debardeur"
+    params.slug === "tshirt-oversize-jordan-minimalist" || productData.showcaseType === "jordan"
+      ? jordanProducts
+      : params.slug === "tshirt-oversize-san-andreas" || productData.showcaseType === "gta"
+      ? gtaProducts
+      : params.slug === "debardeur-nike-dri-fit" || productData.showcaseType === "debardeur"
       ? debardeurProducts
       : productData.showcaseType === "tshirt"
       ? tshirtProducts

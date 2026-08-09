@@ -170,6 +170,108 @@ export const debardeurProducts: ShowcaseProduct[] = [
   },
 ];
 
+export const gtaProducts: ShowcaseProduct[] = [
+  {
+    id: 200,
+    name: "T-Shirt Oversize GTA San Andreas",
+    bg: "#0a0a0a",
+    tag: "Blanc (Face)",
+    swatch: "#ffffff",
+    desc: "T-Shirt Oversize GTA San Andreas en blanc avec col ringer noir. Impression gothic San Andreas sur la poitrine.",
+    review: '"القطعة فخامة حقيقية، القماش سميك والتصميم روعة 🔥" — أمين ب.',
+    productType: "tshirt",
+    image: "/products/gta_1.jpg",
+    colorName: "Blanc",
+  },
+  {
+    id: 201,
+    name: "T-Shirt Oversize GTA San Andreas",
+    bg: "#0a0a0a",
+    tag: "Blanc (Dos)",
+    swatch: "#ffffff",
+    desc: "Vue arrière avec le grand logo Grand Theft Auto San Andreas imprimé au dos.",
+    review: '"أحسن تي شيرت لبسته، الطباعة عصرية والقماش ممتاز" — سليم خ.',
+    productType: "tshirt",
+    image: "/products/gta_2.jpg",
+    colorName: "Blanc (Dos)",
+  },
+  {
+    id: 202,
+    name: "T-Shirt Oversize GTA San Andreas",
+    bg: "#0a0a0a",
+    tag: "Blanc (Flat)",
+    swatch: "#ffffff",
+    desc: "Finition premium du modèle blanc avec col bicolor et coupe oversize streetwear.",
+    review: '"تصميم فريد وجودة عالية جداً، يعطيكم الصحة" — كريم ر.',
+    productType: "tshirt",
+    image: "/products/gta_3.jpg",
+    colorName: "Blanc (Flat)",
+  },
+  {
+    id: 203,
+    name: "T-Shirt Oversize GTA San Andreas",
+    bg: "#0a0a0a",
+    tag: "Pack Duo",
+    swatch: "#111111",
+    desc: "Disponible en 2 couleurs: Blanc et Noir avec col contrasté ringer.",
+    review: '"ديت الزوج بيضاء وسوداء يخرجوا بزاف طوب" — ياسين م.',
+    productType: "tshirt",
+    image: "/products/gta_4.jpg",
+    colorName: "Pack Duo",
+  },
+  {
+    id: 204,
+    name: "T-Shirt Oversize GTA San Andreas",
+    bg: "#0a0a0a",
+    tag: "Noir (Face)",
+    swatch: "#111111",
+    desc: "Modèle Noir avec col ringer blanc et écriture San Andreas sur le devant.",
+    review: '"الأسود مع الكول الأبيض يخرج يهبل" — حمزة ك.',
+    productType: "tshirt",
+    image: "/products/gta_5.jpg",
+    colorName: "Noir",
+  },
+];
+
+export const jordanProducts: ShowcaseProduct[] = [
+  {
+    id: 300,
+    name: "T-Shirt Oversize Jordan Minimalist",
+    bg: "#0a0a0a",
+    tag: "Blanc",
+    swatch: "#ffffff",
+    desc: "Modèle Blanc avec logo Jumpman minimaliste au centre et bandes contrastées noires sur le col et les manches.",
+    review: '"القطعة هايلة بزاف، القماش روعة وتنقاس طوب" — أمين ب.',
+    productType: "tshirt",
+    image: "/products/jordan_1.jpg",
+    colorName: "Blanc",
+  },
+  {
+    id: 301,
+    name: "T-Shirt Oversize Jordan Minimalist",
+    bg: "#0a0a0a",
+    tag: "Noir",
+    swatch: "#111111",
+    desc: "Modèle Noir élégant avec logo Jumpman blanc et finition bicolor ringer.",
+    review: '"الأسود مع البلاين الأبيض يخرج فخامة" — سليم خ.',
+    productType: "tshirt",
+    image: "/products/jordan_2.jpg",
+    colorName: "Noir",
+  },
+  {
+    id: 302,
+    name: "T-Shirt Oversize Jordan Minimalist",
+    bg: "#0a0a0a",
+    tag: "Pack Duo",
+    swatch: "#111111",
+    desc: "Pack Duo Blanc et Noir. Profitez de l'offre 2 pièces à 5500 DA.",
+    review: '"ديتهم في زوج، الشوا شباب بزاف يعطيكم الصحة" — كريم ر.',
+    productType: "tshirt",
+    image: "/products/jordan_3.jpg",
+    colorName: "Pack Duo",
+  },
+];
+
 // Simple product list for shop page and other components
 export interface Product {
   id: number;
@@ -190,10 +292,66 @@ export interface Product {
   reviewCount: number;
   stock: number;
   dateAdded: string;
-  showcaseType: "nocta" | "lin" | "tshirt" | "bmw" | "debardeur";
+  showcaseType: "nocta" | "lin" | "tshirt" | "bmw" | "debardeur" | "gta" | "jordan";
 }
 
 export const products: Product[] = [
+  {
+    id: 6,
+    slug: "tshirt-oversize-jordan-minimalist",
+    name: "T-Shirt Oversize Jordan Minimalist",
+    description: "T-Shirt Oversize Jordan streetwear premium avec logo Jumpman minimaliste au centre et col bicolor ringer avec bandes assorties sur les manches. Coton 100% épais haut de gamme, coupe oversized moderne.",
+    price: 3200,
+    bundlePrice: 5500,
+    images: [
+      "/products/jordan_1.jpg",
+      "/products/jordan_2.jpg",
+      "/products/jordan_3.jpg",
+    ],
+    category: "tshirts",
+    sizes: ["M", "L", "XL"],
+    colors: [
+      { name: "Blanc", hex: "#ffffff" },
+      { name: "Noir", hex: "#111111" },
+    ],
+    tag: "Jordan Minimalist",
+    status: "active",
+    isFeatured: true,
+    rating: 4.9,
+    reviewCount: 92,
+    stock: 70,
+    dateAdded: "2026-08-09",
+    showcaseType: "tshirt",
+  },
+  {
+    id: 5,
+    slug: "tshirt-oversize-san-andreas",
+    name: "T-Shirt Oversize GTA San Andreas",
+    description: "T-Shirt Oversize GTA San Andreas streetwear premium avec col bicolor ringer. Design imprimé San Andreas sur la poitrine et Grand Theft Auto San Andreas au dos. Coton 100% épais, coupe oversized confortable.",
+    price: 3200,
+    bundlePrice: 5500,
+    images: [
+      "/products/gta_1.jpg",
+      "/products/gta_2.jpg",
+      "/products/gta_3.jpg",
+      "/products/gta_4.jpg",
+      "/products/gta_5.jpg",
+    ],
+    category: "tshirts",
+    sizes: ["M", "L", "XL"],
+    colors: [
+      { name: "Blanc", hex: "#ffffff" },
+      { name: "Noir", hex: "#111111" },
+    ],
+    tag: "San Andreas",
+    status: "active",
+    isFeatured: true,
+    rating: 4.9,
+    reviewCount: 78,
+    stock: 65,
+    dateAdded: "2026-08-09",
+    showcaseType: "tshirt",
+  },
   {
     id: 1,
     slug: "nike-nocta-ensemble",
