@@ -272,6 +272,57 @@ export const jordanProducts: ShowcaseProduct[] = [
   },
 ];
 
+export const impossibleProducts: ShowcaseProduct[] = [
+  {
+    id: 400,
+    name: 'T-Shirt Impossible Is Nothing',
+    bg: "#0a0a0a",
+    tag: "Beige (Face)",
+    swatch: "#d8c3a5",
+    desc: 'T-Shirt "Impossible Is Nothing" en beige premium. Slogan élégant imprimé sur le devant et grand visuel sérigraphié au dos. Coton 100% épais, coupe oversized streetwear.',
+    review: '"القطعة قمة في الأناقة، القماش روعة وتنقاس طوب 🔥" — أمين ب.',
+    productType: "tshirt",
+    image: "/products/impossible_1.jpg",
+    colorName: "Beige",
+  },
+  {
+    id: 401,
+    name: 'T-Shirt Impossible Is Nothing',
+    bg: "#0a0a0a",
+    tag: "Beige (Dos)",
+    swatch: "#d8c3a5",
+    desc: 'Vue arrière avec le graphique emblématique de la main entourée de bandages dorés et l\'écriture "Impossible Is Nothing".',
+    review: '"أحسن تي شيرت لبسته، القماش سميك والتصميم عالمي" — سليم خ.',
+    productType: "tshirt",
+    image: "/products/impossible_2.jpg",
+    colorName: "Beige",
+  },
+  {
+    id: 402,
+    name: 'T-Shirt Impossible Is Nothing',
+    bg: "#0a0a0a",
+    tag: "Noir (Dos)",
+    swatch: "#111111",
+    desc: 'Modèle Noir élégant avec le visuel dorsal de la main dorée et l\'impression "Impossible Is Nothing".',
+    review: '"الأسود مع الرسمة الذهبية في الظهر يخرج فخامة كبيرة" — كريم ر.',
+    productType: "tshirt",
+    image: "/products/impossible_3.jpg",
+    colorName: "Noir",
+  },
+  {
+    id: 403,
+    name: 'T-Shirt Impossible Is Nothing',
+    bg: "#0a0a0a",
+    tag: "Noir (Face)",
+    swatch: "#111111",
+    desc: 'Modèle Noir avec l\'écriture "Impossible Is Nothing" sur la poitrine, coupe streetwear premium.',
+    review: '"ديت الزوج بيج وأسود طالعين طوب بزاف" — ياسين م.',
+    productType: "tshirt",
+    image: "/products/impossible_4.jpg",
+    colorName: "Noir",
+  },
+];
+
 // Simple product list for shop page and other components
 export interface Product {
   id: number;
@@ -292,7 +343,7 @@ export interface Product {
   reviewCount: number;
   stock: number;
   dateAdded: string;
-  showcaseType: "nocta" | "lin" | "tshirt" | "bmw" | "debardeur" | "gta" | "jordan";
+  showcaseType: "nocta" | "lin" | "tshirt" | "bmw" | "debardeur" | "gta" | "jordan" | "impossible";
 }
 
 export const products: Product[] = [
@@ -460,6 +511,34 @@ export const products: Product[] = [
     stock: 50,
     dateAdded: "2026-08-03",
     showcaseType: "debardeur",
+  },
+  {
+    id: 7,
+    slug: "tshirt-oversize-impossible-is-nothing",
+    name: 'T-Shirt Impossible Is Nothing',
+    description: 'T-Shirt Oversize "Impossible Is Nothing" streetwear premium. Design avec inscription "Impossible Is Nothing" sur le devant et sérigraphie d\'une main entourée de bandages dorés au dos. Coton 100% épais haut de gamme.',
+    price: 2900,
+    bundlePrice: 4700,
+    images: [
+      "/products/impossible_1.jpg",
+      "/products/impossible_2.jpg",
+      "/products/impossible_3.jpg",
+      "/products/impossible_4.jpg",
+    ],
+    category: "tshirts",
+    sizes: ["S", "M", "L", "XL"],
+    colors: [
+      { name: "Beige", hex: "#d8c3a5" },
+      { name: "Noir", hex: "#111111" },
+    ],
+    tag: "Impossible Is Nothing",
+    status: "active",
+    isFeatured: true,
+    rating: 4.9,
+    reviewCount: 88,
+    stock: 80,
+    dateAdded: "2026-08-16",
+    showcaseType: "impossible",
   },
 ];
 

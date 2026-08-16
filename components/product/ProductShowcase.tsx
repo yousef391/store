@@ -30,6 +30,7 @@ interface ProductShowcaseProps {
 
 /* ──── SIZE GUIDE DATA ──── */
 const sizeChart = [
+  { size: "S", height: "160–170 cm", weight: "50–60 kg", chest: "90 cm" },
   { size: "M", height: "170–175 cm", weight: "60–70 kg", chest: "96 cm" },
   { size: "L", height: "175–180 cm", weight: "70–80 kg", chest: "102 cm" },
   { size: "XL", height: "180–185 cm", weight: "80–90 kg", chest: "108 cm" },
@@ -85,6 +86,17 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
   const formPhoneRef = useRef("");
 
   const item = variants[currentIndex];
+
+  const uniqueColors = React.useMemo(() => {
+    const map = new Map<string, { name: string; swatch: string; firstIdx: number }>();
+    variants.forEach((v, idx) => {
+      const cName = v.colorName || v.tag || "Noir";
+      if (!map.has(cName)) {
+        map.set(cName, { name: cName, swatch: v.swatch || "#111111", firstIdx: idx });
+      }
+    });
+    return Array.from(map.values());
+  }, [variants]);
 
   // ── Track ViewContent on page load ──
   useEffect(() => {
@@ -453,12 +465,23 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
 
         {/* Right Sidebar — desktop */}
         <div className="hidden lg:flex absolute right-10 top-1/2 -translate-y-1/2 z-20 flex-col gap-10 w-[120px] items-end">
-          {hasColorSelector && variants.length > 1 && (
+          {hasColorSelector && uniqueColors.length > 1 && (
             <div className="flex flex-col gap-4 items-end">
               <span className="text-white/60 text-xs uppercase tracking-[0.2em] font-bold" style={{ fontFamily: "var(--font-heading)" }}>Color</span>
-              {variants.map((j, idx) => (
-                <motion.button key={j.id} onClick={() => switchTo(idx)} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} className={`w-8 h-8 rounded-full border-2 transition-all ${idx === currentIndex ? "border-white scale-110" : "border-transparent scale-100"}`} style={{ backgroundColor: j.swatch }} />
-              ))}
+              {uniqueColors.map((c) => {
+                const isActive = item?.colorName === c.name || currentIndex === c.firstIdx;
+                return (
+                  <motion.button
+                    key={c.name}
+                    onClick={() => switchTo(c.firstIdx)}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    title={c.name}
+                    className={`w-8 h-8 rounded-full border-2 transition-all ${isActive ? "border-white scale-110 shadow-[0_0_15px_rgba(255,255,255,0.4)]" : "border-transparent scale-100 opacity-70"}`}
+                    style={{ backgroundColor: c.swatch }}
+                  />
+                );
+              })}
             </div>
           )}
           {showSizes && (
@@ -732,14 +755,23 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
 
           {/* Variants & Form */}
           <div className="flex flex-col gap-3">
-            {/* Color selector (only for Nocta) */}
-            {hasColorSelector && variants.length > 1 && (
+            {hasColorSelector && uniqueColors.length > 1 && (
               <div className="flex justify-between items-center bg-white/5 border border-white/10 rounded-[1.2rem] p-3.5 shadow-inner backdrop-blur-sm">
                 <span className="text-white/60 text-[11px] uppercase tracking-widest font-bold font-dm">Color: <span className="text-white ml-1 font-black">{item.colorName}</span></span>
                 <div className="flex gap-2.5">
-                  {variants.map((j, idx) => (
-                    <button key={j.id} type="button" onClick={() => switchTo(idx)} className={`w-7 h-7 rounded-full transition-all duration-300 border-2 ${idx === currentIndex ? "border-white scale-110 shadow-[0_0_15px_rgba(255,255,255,0.3)]" : "border-transparent scale-95 opacity-80"}`} style={{ backgroundColor: j.swatch }} />
-                  ))}
+                  {uniqueColors.map((c) => {
+                    const isActive = item?.colorName === c.name || currentIndex === c.firstIdx;
+                    return (
+                      <button
+                        key={c.name}
+                        type="button"
+                        onClick={() => switchTo(c.firstIdx)}
+                        title={c.name}
+                        className={`w-7 h-7 rounded-full transition-all duration-300 border-2 ${isActive ? "border-white scale-110 shadow-[0_0_15px_rgba(255,255,255,0.4)]" : "border-transparent scale-95 opacity-80"}`}
+                        style={{ backgroundColor: c.swatch }}
+                      />
+                    );
+                  })}
                 </div>
               </div>
             )}

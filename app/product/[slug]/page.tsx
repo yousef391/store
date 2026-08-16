@@ -11,6 +11,7 @@ import {
   debardeurProducts,
   gtaProducts,
   jordanProducts,
+  impossibleProducts,
   ShowcaseProduct,
 } from "@/data/products";
 import { supabase } from "@/lib/supabase";
@@ -88,6 +89,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
           } else {
             // Build dynamic variants from DB images so edits are reflected
             const getBaseVariants = (type: string) => {
+              if (params.slug === "tshirt-oversize-impossible-is-nothing" || type === "impossible") return impossibleProducts;
               if (params.slug === "tshirt-oversize-jordan-minimalist" || type === "jordan") return jordanProducts;
               if (params.slug === "tshirt-oversize-san-andreas" || type === "gta") return gtaProducts;
               if (type === "debardeur" || params.slug === "debardeur-nike-dri-fit") return debardeurProducts;
@@ -141,7 +143,9 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
   if (!productData) notFound();
 
   const fallbackVariants =
-    params.slug === "tshirt-oversize-jordan-minimalist" || productData.showcaseType === "jordan"
+    params.slug === "tshirt-oversize-impossible-is-nothing" || productData.showcaseType === "impossible"
+      ? impossibleProducts
+      : params.slug === "tshirt-oversize-jordan-minimalist" || productData.showcaseType === "jordan"
       ? jordanProducts
       : params.slug === "tshirt-oversize-san-andreas" || productData.showcaseType === "gta"
       ? gtaProducts
@@ -163,14 +167,10 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
       bundlePrice={productData.bundlePrice}
       triplePrice={productData.triplePrice}
       sizes={productData.sizes}
-      hasColorSelector={
-        (productData.showcaseType === "nocta" ||
-          productData.showcaseType === "bmw") &&
-        variants.length > 1
-      }
+      hasColorSelector={variants.length > 1}
       hasSizeSelector={productData.category !== "accessoires"}
       zonePrices={zonePrices}
-      showReviews={productData.showcaseType !== "tshirt"}
+      showReviews={true}
       productId={productData.id}
       productSlug={productData.slug}
       productName={productData.name}
