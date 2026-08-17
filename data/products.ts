@@ -323,6 +323,33 @@ export const impossibleProducts: ShowcaseProduct[] = [
   },
 ];
 
+export const cartierProducts: ShowcaseProduct[] = [
+  {
+    id: 500,
+    name: "Lunettes Cartier Diamond Cut",
+    bg: "#0a0a0a",
+    tag: "Rosé",
+    swatch: "#e0a6b8",
+    desc: "Lunettes de soleil Cartier rimless sans monture avec verres rosé taillés cristal diamant faits main. Branches blanches nacrées et charnières dorées d'une élégance exceptionnelle.",
+    review: '"نظارة كارتييه فخمة بزاف، الزجاج المقصوص ذهب والفينيسيون عالمية 🔥" — أمين ب.',
+    productType: "lunette",
+    image: "/products/cartier_pink_1.jpg",
+    colorName: "Rosé",
+  },
+  {
+    id: 501,
+    name: "Lunettes Cartier Diamond Cut",
+    bg: "#0a0a0a",
+    tag: "Bleu Océan",
+    swatch: "#4a90e2",
+    desc: "Lunettes rimless photochromiques bleu océan avec verres taillés cristal diamant. Monture et charnières dorées premium d'une qualité remarquable.",
+    review: '"اللون الأزرق مع الذهبي يخرج فخامة كبيرة بزاف وانيق" — كريم ر.',
+    productType: "lunette",
+    image: "/products/cartier_blue_1.png",
+    colorName: "Bleu Océan",
+  },
+];
+
 // Simple product list for shop page and other components
 export interface Product {
   id: number;
@@ -343,7 +370,7 @@ export interface Product {
   reviewCount: number;
   stock: number;
   dateAdded: string;
-  showcaseType: "nocta" | "lin" | "tshirt" | "bmw" | "debardeur" | "gta" | "jordan" | "impossible";
+  showcaseType: "nocta" | "lin" | "tshirt" | "bmw" | "debardeur" | "gta" | "jordan" | "impossible" | "cartier";
 }
 
 export const products: Product[] = [
@@ -539,6 +566,32 @@ export const products: Product[] = [
     stock: 80,
     dateAdded: "2026-08-16",
     showcaseType: "impossible",
+  },
+  {
+    id: 8,
+    slug: "lunettes-cartier-diamond-cut",
+    name: "Lunettes Cartier Diamond Cut",
+    description: "Lunettes de soleil Cartier rimless d'exception avec verres taillés cristal diamant faits main. Modèle d'une élégance rare disponible en 2 teintes: Rosé et Bleu Océan. Branches nacrées avec finition et pont dorés premium. Profitez de notre offre spéciale: 1 pièce à 3300 DA / Pack Duo 2 pièces à 6000 DA.",
+    price: 3300,
+    bundlePrice: 6000,
+    images: [
+      "/products/cartier_pink_1.jpg",
+      "/products/cartier_blue_1.png",
+    ],
+    category: "lunettes",
+    sizes: ["Taille Unique"],
+    colors: [
+      { name: "Rosé", hex: "#e0a6b8" },
+      { name: "Bleu Océan", hex: "#4a90e2" },
+    ],
+    tag: "Cartier Diamond Cut",
+    status: "active",
+    isFeatured: true,
+    rating: 4.9,
+    reviewCount: 52,
+    stock: 40,
+    dateAdded: "2026-08-17",
+    showcaseType: "cartier",
   },
 ];
 

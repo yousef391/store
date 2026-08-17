@@ -12,6 +12,7 @@ import {
   gtaProducts,
   jordanProducts,
   impossibleProducts,
+  cartierProducts,
   ShowcaseProduct,
 } from "@/data/products";
 import { supabase } from "@/lib/supabase";
@@ -89,6 +90,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
           } else {
             // Build dynamic variants from DB images so edits are reflected
             const getBaseVariants = (type: string) => {
+              if (params.slug === "lunettes-cartier-diamond-cut" || type === "cartier") return cartierProducts;
               if (params.slug === "tshirt-oversize-impossible-is-nothing" || type === "impossible") return impossibleProducts;
               if (params.slug === "tshirt-oversize-jordan-minimalist" || type === "jordan") return jordanProducts;
               if (params.slug === "tshirt-oversize-san-andreas" || type === "gta") return gtaProducts;
@@ -143,7 +145,9 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
   if (!productData) notFound();
 
   const fallbackVariants =
-    params.slug === "tshirt-oversize-impossible-is-nothing" || productData.showcaseType === "impossible"
+    params.slug === "lunettes-cartier-diamond-cut" || productData.showcaseType === "cartier"
+      ? cartierProducts
+      : params.slug === "tshirt-oversize-impossible-is-nothing" || productData.showcaseType === "impossible"
       ? impossibleProducts
       : params.slug === "tshirt-oversize-jordan-minimalist" || productData.showcaseType === "jordan"
       ? jordanProducts
@@ -168,7 +172,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
       triplePrice={productData.triplePrice}
       sizes={productData.sizes}
       hasColorSelector={variants.length > 1}
-      hasSizeSelector={productData.category !== "accessoires"}
+      hasSizeSelector={productData.category !== "accessoires" && productData.category !== "accessories" && productData.category !== "lunettes"}
       zonePrices={zonePrices}
       showReviews={true}
       productId={productData.id}

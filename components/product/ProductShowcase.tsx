@@ -738,10 +738,10 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                   {productPrice.toLocaleString("en")} DA
                 </span>
                 {selectedQuantity === 2 && (
-                  <span className="text-amber-400 text-[10px] font-bold tracking-wide" style={{ fontFamily: "var(--font-dm)" }}>وفّر 700 DA! 🔥</span>
+                  <span className="text-amber-400 text-[10px] font-bold tracking-wide" style={{ fontFamily: "var(--font-dm)" }}>وفّر {(singlePrice * 2 - effectiveBundlePrice).toLocaleString("en")} DA! 🔥</span>
                 )}
                 {selectedQuantity === 3 && effectiveTriplePrice && (
-                  <span className="text-amber-400 text-[10px] font-bold tracking-wide" style={{ fontFamily: "var(--font-dm)" }}>وفّر 2200 DA! 🔥🔥</span>
+                  <span className="text-amber-400 text-[10px] font-bold tracking-wide" style={{ fontFamily: "var(--font-dm)" }}>وفّر {(singlePrice * 3 - effectiveTriplePrice).toLocaleString("en")} DA! 🔥🔥</span>
                 )}
                 
                 {/* Risk Reversal */}
