@@ -13,6 +13,7 @@ import {
   jordanProducts,
   impossibleProducts,
   cartierProducts,
+  sabrProducts,
   ShowcaseProduct,
 } from "@/data/products";
 import { supabase } from "@/lib/supabase";
@@ -90,6 +91,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
           } else {
             // Build dynamic variants from DB images so edits are reflected
             const getBaseVariants = (type: string) => {
+              if (params.slug === "montre-sabr-edition-luxe" || type === "sabr") return sabrProducts;
               if (params.slug === "lunettes-cartier-diamond-cut" || type === "cartier") return cartierProducts;
               if (params.slug === "tshirt-oversize-impossible-is-nothing" || type === "impossible") return impossibleProducts;
               if (params.slug === "tshirt-oversize-jordan-minimalist" || type === "jordan") return jordanProducts;
@@ -145,7 +147,9 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
   if (!productData) notFound();
 
   const fallbackVariants =
-    params.slug === "lunettes-cartier-diamond-cut" || productData.showcaseType === "cartier"
+    params.slug === "montre-sabr-edition-luxe" || productData.showcaseType === "sabr"
+      ? sabrProducts
+      : params.slug === "lunettes-cartier-diamond-cut" || productData.showcaseType === "cartier"
       ? cartierProducts
       : params.slug === "tshirt-oversize-impossible-is-nothing" || productData.showcaseType === "impossible"
       ? impossibleProducts
@@ -164,6 +168,8 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
       : linProducts;
   const variants = dynamicVariants || fallbackVariants;
 
+  const isSabr = params.slug === "montre-sabr-edition-luxe" || productData.showcaseType === "sabr";
+
   return (
     <ProductShowcase
       variants={variants}
@@ -171,8 +177,8 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
       bundlePrice={productData.bundlePrice}
       triplePrice={productData.triplePrice}
       sizes={productData.sizes}
-      hasColorSelector={variants.length > 1}
-      hasSizeSelector={productData.category !== "accessoires" && productData.category !== "accessories" && productData.category !== "lunettes"}
+      hasColorSelector={isSabr ? false : variants.length > 1}
+      hasSizeSelector={!isSabr && productData.category !== "accessoires" && productData.category !== "accessories" && productData.category !== "lunettes" && productData.category !== "montres"}
       zonePrices={zonePrices}
       showReviews={true}
       productId={productData.id}

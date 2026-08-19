@@ -604,7 +604,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                 {/* Desktop Order Summary */}
                 <div className="bg-white/5 border border-white/10 rounded-xl p-4 flex flex-col gap-2 mt-1 font-sans relative z-10">
                   <div className="flex justify-between text-white/70 text-sm">
-                    <span>المجموع ({selectedQuantity} {selectedQuantity === 1 ? "قطعة" : "قطع"} - المقاس: {selectedSize})</span>
+                    <span>المجموع ({selectedQuantity} {selectedQuantity === 1 ? "قطعة" : "قطع"}{showSizes && selectedSize ? ` - المقاس: ${selectedSize}` : ""})</span>
                     <span dir="ltr">{productPrice.toLocaleString("en")} DA</span>
                   </div>
                   <div className="flex justify-between text-white/70 text-sm">
@@ -970,7 +970,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                   </div>
                   <div className="text-left" dir="ltr">
                     <p className="text-sm font-bold text-gray-900" style={{ fontFamily: "var(--font-dm)" }}>{item.name}</p>
-                    <p className="text-xs text-gray-500">{item.colorName} • {selectedSize} • {selectedQuantity}x</p>
+                    <p className="text-xs text-gray-500">{hasColorSelector ? `${item.colorName} • ` : ""}{showSizes ? `${selectedSize} • ` : ""}{selectedQuantity}x</p>
                   </div>
                 </div>
                 <div className="flex justify-between items-center">

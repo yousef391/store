@@ -350,6 +350,57 @@ export const cartierProducts: ShowcaseProduct[] = [
   },
 ];
 
+export const sabrProducts: ShowcaseProduct[] = [
+  {
+    id: 600,
+    name: "Montre SABR Edition Luxe",
+    bg: "#0a0a0a",
+    tag: "Noir (Chiffres Arabes)",
+    swatch: "#111111",
+    desc: "Montre SABR d'exception au design carré épuré. Cadran sombre à chiffres arabes traditionnels, boîtier noir mat et bracelet silicone doux ultra confort.",
+    review: '"ساعة فخمة بزاف، التصميم بالأرقام العربية عاطي هيبة ما شاء الله" — أمين ب.',
+    productType: "montre",
+    image: "/products/sabr_1.jpg",
+    colorName: "Noir / Arabes",
+  },
+  {
+    id: 602,
+    name: "Montre SABR Edition Luxe",
+    bg: "#0a0a0a",
+    tag: "Full Black Box",
+    swatch: "#111111",
+    desc: "Coffret complet avec montre SABR Full Black et chiffon de nettoyage en microfibre siglé SABR.",
+    review: '"وصلتني في العلبة تاعها، الفينيسيون فور بزاف يعطيكم الصحة" — سليم خ.',
+    productType: "montre",
+    image: "/products/sabr_3.jpg",
+    colorName: "Full Black Box",
+  },
+  {
+    id: 603,
+    name: "Montre SABR Edition Luxe",
+    bg: "#0a0a0a",
+    tag: "Bleu Nuit",
+    swatch: "#1b2a4a",
+    desc: "Modèle Bleu Nuit élégant avec cadran soleil et chiffres arabes assortis.",
+    review: '"اللون الأزرق الملكي يخرج روعة مع اللبسة" — ياسين م.',
+    productType: "montre",
+    image: "/products/sabr_4.jpg",
+    colorName: "Bleu Nuit",
+  },
+  {
+    id: 604,
+    name: "Montre SABR Edition Luxe",
+    bg: "#0a0a0a",
+    tag: "Coffret Cadeau",
+    swatch: "#111111",
+    desc: "L'accessoire idéal à offrir ou se faire plaisir. Livré avec écran de protection et lingette de soin SABR.",
+    review: '"هدية ممتازة ومحبوبة بزاف، شكراً ROVA" — حمزة ك.',
+    productType: "montre",
+    image: "/products/sabr_5.jpg",
+    colorName: "Coffret",
+  },
+];
+
 // Simple product list for shop page and other components
 export interface Product {
   id: number;
@@ -370,7 +421,7 @@ export interface Product {
   reviewCount: number;
   stock: number;
   dateAdded: string;
-  showcaseType: "nocta" | "lin" | "tshirt" | "bmw" | "debardeur" | "gta" | "jordan" | "impossible" | "cartier";
+  showcaseType: "nocta" | "lin" | "tshirt" | "bmw" | "debardeur" | "gta" | "jordan" | "impossible" | "cartier" | "sabr";
 }
 
 export const products: Product[] = [
@@ -592,6 +643,31 @@ export const products: Product[] = [
     stock: 40,
     dateAdded: "2026-08-17",
     showcaseType: "cartier",
+  },
+  {
+    id: 9,
+    slug: "montre-sabr-edition-luxe",
+    name: "Montre SABR Edition Luxe",
+    description: "Montre SABR d'exception au design carré épuré. Cadran unique inspiré de la culture avec chiffres arabes et romains, verre minéral ultra résistant et bracelet en silicone haute densité. Livrée dans son coffret officiel avec chiffon d'entretien SABR.",
+    price: 4100,
+    bundlePrice: 7200,
+    images: [
+      "/products/sabr_1.jpg",
+      "/products/sabr_3.jpg",
+      "/products/sabr_4.jpg",
+      "/products/sabr_5.jpg",
+    ],
+    category: "accessories",
+    sizes: ["Taille Unique"],
+    colors: [{ name: "Standard", hex: "#111111" }],
+    tag: "SABR Luxe",
+    status: "active",
+    isFeatured: true,
+    rating: 4.9,
+    reviewCount: 45,
+    stock: 50,
+    dateAdded: "2026-08-19",
+    showcaseType: "sabr",
   },
 ];
 
