@@ -338,6 +338,21 @@ export const cartierProducts: ShowcaseProduct[] = [
   },
 ];
 
+export const martinayProducts: ShowcaseProduct[] = [
+  {
+    id: 700,
+    name: "Lunettes Martinay Diamond Cut",
+    bg: "#0a0a0a",
+    tag: "Martinay Diamond Cut",
+    swatch: "#c68a4c",
+    desc: "Lunettes de soleil Martinay d'exception rimless avec verres taillés cristal diamant faits main. Branches dorées de luxe et verres teintés ambrés d'une élégance remarquable.",
+    review: '"نظارة مارتيناي فخمة بزاف، الزجاج المقصوص واللون العسلي الذهبي عالمي 🔥" — أمين ب.',
+    productType: "lunette",
+    image: "/products/martinay_1.jpg",
+    colorName: "Ambre Doré",
+  },
+];
+
 export const sabrProducts: ShowcaseProduct[] = [
   {
     id: 600,
@@ -409,7 +424,7 @@ export interface Product {
   reviewCount: number;
   stock: number;
   dateAdded: string;
-  showcaseType: "nocta" | "lin" | "tshirt" | "bmw" | "debardeur" | "gta" | "jordan" | "impossible" | "cartier" | "sabr";
+  showcaseType: "nocta" | "lin" | "tshirt" | "bmw" | "debardeur" | "gta" | "jordan" | "impossible" | "cartier" | "sabr" | "martinay";
 }
 
 export const products: Product[] = [
@@ -655,6 +670,28 @@ export const products: Product[] = [
     stock: 50,
     dateAdded: "2026-08-19",
     showcaseType: "sabr",
+  },
+  {
+    id: 12,
+    slug: "lunettes-martinay-diamond-cut",
+    name: "Lunettes Martinay Diamond Cut",
+    description: "Lunettes de soleil Martinay d'exception rimless avec verres taillés cristal diamant faits main. Branches dorées de luxe et verres teintés ambrés d'une élégance remarquable. Livrées dans leur étui officiel Martinay.",
+    price: 3200,
+    bundlePrice: 5500,
+    images: [
+      "/products/martinay_1.jpg",
+    ],
+    category: "lunettes",
+    sizes: ["Taille Unique"],
+    colors: [{ name: "Ambre Doré", hex: "#c68a4c" }],
+    tag: "Martinay Diamond Cut",
+    status: "active",
+    isFeatured: true,
+    rating: 4.9,
+    reviewCount: 48,
+    stock: 40,
+    dateAdded: "2026-08-20",
+    showcaseType: "martinay",
   },
 ];
 

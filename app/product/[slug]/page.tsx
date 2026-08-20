@@ -14,6 +14,7 @@ import {
   impossibleProducts,
   cartierProducts,
   sabrProducts,
+  martinayProducts,
   ShowcaseProduct,
 } from "@/data/products";
 import { supabase } from "@/lib/supabase";
@@ -91,6 +92,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
           } else {
             // Build dynamic variants from DB images so edits are reflected
             const getBaseVariants = (type: string) => {
+              if (params.slug === "lunettes-martinay-diamond-cut" || type === "martinay") return martinayProducts;
               if (params.slug === "montre-sabr-edition-luxe" || type === "sabr") return sabrProducts;
               if (params.slug === "lunettes-cartier-diamond-cut" || type === "cartier") return cartierProducts;
               if (params.slug === "tshirt-oversize-impossible-is-nothing" || type === "impossible") return impossibleProducts;
@@ -147,7 +149,9 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
   if (!productData) notFound();
 
   const fallbackVariants =
-    params.slug === "montre-sabr-edition-luxe" || productData.showcaseType === "sabr"
+    params.slug === "lunettes-martinay-diamond-cut" || productData.showcaseType === "martinay"
+      ? martinayProducts
+      : params.slug === "montre-sabr-edition-luxe" || productData.showcaseType === "sabr"
       ? sabrProducts
       : params.slug === "lunettes-cartier-diamond-cut" || productData.showcaseType === "cartier"
       ? cartierProducts
@@ -170,7 +174,8 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
 
   const isSabr = params.slug === "montre-sabr-edition-luxe" || productData.showcaseType === "sabr";
   const isCartier = params.slug === "lunettes-cartier-diamond-cut" || productData.showcaseType === "cartier";
-  const hideColorSelector = isSabr || isCartier;
+  const isMartinay = params.slug === "lunettes-martinay-diamond-cut" || productData.showcaseType === "martinay";
+  const hideColorSelector = isSabr || isCartier || isMartinay;
 
   return (
     <ProductShowcase
@@ -180,7 +185,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
       triplePrice={productData.triplePrice}
       sizes={productData.sizes}
       hasColorSelector={hideColorSelector ? false : variants.length > 1}
-      hasSizeSelector={!isSabr && !isCartier && productData.category !== "accessoires" && productData.category !== "accessories" && productData.category !== "lunettes" && productData.category !== "montres"}
+      hasSizeSelector={!isSabr && !isCartier && !isMartinay && productData.category !== "accessoires" && productData.category !== "accessories" && productData.category !== "lunettes" && productData.category !== "montres"}
       zonePrices={zonePrices}
       showReviews={true}
       productId={productData.id}
