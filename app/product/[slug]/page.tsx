@@ -75,7 +75,8 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
             .eq("product_id", data.id)
             .order("sort_order");
 
-          if (dbVariants && dbVariants.length > 0) {
+          const dbImagesList: string[] = data.images || [];
+          if (dbVariants && dbVariants.length >= dbImagesList.length && dbVariants.length > 0) {
             const built: ShowcaseProduct[] = dbVariants.map((v: Record<string, unknown>) => ({
               id: v.id as number,
               name: (v.name as string) || data.name,
