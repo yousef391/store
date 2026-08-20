@@ -336,6 +336,18 @@ export const cartierProducts: ShowcaseProduct[] = [
     image: "/products/cartier_1.jpg",
     colorName: "Bleu Océan",
   },
+  {
+    id: 501,
+    name: "Lunettes Cartier Diamond Cut",
+    bg: "#0a0a0a",
+    tag: "Noir / Doré",
+    swatch: "#111111",
+    desc: "Lunettes de soleil Cartier rimless avec verres noirs fumés taillés cristal diamant et monture dorée haut de gamme.",
+    review: '"اللون الأسود مع الإطار الذهبي والزجاج المقصوص فخامة لا تُقاوم" — سليم خ.',
+    productType: "lunette",
+    image: "/products/cartier_2.jpg",
+    colorName: "Noir / Doré",
+  },
 ];
 
 export const martinayProducts: ShowcaseProduct[] = [
@@ -630,6 +642,7 @@ export const products: Product[] = [
     bundlePrice: 6000,
     images: [
       "/products/cartier_1.jpg",
+      "/products/cartier_2.jpg",
     ],
     category: "lunettes",
     sizes: ["Taille Unique"],
