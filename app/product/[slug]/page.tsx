@@ -169,6 +169,8 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
   const variants = dynamicVariants || fallbackVariants;
 
   const isSabr = params.slug === "montre-sabr-edition-luxe" || productData.showcaseType === "sabr";
+  const isCartier = params.slug === "lunettes-cartier-diamond-cut" || productData.showcaseType === "cartier";
+  const hideColorSelector = isSabr || isCartier;
 
   return (
     <ProductShowcase
@@ -177,8 +179,8 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
       bundlePrice={productData.bundlePrice}
       triplePrice={productData.triplePrice}
       sizes={productData.sizes}
-      hasColorSelector={isSabr ? false : variants.length > 1}
-      hasSizeSelector={!isSabr && productData.category !== "accessoires" && productData.category !== "accessories" && productData.category !== "lunettes" && productData.category !== "montres"}
+      hasColorSelector={hideColorSelector ? false : variants.length > 1}
+      hasSizeSelector={!isSabr && !isCartier && productData.category !== "accessoires" && productData.category !== "accessories" && productData.category !== "lunettes" && productData.category !== "montres"}
       zonePrices={zonePrices}
       showReviews={true}
       productId={productData.id}
