@@ -365,6 +365,34 @@ export const martinayProducts: ShowcaseProduct[] = [
   },
 ];
 
+export const alcProducts: ShowcaseProduct[] = [
+  {
+    id: 800,
+    name: "Baskets ALC Streetwear Premium",
+    bg: "#0a0a0a",
+    tag: "Blanc / Noir",
+    swatch: "#ffffff",
+    desc: "Baskets ALC Streetwear d'exception en cuir premium blanc avec accents noirs. Semelle ergonomique ultra confort, finition haut de gamme et style moderne.",
+    review: '"السباط بزاف فور، القماش واللاكونسيون ما شاء الله 🔥" — أمين ب.',
+    productType: "sneakers",
+    image: "/products/alc_1.jpg",
+    colorName: "Blanc",
+  },
+  {
+    id: 801,
+    name: "Baskets ALC Streetwear Premium",
+    bg: "#0a0a0a",
+    tag: "Noir / Blanc",
+    swatch: "#111111",
+    desc: "Modèle Noir élégant avec accents blancs et logo ALC signature. Style streetwear intemporel et confort absolu au quotidien.",
+    review: '"اللون الأسود يخرج روعة مع كلش، الجودة طوب" — سليم خ.',
+    productType: "sneakers",
+    image: "/products/alc_2.jpg",
+    colorName: "Noir",
+  },
+];
+
+
 export const sabrProducts: ShowcaseProduct[] = [
   {
     id: 600,
@@ -436,7 +464,7 @@ export interface Product {
   reviewCount: number;
   stock: number;
   dateAdded: string;
-  showcaseType: "nocta" | "lin" | "tshirt" | "bmw" | "debardeur" | "gta" | "jordan" | "impossible" | "cartier" | "sabr" | "martinay";
+  showcaseType: "nocta" | "lin" | "tshirt" | "bmw" | "debardeur" | "gta" | "jordan" | "impossible" | "cartier" | "sabr" | "martinay" | "alc";
 }
 
 export const products: Product[] = [
@@ -705,6 +733,32 @@ export const products: Product[] = [
     stock: 40,
     dateAdded: "2026-08-20",
     showcaseType: "martinay",
+  },
+  {
+    id: 13,
+    slug: "baskets-alc-streetwear-premium",
+    name: "Baskets ALC Streetwear Premium",
+    description: "Baskets ALC Streetwear d'exception avec design moderne et logo ALC emblématique. Fabriquées avec des matériaux de qualité supérieure pour un confort optimal et une durabilité accrue. Disponibles en Blanc et Noir. Offre spéciale: 1 paire à 5100 DA / Pack Duo 2 paires à 8900 DA.",
+    price: 5100,
+    bundlePrice: 8900,
+    images: [
+      "/products/alc_1.jpg",
+      "/products/alc_2.jpg",
+    ],
+    category: "baskets",
+    sizes: ["40", "41", "42", "43", "44"],
+    colors: [
+      { name: "Blanc", hex: "#ffffff" },
+      { name: "Noir", hex: "#111111" },
+    ],
+    tag: "ALC Premium",
+    status: "active",
+    isFeatured: true,
+    rating: 4.9,
+    reviewCount: 56,
+    stock: 50,
+    dateAdded: "2026-08-22",
+    showcaseType: "alc",
   },
 ];
 

@@ -15,6 +15,7 @@ import {
   cartierProducts,
   sabrProducts,
   martinayProducts,
+  alcProducts,
   ShowcaseProduct,
 } from "@/data/products";
 import { supabase } from "@/lib/supabase";
@@ -93,6 +94,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
           } else {
             // Build dynamic variants from DB images so edits are reflected
             const getBaseVariants = (type: string) => {
+              if (params.slug === "baskets-alc-streetwear-premium" || type === "alc") return alcProducts;
               if (params.slug === "lunettes-martinay-diamond-cut" || type === "martinay") return martinayProducts;
               if (params.slug === "montre-sabr-edition-luxe" || type === "sabr") return sabrProducts;
               if (params.slug === "lunettes-cartier-diamond-cut" || type === "cartier") return cartierProducts;
@@ -150,7 +152,9 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
   if (!productData) notFound();
 
   const fallbackVariants =
-    params.slug === "lunettes-martinay-diamond-cut" || productData.showcaseType === "martinay"
+    params.slug === "baskets-alc-streetwear-premium" || productData.showcaseType === "alc"
+      ? alcProducts
+      : params.slug === "lunettes-martinay-diamond-cut" || productData.showcaseType === "martinay"
       ? martinayProducts
       : params.slug === "montre-sabr-edition-luxe" || productData.showcaseType === "sabr"
       ? sabrProducts
