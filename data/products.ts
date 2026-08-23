@@ -392,6 +392,46 @@ export const alcProducts: ShowcaseProduct[] = [
   },
 ];
 
+export const ogiyProducts: ShowcaseProduct[] = [
+  {
+    id: 900,
+    name: "Baskets Ogiy™ Streetwear Premium",
+    bg: "#0a0a0a",
+    tag: "Full Black",
+    swatch: "#111111",
+    desc: "Baskets Ogiy™ Skate Streetwear d'exception en finition Full Black. Design chunky avec lacets épais, logo Ogiy™ brodé et semelle ergonomique ultra confort.",
+    review: '"السباط بزاف فور، الفينيسيون والشكل تاعو خيالي 🔥" — أمين ب.',
+    productType: "sneakers",
+    image: "/products/ogiy_black.jpg",
+    colorName: "Noir",
+  },
+  {
+    id: 901,
+    name: "Baskets Ogiy™ Streetwear Premium",
+    bg: "#0a0a0a",
+    tag: "Noir & Blanc",
+    swatch: "#ffffff",
+    desc: "Baskets Ogiy™ Skate Streetwear en coloris Panda Noir & Blanc. Style skate moderne avec contrastes affirmés et confort exceptionnel.",
+    review: '"اللون الأسود والأبيض يخرج روعة، الجودة طوب ورائعة بزاف" — سليم خ.',
+    productType: "sneakers",
+    image: "/products/ogiy_panda.jpg",
+    colorName: "Noir & Blanc",
+  },
+  {
+    id: 902,
+    name: "Baskets Ogiy™ Streetwear Premium",
+    bg: "#0a0a0a",
+    tag: "Full White",
+    swatch: "#f5f5f5",
+    desc: "Baskets Ogiy™ Skate Streetwear en finition Full White pure. Élégance streetwear épurée avec lacets oversize et semelle amortissante.",
+    review: '"الأبيض فخامة حقيقية، نقي ويناسب كامل اللبسات" — كريم ر.',
+    productType: "sneakers",
+    image: "/products/ogiy_white.jpg",
+    colorName: "Blanc",
+  },
+];
+
+
 
 export const sabrProducts: ShowcaseProduct[] = [
   {
@@ -464,7 +504,7 @@ export interface Product {
   reviewCount: number;
   stock: number;
   dateAdded: string;
-  showcaseType: "nocta" | "lin" | "tshirt" | "bmw" | "debardeur" | "gta" | "jordan" | "impossible" | "cartier" | "sabr" | "martinay" | "alc";
+  showcaseType: "nocta" | "lin" | "tshirt" | "bmw" | "debardeur" | "gta" | "jordan" | "impossible" | "cartier" | "sabr" | "martinay" | "alc" | "ogiy";
 }
 
 export const products: Product[] = [
@@ -759,6 +799,34 @@ export const products: Product[] = [
     stock: 50,
     dateAdded: "2026-08-22",
     showcaseType: "alc",
+  },
+  {
+    id: 14,
+    slug: "baskets-ogiy-streetwear-premium",
+    name: "Baskets Ogiy™ Streetwear Premium",
+    description: "Baskets Ogiy™ Skate Streetwear d'exception avec design chunky ultra tendance et logo Ogiy™ emblématique. Fabriquées avec des matériaux de qualité supérieure pour un style skate unique et un confort optimal au quotidien. Disponibles en 3 coloris: Noir, Noir & Blanc, et Blanc. Offre spéciale: 1 paire à 5300 DA / Pack Duo 2 paires à 9500 DA.",
+    price: 5300,
+    bundlePrice: 9500,
+    images: [
+      "/products/ogiy_black.jpg",
+      "/products/ogiy_panda.jpg",
+      "/products/ogiy_white.jpg",
+    ],
+    category: "baskets",
+    sizes: ["40", "41", "42", "43", "44"],
+    colors: [
+      { name: "Noir", hex: "#111111" },
+      { name: "Noir & Blanc", hex: "#ffffff" },
+      { name: "Blanc", hex: "#f5f5f5" },
+    ],
+    tag: "Ogiy™ Skate",
+    status: "active",
+    isFeatured: true,
+    rating: 4.9,
+    reviewCount: 68,
+    stock: 60,
+    dateAdded: "2026-08-23",
+    showcaseType: "ogiy",
   },
 ];
 
