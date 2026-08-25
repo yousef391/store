@@ -5,18 +5,15 @@ import ProductShowcase from "@/components/product/ProductShowcase";
 import {
   products as defaultProducts,
   noctaProducts,
-  linProducts,
-  tshirtProducts,
+  noctaSweatProducts,
+  poloProducts,
+  nyProducts,
+  nikeJoggerProducts,
+  adidasSnapProducts,
   bmwProducts,
   debardeurProducts,
-  gtaProducts,
   jordanProducts,
-  impossibleProducts,
-  cartierProducts,
-  sabrProducts,
-  martinayProducts,
-  alcProducts,
-  ogiyProducts,
+  jordanParisProducts,
   ShowcaseProduct,
 } from "@/data/products";
 import { supabase } from "@/lib/supabase";
@@ -95,18 +92,15 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
           } else {
             // Build dynamic variants from DB images so edits are reflected
             const getBaseVariants = (type: string) => {
-              if (params.slug === "baskets-ogiy-streetwear-premium" || type === "ogiy") return ogiyProducts;
-              if (params.slug === "baskets-alc-streetwear-premium" || type === "alc") return alcProducts;
-              if (params.slug === "lunettes-martinay-diamond-cut" || type === "martinay") return martinayProducts;
-              if (params.slug === "montre-sabr-edition-luxe" || type === "sabr") return sabrProducts;
-              if (params.slug === "lunettes-cartier-diamond-cut" || type === "cartier") return cartierProducts;
-              if (params.slug === "tshirt-oversize-impossible-is-nothing" || type === "impossible") return impossibleProducts;
+              if (params.slug === "pantalon-track-adidas-3-stripes-snap" || type === "adidas_snap") return adidasSnapProducts;
+              if (params.slug === "pantalon-jogger-nike-straight-leg" || type === "nike_jogger") return nikeJoggerProducts;
+              if (params.slug === "ensemble-ny-yankees-heavy-fleece" || type === "ny") return nyProducts;
+              if (params.slug === "pull-polo-jordan-paris-jacquard" || type === "jordan_paris") return jordanParisProducts;
+              if (params.slug === "ensemble-polo-ralph-lauren-premium" || type === "polo") return poloProducts;
+              if (params.slug === "nike-nocta-sweatshirt-ensemble" || type === "nocta_sweat") return noctaSweatProducts;
               if (params.slug === "tshirt-oversize-jordan-minimalist" || type === "jordan") return jordanProducts;
-              if (params.slug === "tshirt-oversize-san-andreas" || type === "gta") return gtaProducts;
               if (type === "debardeur" || params.slug === "debardeur-nike-dri-fit") return debardeurProducts;
-              if (type === "tshirt") return tshirtProducts;
-              if (type === "lin") return linProducts;
-              if (type === "bmw") return bmwProducts;
+              if (type === "bmw" || params.slug === "bmw-motorsport-ensemble") return bmwProducts;
               return noctaProducts;
             };
             const baseVariants = getBaseVariants(currentProduct.showcaseType);
@@ -142,7 +136,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.slug]);
 
-  // Show loading until Supabase data arrives (prevents flash of old static data)
+  // Show loading until Supabase data arrives
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-black">
@@ -154,37 +148,26 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
   if (!productData) notFound();
 
   const fallbackVariants =
-    params.slug === "baskets-ogiy-streetwear-premium" || productData.showcaseType === "ogiy"
-      ? ogiyProducts
-      : params.slug === "baskets-alc-streetwear-premium" || productData.showcaseType === "alc"
-      ? alcProducts
-      : params.slug === "lunettes-martinay-diamond-cut" || productData.showcaseType === "martinay"
-      ? martinayProducts
-      : params.slug === "montre-sabr-edition-luxe" || productData.showcaseType === "sabr"
-      ? sabrProducts
-      : params.slug === "lunettes-cartier-diamond-cut" || productData.showcaseType === "cartier"
-      ? cartierProducts
-      : params.slug === "tshirt-oversize-impossible-is-nothing" || productData.showcaseType === "impossible"
-      ? impossibleProducts
+    params.slug === "pantalon-track-adidas-3-stripes-snap" || productData.showcaseType === "adidas_snap"
+      ? adidasSnapProducts
+      : params.slug === "pantalon-jogger-nike-straight-leg" || productData.showcaseType === "nike_jogger"
+      ? nikeJoggerProducts
+      : params.slug === "ensemble-ny-yankees-heavy-fleece" || productData.showcaseType === "ny"
+      ? nyProducts
+      : params.slug === "pull-polo-jordan-paris-jacquard" || productData.showcaseType === "jordan_paris"
+      ? jordanParisProducts
+      : params.slug === "ensemble-polo-ralph-lauren-premium" || productData.showcaseType === "polo"
+      ? poloProducts
+      : params.slug === "nike-nocta-sweatshirt-ensemble" || productData.showcaseType === "nocta_sweat"
+      ? noctaSweatProducts
       : params.slug === "tshirt-oversize-jordan-minimalist" || productData.showcaseType === "jordan"
       ? jordanProducts
-      : params.slug === "tshirt-oversize-san-andreas" || productData.showcaseType === "gta"
-      ? gtaProducts
       : params.slug === "debardeur-nike-dri-fit" || productData.showcaseType === "debardeur"
       ? debardeurProducts
-      : productData.showcaseType === "tshirt"
-      ? tshirtProducts
       : productData.showcaseType === "bmw"
       ? bmwProducts
-      : productData.showcaseType === "nocta"
-      ? noctaProducts
-      : linProducts;
+      : noctaProducts;
   const variants = dynamicVariants || fallbackVariants;
-
-  const isSabr = params.slug === "montre-sabr-edition-luxe" || productData.showcaseType === "sabr";
-  const isCartier = params.slug === "lunettes-cartier-diamond-cut" || productData.showcaseType === "cartier";
-  const isMartinay = params.slug === "lunettes-martinay-diamond-cut" || productData.showcaseType === "martinay";
-  const hideColorSelector = isSabr || isCartier || isMartinay;
 
   return (
     <ProductShowcase
@@ -193,8 +176,8 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
       bundlePrice={productData.bundlePrice}
       triplePrice={productData.triplePrice}
       sizes={productData.sizes}
-      hasColorSelector={hideColorSelector ? false : variants.length > 1}
-      hasSizeSelector={!isSabr && !isCartier && !isMartinay && productData.category !== "accessoires" && productData.category !== "accessories" && productData.category !== "lunettes" && productData.category !== "montres"}
+      hasColorSelector={variants.length > 1}
+      hasSizeSelector={true}
       zonePrices={zonePrices}
       showReviews={true}
       productId={productData.id}
@@ -204,4 +187,3 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
     />
   );
 }
-

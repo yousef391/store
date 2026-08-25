@@ -14,10 +14,10 @@ const collections = [
     desc: "Tech-inspired streetwear",
   },
   {
-    name: "Lin Premium",
-    slug: "ensemble-lin-premium",
-    image: "/products/ens1.png",
-    desc: "Élégance moderne",
+    name: "BMW Motorsport",
+    slug: "bmw-motorsport-ensemble",
+    image: "/products/bmw1.png",
+    desc: "Style sportif & racing",
   },
 ];
 
