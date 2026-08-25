@@ -5,6 +5,7 @@ import ProductShowcase from "@/components/product/ProductShowcase";
 import {
   products as defaultProducts,
   noctaProducts,
+  noctaTeeEnsembleProducts,
   noctaSweatProducts,
   poloProducts,
   nyProducts,
@@ -98,6 +99,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
               if (params.slug === "pull-polo-jordan-paris-jacquard" || type === "jordan_paris") return jordanParisProducts;
               if (params.slug === "ensemble-polo-ralph-lauren-premium" || type === "polo") return poloProducts;
               if (params.slug === "nike-nocta-sweatshirt-ensemble" || type === "nocta_sweat") return noctaSweatProducts;
+              if (params.slug === "nike-nocta-tshirt-pantalon-ensemble" || type === "nocta_tee") return noctaTeeEnsembleProducts;
               if (params.slug === "tshirt-oversize-jordan-minimalist" || type === "jordan") return jordanProducts;
               if (type === "debardeur" || params.slug === "debardeur-nike-dri-fit") return debardeurProducts;
               if (type === "bmw" || params.slug === "bmw-motorsport-ensemble") return bmwProducts;
@@ -160,6 +162,8 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
       ? poloProducts
       : params.slug === "nike-nocta-sweatshirt-ensemble" || productData.showcaseType === "nocta_sweat"
       ? noctaSweatProducts
+      : params.slug === "nike-nocta-tshirt-pantalon-ensemble" || productData.showcaseType === "nocta_tee"
+      ? noctaTeeEnsembleProducts
       : params.slug === "tshirt-oversize-jordan-minimalist" || productData.showcaseType === "jordan"
       ? jordanProducts
       : params.slug === "debardeur-nike-dri-fit" || productData.showcaseType === "debardeur"

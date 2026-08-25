@@ -26,6 +26,21 @@ export const noctaProducts: ShowcaseProduct[] = [
   },
 ];
 
+export const noctaTeeEnsembleProducts: ShowcaseProduct[] = [
+  {
+    id: 1600,
+    name: "Ensemble Nike Nocta T-Shirt & Pantalon",
+    bg: "#050505",
+    tag: "Full Black",
+    swatch: "#111111",
+    desc: "Ensemble T-Shirt & Pantalon Nike Nocta. T-shirt col rond à manches courtes et pantalon assortis en coton 100% premium avec piping blanc contrasté signature et logos Nike & NOCTA.",
+    review: '"طقم النوكتا تيشيرت وسروال روعة، القماش والفينيسيون عالمي 🔥" — أمين ب.',
+    productType: "set",
+    image: "/products/nocta_ensemble_tee.jpg",
+    colorName: "Full Black",
+  },
+];
+
 export const noctaSweatProducts: ShowcaseProduct[] = [
   {
     id: 150,
@@ -325,10 +340,30 @@ export interface Product {
   reviewCount: number;
   stock: number;
   dateAdded: string;
-  showcaseType: "nocta" | "nocta_sweat" | "polo" | "bmw" | "jordan" | "jordan_paris" | "debardeur" | "ny" | "nike_jogger" | "adidas_snap";
+  showcaseType: "nocta" | "nocta_sweat" | "nocta_tee" | "polo" | "bmw" | "jordan" | "jordan_paris" | "debardeur" | "ny" | "nike_jogger" | "adidas_snap";
 }
 
 export const products: Product[] = [
+  {
+    id: 21,
+    slug: "nike-nocta-tshirt-pantalon-ensemble",
+    name: "Ensemble Nike Nocta T-Shirt & Pantalon",
+    description: "Ensemble T-shirt & Pantalon Nike Nocta. T-shirt col rond à manches courtes et pantalon assortis en coton 100% premium avec piping blanc contrasté signature et logos Nike & NOCTA. Coupe moderne et finition streetwear d'exception.",
+    price: 5400,
+    bundlePrice: 8400,
+    images: ["/products/nocta_ensemble_tee.jpg"],
+    category: "ensembles",
+    sizes: ["M", "L", "XL"],
+    colors: [{ name: "Full Black", hex: "#111111" }],
+    tag: "Full Black",
+    status: "active",
+    isFeatured: true,
+    rating: 4.9,
+    reviewCount: 94,
+    stock: 50,
+    dateAdded: "2026-08-25",
+    showcaseType: "nocta_tee",
+  },
   {
     id: 20,
     slug: "pantalon-track-adidas-3-stripes-snap",
