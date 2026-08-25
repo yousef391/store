@@ -53,7 +53,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
             price: data.price,
             bundlePrice: data.slug === "debardeur-nike-dri-fit" && data.bundle_price === 4500 ? 3100 : (data.bundle_price || staticProduct?.bundlePrice || 3100),
             triplePrice: data.triple_price || staticProduct?.triplePrice || (data.slug === "debardeur-nike-dri-fit" ? 4500 : undefined),
-            sizes: (data.sizes || staticProduct?.sizes || ["M", "L", "XL"]).filter((s: string) => s !== "XXL"),
+            sizes: (data.sizes || staticProduct?.sizes || ["S", "M", "L", "XL"]).filter((s: string) => s !== "XXL"),
             stock: data.stock,
             status: data.status,
             images: data.images || [],

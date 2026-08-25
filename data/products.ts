@@ -377,7 +377,7 @@ export const products: Product[] = [
     bundlePrice: 8400,
     images: ["/products/nocta_ensemble_tee.jpg", "/products/nocta_sweat_grey.jpg"],
     category: "ensembles",
-    sizes: ["M", "L", "XL"],
+    sizes: ["S", "M", "L", "XL"],
     colors: [
       { name: "Full Black", hex: "#111111" },
       { name: "Gris", hex: "#7a8288" },
@@ -400,7 +400,7 @@ export const products: Product[] = [
     bundlePrice: 6800,
     images: ["/products/adidas_snap_black.jpg", "/products/adidas_snap_grey.jpg"],
     category: "ensembles",
-    sizes: ["M", "L", "XL"],
+    sizes: ["S", "M", "L", "XL"],
     colors: [
       { name: "Noir", hex: "#111111" },
       { name: "Gris", hex: "#a8a8a8" },
@@ -423,7 +423,7 @@ export const products: Product[] = [
     bundlePrice: 6600,
     images: ["/products/nike_jogger_grey.jpg", "/products/nike_jogger_black.jpg"],
     category: "ensembles",
-    sizes: ["M", "L", "XL"],
+    sizes: ["S", "M", "L", "XL"],
     colors: [
       { name: "Gris", hex: "#a8a8a8" },
       { name: "Noir", hex: "#111111" },
@@ -446,7 +446,7 @@ export const products: Product[] = [
     bundlePrice: 10500,
     images: ["/products/ny_brown_1.jpg"],
     category: "ensembles",
-    sizes: ["M", "L", "XL"],
+    sizes: ["S", "M", "L", "XL"],
     colors: [{ name: "Marron Chocolat", hex: "#4a2e1b" }],
     tag: "Heavy Fleece",
     status: "active",
@@ -470,7 +470,7 @@ export const products: Product[] = [
       "/products/jordan_paris_black.jpg",
     ],
     category: "tshirts",
-    sizes: ["M", "L", "XL"],
+    sizes: ["S", "M", "L", "XL"],
     colors: [
       { name: "Crème", hex: "#f4f1ea" },
       { name: "Bleu Nuit", hex: "#1b2a4a" },
@@ -494,7 +494,7 @@ export const products: Product[] = [
     bundlePrice: 16500,
     images: ["/products/polo_ralph_black.jpg", "/products/polo_ralph_brown.jpg"],
     category: "ensembles",
-    sizes: ["M", "L", "XL"],
+    sizes: ["S", "M", "L", "XL"],
     colors: [
       { name: "Noir", hex: "#111111" },
       { name: "Marron", hex: "#4a2e1b" },
@@ -517,7 +517,7 @@ export const products: Product[] = [
     bundlePrice: 9200,
     images: ["/products/nocta_sweat_1.jpg", "/products/nocta_sweat_grey.jpg", "/products/nocta_sweat_2.jpg"],
     category: "ensembles",
-    sizes: ["M", "L", "XL"],
+    sizes: ["S", "M", "L", "XL"],
     colors: [
       { name: "Full Black", hex: "#111111" },
       { name: "Gris", hex: "#7a8288" },
@@ -540,7 +540,7 @@ export const products: Product[] = [
     bundlePrice: 8200,
     images: ["/products/nocta_2.png", "/products/nocta_1.png", "/products/nocta_3.png"],
     category: "ensembles",
-    sizes: ["M", "L", "XL"],
+    sizes: ["S", "M", "L", "XL"],
     colors: [{ name: "Full Black", hex: "#111111" }],
     tag: "Full Black",
     status: "active",
@@ -560,7 +560,7 @@ export const products: Product[] = [
     bundlePrice: 8200,
     images: ["/products/bmw1.png", "/products/bmw2.jpg"],
     category: "ensembles",
-    sizes: ["M", "L", "XL"],
+    sizes: ["S", "M", "L", "XL"],
     colors: [
       { name: "Noir / Blanc", hex: "#111111" },
       { name: "Noir / Bleu", hex: "#0033a0" },
@@ -587,7 +587,7 @@ export const products: Product[] = [
       "/products/jordan_3.jpg",
     ],
     category: "tshirts",
-    sizes: ["M", "L", "XL"],
+    sizes: ["S", "M", "L", "XL"],
     colors: [
       { name: "Blanc", hex: "#ffffff" },
       { name: "Noir", hex: "#111111" },
@@ -616,7 +616,7 @@ export const products: Product[] = [
       "/products/debardeur_nike_4.jpg",
     ],
     category: "tshirts",
-    sizes: ["M", "L", "XL"],
+    sizes: ["S", "M", "L", "XL"],
     colors: [{ name: "Noir", hex: "#111111" }],
     tag: "Dri-FIT",
     status: "active",
