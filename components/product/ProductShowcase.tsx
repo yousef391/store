@@ -8,7 +8,7 @@ import algeriaData from "@/data/algeria.json";
 import { zonePrices as defaultZonePrices } from "@/data/wilayas";
 import { useMetaEvents } from "@/hooks/useMetaEvents";
 import Image from "next/image";
-import { ShieldCheck, PackageOpen, Truck, Banknote, Ruler, Globe2, CheckCircle2, Eye, ArrowLeft } from "lucide-react";
+import { ShieldCheck, PackageOpen, Truck, Banknote, Ruler, Globe2, CheckCircle2, Eye, ArrowLeft, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
 import Reviews from "@/components/home/Reviews";
 
 interface ProductShowcaseProps {
@@ -36,7 +36,8 @@ const sizeChart = [
   { size: "XL", height: "180–185 cm", weight: "80–90 kg", chest: "108 cm" },
 ];
 
-/* ──── CUSTOMER REVIEWS DATA (Removed, using Reviews component instead) ──── */
+/* ──── BACKPACK UPSELL IMAGES ──── */
+const backpackImages = ["/products/sac_a_dos_2.jpg", "/products/sac_a_dos_1.jpg"];
 
 /* ──── TRUST BADGES DATA ──── */
 const trustBadges = [
@@ -79,6 +80,12 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
   const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
   const [hasTrackedAddToCart, setHasTrackedAddToCart] = useState(false);
   const [isFormInView, setIsFormInView] = useState(false);
+
+  // Upsell states
+  const [showUpsellModal, setShowUpsellModal] = useState(false);
+  const [upsellShown, setUpsellShown] = useState(false);
+  const [confirmedUpsell, setConfirmedUpsell] = useState(false);
+  const [upsellImgIdx, setUpsellImgIdx] = useState(0);
   const formRef = useRef<HTMLFormElement>(null);
   const animating = useRef(false);
   const abandonedLeadSent = useRef(false);
@@ -218,10 +225,18 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
     [currentIndex]
   );
 
-  const handleOrderSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const executeOrderSubmit = async (includeUpsell: boolean) => {
     setIsSubmitting(true);
     setOrderError("");
+    setShowUpsellModal(false);
+
+    const finalItemName = includeUpsell
+      ? `${item.name} + Sac à dos Nike`
+      : item.name;
+    const upsellPrice = includeUpsell ? 2700 : 0;
+    const finalProductPrice = productPrice + upsellPrice;
+    const finalTotalPrice = totalPrice + upsellPrice;
+
     try {
       const res = await fetch("/api/order", {
         method: "POST",
@@ -231,15 +246,17 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
           phone: formPhoneRef.current,
           wilaya: selectedWilaya,
           commune: selectedCommune,
-          item: item.name,
+          item: finalItemName,
           color: item.colorName || item.tag,
           size: selectedSize,
           quantity: selectedQuantity,
-          price: productPrice,
+          price: finalProductPrice,
           delivery: deliveryPrice,
-          total: totalPrice,
+          total: finalTotalPrice,
+          upsellAdded: includeUpsell ? "Sac à dos Nike (2700 DA)" : null,
         }),
       });
+
       if (res.status === 429) {
         const data = await res.json();
         setOrderError(data.error || "لقد قمت بطلب مؤخراً. يرجى المحاولة بعد 48 ساعة.");
@@ -247,16 +264,17 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
         return;
       }
       if (!res.ok) throw new Error("Order failed");
+
       setIsSubmitting(false);
+      setConfirmedUpsell(includeUpsell);
       setOrderSuccess(true);
 
       // Track Purchase event via CAPI + browser pixel
-      // Use real product identity for accurate attribution
       const purchaseId = productId ?? productSlug ?? String(item.id);
-      const purchaseName = productName ?? item.name;
+      const purchaseName = productName ?? finalItemName;
       const purchaseCategory = productCategory ?? item.productType;
       sendEvent("Purchase", {
-        value: totalPrice,
+        value: finalTotalPrice,
         currency: "DZD",
         contentIds: [String(purchaseId)],
         contentName: purchaseName,
@@ -268,6 +286,26 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
       setIsSubmitting(false);
       setOrderError("حدث خطأ. يرجى المحاولة مرة أخرى.");
     }
+  };
+
+  const handleOrderSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    // Check if product is Nike Nocta ensemble
+    const isNoctaProduct =
+      productSlug === "nike-nocta-tshirt-pantalon-ensemble" ||
+      productSlug === "nike-nocta-sweatshirt-ensemble" ||
+      productSlug === "nike-nocta-ensemble" ||
+      productName?.toLowerCase().includes("nocta") ||
+      item?.name?.toLowerCase().includes("nocta");
+
+    if (isNoctaProduct && !upsellShown) {
+      setUpsellShown(true);
+      setShowUpsellModal(true);
+      return;
+    }
+
+    await executeOrderSubmit(false);
   };
 
   /* ──── SHARED SUB-COMPONENTS ──── */
@@ -925,6 +963,101 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
         )}
       </AnimatePresence>
 
+      {/* ────── UPSELL MODAL ────── */}
+      <AnimatePresence>
+        {showUpsellModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[95] flex items-center justify-center p-4 overflow-y-auto no-scrollbar"
+          >
+            <div
+              className="absolute inset-0 bg-black/80 backdrop-blur-md"
+              onClick={() => executeOrderSubmit(false)}
+            />
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 15 }}
+              transition={{ type: "spring", stiffness: 350, damping: 25 }}
+              className="relative z-10 bg-[#161618] border border-white/15 rounded-3xl w-full max-w-sm p-5 shadow-2xl flex flex-col items-center my-auto"
+              onClick={(e) => e.stopPropagation()}
+              dir="rtl"
+            >
+              {/* Header Badge */}
+              <div className="bg-amber-400/10 border border-amber-400/30 text-amber-400 text-xs font-extrabold px-3 py-1 rounded-full mb-3 flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>عرض خاص: أضف حقيبة Nike لطلبك!</span>
+              </div>
+
+              {/* Title & Price */}
+              <h3 className="text-white text-lg font-black text-center mb-1" style={{ fontFamily: "var(--font-heading)" }}>
+                حقيبة ظهر Nike "Just Do It"
+              </h3>
+              
+              <div className="flex items-center justify-center gap-3 my-2 bg-white/5 border border-white/10 rounded-xl px-4 py-2 w-full">
+                <span className="text-white/40 text-xs line-through font-bold">3,900 DA</span>
+                <span className="text-amber-400 text-xl font-black" style={{ fontFamily: "var(--font-heading)" }}>2,700 DA</span>
+                <span className="bg-red-500/20 text-red-400 text-[10px] font-bold px-2 py-0.5 rounded-md border border-red-500/30">وفر 1200 دج</span>
+              </div>
+
+              {/* Image */}
+              <div className="relative w-full aspect-[4/3] rounded-xl overflow-hidden bg-black/40 border border-white/10 mb-4 group cursor-pointer" onClick={() => setUpsellImgIdx((prev) => (prev === 0 ? 1 : 0))}>
+                <Image
+                  src={backpackImages[upsellImgIdx]}
+                  alt="Sac à dos Nike"
+                  fill
+                  sizes="(max-width: 640px) 100vw, 360px"
+                  className="object-cover"
+                />
+                
+                {/* Image Nav hint */}
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); setUpsellImgIdx((prev) => (prev === 0 ? 1 : 0)); }}
+                  className="absolute bottom-2 left-2 bg-black/70 backdrop-blur-sm text-white/80 text-[10px] px-2.5 py-1 rounded-md border border-white/10 flex items-center gap-1 hover:text-white"
+                >
+                  صورة {upsellImgIdx + 1}/2 🔄
+                </button>
+              </div>
+
+              {/* Quick bullets */}
+              <p className="text-white/70 text-xs text-center mb-4 leading-relaxed font-dm">
+                ✓ توصيل مجاني مع نفس الطرد <br />
+                ✓ الدفع عند الاستلام مع إمكانية فتح الطرد قبل الدفع
+              </p>
+
+              {/* Action Buttons */}
+              <div className="w-full space-y-2">
+                {/* YES Button - Green / Emerald */}
+                <button
+                  type="button"
+                  onClick={() => executeOrderSubmit(true)}
+                  disabled={isSubmitting}
+                  className="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-black text-sm tracking-wide shadow-lg shadow-emerald-500/25 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70"
+                  style={{ fontFamily: "var(--font-heading)" }}
+                >
+                  {isSubmitting ? "جاري الإضافة..." : "نعم! أضف الحقيبة (بـ 2700 دج) 🛍️"}
+                </button>
+
+                {/* NO Button - STYLED IN RED as requested */}
+                <button
+                  type="button"
+                  onClick={() => executeOrderSubmit(false)}
+                  disabled={isSubmitting}
+                  className="w-full py-3 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 text-xs font-bold transition-all cursor-pointer text-center block active:scale-[0.98] disabled:opacity-70"
+                  style={{ fontFamily: "var(--font-dm)" }}
+                >
+                  لا شكراً، تأكيد طلب الطقم فقط ❌
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* ────── SIZE GUIDE MODAL ────── */}
       <AnimatePresence>
         {sizeGuideOpen && <SizeRecommender onClose={() => setSizeGuideOpen(false)} />}
@@ -969,14 +1102,19 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.38 3.46L16 2a4 4 0 01-8 0L3.62 3.46a2 2 0 00-1.34 2.23l.58 3.47a1 1 0 00.99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 002-2V10h2.15a1 1 0 00.99-.84l.58-3.47a2 2 0 00-1.34-2.23z" /></svg>
                   </div>
                   <div className="text-left" dir="ltr">
-                    <p className="text-sm font-bold text-gray-900" style={{ fontFamily: "var(--font-dm)" }}>{item.name}</p>
-                    <p className="text-xs text-gray-500">{hasColorSelector ? `${item.colorName} • ` : ""}{showSizes ? `${selectedSize} • ` : ""}{selectedQuantity}x</p>
+                    <p className="text-sm font-bold text-gray-900" style={{ fontFamily: "var(--font-dm)" }}>
+                      {confirmedUpsell ? `${item.name} + Sac à dos Nike` : item.name}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {hasColorSelector ? `${item.colorName} • ` : ""}{showSizes ? `${selectedSize} • ` : ""}{selectedQuantity}x
+                      {confirmedUpsell ? " • Sac à dos (2,700 DA)" : ""}
+                    </p>
                   </div>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-xs text-gray-500 font-medium">المبلغ الإجمالي</span>
                   <span className="text-lg font-black text-gray-900" style={{ fontFamily: "var(--font-heading)" }} dir="ltr">
-                    {totalPrice.toLocaleString("en")} DA
+                    {(totalPrice + (confirmedUpsell ? 2700 : 0)).toLocaleString("en")} DA
                   </span>
                 </div>
               </motion.div>

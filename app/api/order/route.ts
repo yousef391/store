@@ -26,7 +26,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { name, phone, wilaya, commune, item, color, size, quantity, price, delivery, total } = body;
+    const { name, phone, wilaya, commune, item, color, size, quantity, price, delivery, total, upsellAdded } = body;
 
     // 1. Insert order into Supabase
     const { data: order, error: dbError } = await supabase
@@ -68,36 +68,29 @@ export async function POST(request: Request) {
       // fallback to raw value
     }
 
+    const locationDisplay = commune ? `${wilayaDisplay} - ${commune}` : wilayaDisplay;
+    const itemDisplay = color && !item.includes(color) ? `${item} (${color})` : item;
+
     // 4. Format price values
     const formatPrice = (val: number | string) => {
       if (typeof val === "number") return val.toLocaleString("en");
       return val;
     };
 
-    // 5. Build Telegram message
-    const message = `
-🛒  *NEW ORDER — ROVA*
-━━━━━━━━━━━━━━━━━━━━━
+    // 5. Build Telegram message (Exact requested format)
+    const message = `🚨 NEW CHECKOUT ORDER
+━━━━━━━━━━━━━━━━━━
+👤 Name: ${name}
+📞 Phone: ${phone}
+📍 Location: ${locationDisplay}
 
-👤  *Customer:*  ${name}
-📱  *Phone:*  ${phone}
+👕 Item: ${itemDisplay}
+📦 Quantity: ${quantity || 1} piece(s)
+📏 Size: ${size || "N/A"}
 
-📍  *Wilaya:*  ${wilayaDisplay}
-🏘️  *Commune:*  ${commune}
-
-━━━━━━━━━━━━━━━━━━━━━
-
-🏷️  *Product:*  ${item}
-🎨  *Color:*  ${color}
-📐  *Size:*  ${size}
-📦  *Qty:*  ${quantity || 1}
-
-━━━━━━━━━━━━━━━━━━━━━
-
-💰  *Price:*  ${formatPrice(price)} DA
-🚚  *Delivery:*  ${formatPrice(delivery)} DA
-✅  *Total:*  *${formatPrice(total)} DA*
-`;
+💰 Product: ${formatPrice(price)} DA
+🚚 Delivery: ${formatPrice(delivery)} DA
+🛒 Total: ${formatPrice(total)} DA`;
 
     // 6. Send to Telegram
     const telegramUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
