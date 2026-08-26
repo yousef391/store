@@ -19,6 +19,7 @@ interface ProductShowcaseProps {
   sizes?: string[];
   hasColorSelector?: boolean;
   hasSizeSelector?: boolean;
+  hasBagUpsell?: boolean;
   zonePrices?: Record<number, number>;
   showReviews?: boolean;
   // Real product identity for accurate Meta pixel tracking
@@ -55,6 +56,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
   sizes: sizesProp,
   hasColorSelector = false,
   hasSizeSelector = true,
+  hasBagUpsell = true,
   zonePrices = defaultZonePrices,
   showReviews = true,
   productId,
@@ -291,15 +293,16 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
   const handleOrderSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    // Check if product is Nike Nocta ensemble
-    const isNoctaProduct =
-      productSlug === "nike-nocta-tshirt-pantalon-ensemble" ||
-      productSlug === "nike-nocta-sweatshirt-ensemble" ||
-      productSlug === "nike-nocta-ensemble" ||
-      productName?.toLowerCase().includes("nocta") ||
-      item?.name?.toLowerCase().includes("nocta");
+    // Check if item itself is a bag
+    const isBagProduct =
+      productSlug?.includes("sac") ||
+      productName?.toLowerCase().includes("sac") ||
+      item?.name?.toLowerCase().includes("sac") ||
+      productCategory === "bags";
 
-    if (isNoctaProduct && !upsellShown) {
+    const shouldShowUpsell = hasBagUpsell && !isBagProduct;
+
+    if (shouldShowUpsell && !upsellShown) {
       setUpsellShown(true);
       setShowUpsellModal(true);
       return;

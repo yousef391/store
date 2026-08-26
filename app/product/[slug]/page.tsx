@@ -180,7 +180,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
       bundlePrice={productData.bundlePrice}
       triplePrice={productData.triplePrice}
       sizes={productData.sizes}
-      hasColorSelector={variants.length > 1}
+      hasColorSelector={false}
       hasSizeSelector={true}
       zonePrices={zonePrices}
       showReviews={true}

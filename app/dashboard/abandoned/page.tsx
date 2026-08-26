@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = 'force-dynamic';
+
 import { useEffect, useState } from 'react';
 import { Search, Phone, Copy, Check, X, UserX, RefreshCw, MessageCircle, Tag, ArrowRightLeft } from 'lucide-react';
 
