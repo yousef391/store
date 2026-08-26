@@ -8,7 +8,7 @@ import algeriaData from "@/data/algeria.json";
 import { zonePrices as defaultZonePrices } from "@/data/wilayas";
 import { useMetaEvents } from "@/hooks/useMetaEvents";
 import Image from "next/image";
-import { ShieldCheck, PackageOpen, Truck, Banknote, Ruler, Globe2, CheckCircle2, Eye, ArrowLeft, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
+import { ShieldCheck, PackageOpen, Truck, Banknote, Ruler, Globe2, CheckCircle2, Eye, ArrowLeft, Sparkles } from "lucide-react";
 import Reviews from "@/components/home/Reviews";
 
 interface ProductShowcaseProps {
@@ -994,7 +994,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
 
               {/* Title & Price */}
               <h3 className="text-white text-lg font-black text-center mb-1" style={{ fontFamily: "var(--font-heading)" }}>
-                حقيبة ظهر Nike "Just Do It"
+                حقيبة ظهر Nike &quot;Just Do It&quot;
               </h3>
               
               <div className="flex items-center justify-center gap-3 my-2 bg-white/5 border border-white/10 rounded-xl px-4 py-2 w-full">

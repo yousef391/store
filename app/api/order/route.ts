@@ -26,7 +26,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { name, phone, wilaya, commune, item, color, size, quantity, price, delivery, total, upsellAdded } = body;
+    const { name, phone, wilaya, commune, item, color, size, quantity, price, delivery, total } = body;
 
     // 1. Insert order into Supabase
     const { data: order, error: dbError } = await supabase
