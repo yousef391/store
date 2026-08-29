@@ -91,7 +91,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
 
   const upsellImages = isChineseJacketProduct
     ? ["/products/ogiy_white.jpg", "/products/ogiy_panda.jpg", "/products/ogiy_black.jpg"]
-    : ["/products/sac_a_dos_2.jpg", "/products/sac_a_dos_1.jpg"];
+    : backpackImages;
 
   const upsellBadgeText = isChineseJacketProduct
     ? "عرض خاص: أضف حذاء Ogiy™ لطلبك!"
