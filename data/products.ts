@@ -92,6 +92,21 @@ export const noctaSweatProducts: ShowcaseProduct[] = [
   },
 ];
 
+export const noctaHoodieProducts: ShowcaseProduct[] = [
+  {
+    id: 2300,
+    name: "Ensemble Nike Nocta Zip Hoodie & Pantalon",
+    bg: "#050505",
+    tag: "Heavy Fleece Zip",
+    swatch: "#111111",
+    desc: "Ensemble Veste Zippée à Capuche & Pantalon Nike NOCTA. Veste zippée en coton molletonné épais avec piping blanc contrasté sur les manches, logos Nike Swoosh et NOCTA. Pantalon à coupe droite avec bandes latérales et finitions premium.",
+    review: '"طقم النوكتا الزيب هودي روعة بزاف، القماش سميك ودافئ والفينيسيون عالمية 🔥" — سليم خ.',
+    productType: "set",
+    image: "/products/nocta_hoodie_1.jpg",
+    colorName: "Full Black",
+  },
+];
+
 export const poloProducts: ShowcaseProduct[] = [
   {
     id: 160,
@@ -391,11 +406,31 @@ export interface Product {
   reviewCount: number;
   stock: number;
   dateAdded: string;
-  showcaseType: "nocta" | "nocta_sweat" | "nocta_tee" | "polo" | "bmw" | "jordan" | "jordan_paris" | "debardeur" | "ny" | "nike_jogger" | "adidas_snap" | "chinese_jacket";
+  showcaseType: "nocta" | "nocta_sweat" | "nocta_tee" | "nocta_hoodie" | "polo" | "bmw" | "jordan" | "jordan_paris" | "debardeur" | "ny" | "nike_jogger" | "adidas_snap" | "chinese_jacket";
   upsellPrice?: number;
 }
 
 export const products: Product[] = [
+  {
+    id: 23,
+    slug: "nike-nocta-zip-hoodie-ensemble",
+    name: "Ensemble Nike Nocta Zip Hoodie & Pantalon",
+    description: "Ensemble Veste Zippée à Capuche & Pantalon Nike NOCTA d'exception. Veste zippée en coton molletonné épais 3 iplik avec piping blanc contrasté signature sur les manches et les jambes. Logos Nike Swoosh & NOCTA brodés. Coupe streetwear moderne et finition haut de gamme.",
+    price: 5900,
+    bundlePrice: 9900,
+    images: ["/products/nocta_hoodie_1.jpg"],
+    category: "ensembles",
+    sizes: ["S", "M", "L", "XL"],
+    colors: [{ name: "Full Black", hex: "#111111" }],
+    tag: "Heavy Fleece Zip",
+    status: "active",
+    isFeatured: true,
+    rating: 4.9,
+    reviewCount: 86,
+    stock: 50,
+    dateAdded: "2026-08-29",
+    showcaseType: "nocta_hoodie",
+  },
   {
     id: 22,
     slug: "chinese-jacket",
