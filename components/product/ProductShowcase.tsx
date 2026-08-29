@@ -676,23 +676,27 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                 <h3 className="text-white font-black tracking-tight text-2xl mb-1 relative z-10" style={{ fontFamily: "var(--font-heading)" }}>تأكيد الطلبية</h3>
                 
                 {/* Description & Quality Banner (Desktop) */}
-                <div className="bg-gradient-to-r from-amber-500/15 via-white/5 to-amber-500/15 border border-amber-500/30 rounded-xl p-3 text-right shadow-lg backdrop-blur-md relative z-10" dir="rtl">
-                  <div className="flex items-center justify-between gap-2 mb-1.5 border-b border-white/10 pb-1.5">
-                    <span className={`text-black text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider shadow-sm ${isImportedProduct ? "bg-amber-400" : "bg-emerald-400"}`}>
-                      {isImportedProduct ? "Importation High Quality 🇩🇿" : "Qualité Premium ⚡"}
-                    </span>
-                    <span className="text-amber-400 text-xs font-black flex items-center gap-1">
-                      <Sparkles className="w-3.5 h-3.5" />
-                      {isImportedProduct ? "ضمان الجودة المستوردة" : "ضمان الجودة والنوعية"}
-                    </span>
-                  </div>
+                <div className={`bg-gradient-to-r ${isImportedProduct ? "from-amber-500/15 via-white/5 to-amber-500/15 border-amber-500/30" : "from-white/10 via-white/5 to-white/10 border-white/15"} border rounded-xl p-3 text-right shadow-lg backdrop-blur-md relative z-10`} dir="rtl">
+                  {isImportedProduct && (
+                    <div className="flex items-center justify-between gap-2 mb-1.5 border-b border-white/10 pb-1.5">
+                      <span className="bg-amber-400 text-black text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider shadow-sm">
+                        Importation High Quality 🇩🇿
+                      </span>
+                      <span className="text-amber-400 text-xs font-black flex items-center gap-1">
+                        <Sparkles className="w-3.5 h-3.5" />
+                        ضمان الجودة المستوردة
+                      </span>
+                    </div>
+                  )}
                   <p className="text-white font-medium text-xs leading-relaxed mb-1.5" style={{ fontFamily: "var(--font-dm)" }}>
                     {item.desc || (isImportedProduct ? "سلعة مستوردة ذات جودة عالية جداً (Importation High Quality - مشي كما السلعة اللوكال). خامة ممتازة وأناقة استثنائية." : "سلعة ذات جودة عالية وخامة ممتازة في منتهى الأناقة والراحة.")}
                   </p>
-                  <div className="flex items-center justify-start gap-1.5 text-[10px] text-amber-300 font-bold bg-amber-500/10 px-2 py-0.5 rounded-lg w-fit border border-amber-500/20">
-                    <CheckCircle2 className="w-3 h-3 text-amber-400" />
-                    <span>{isImportedProduct ? "سلعة مستوردة 100% — مشي كيمـا اللوكـال" : "قماش ممتاز 100% — خياطة وتنقاس عالي الجودة"}</span>
-                  </div>
+                  {isImportedProduct && (
+                    <div className="flex items-center justify-start gap-1.5 text-[10px] text-amber-300 font-bold bg-amber-500/10 px-2 py-0.5 rounded-lg w-fit border border-amber-500/20">
+                      <CheckCircle2 className="w-3 h-3 text-amber-400" />
+                      <span>سلعة مستوردة 100% — مشي كيمـا اللوكـال</span>
+                    </div>
+                  )}
                 </div>
 
                 <input required name="name" placeholder="الاسم الكامل" onChange={(e) => { formNameRef.current = e.target.value; }} className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-white/50 transition-colors text-base relative z-10" />
@@ -948,23 +952,27 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
             >
               <div className="bg-white/10 p-5 rounded-3xl backdrop-blur-xl border border-white/10 mt-1 shadow-2xl flex flex-col gap-3">
                 {/* Product Description & Quality Banner (Mobile) */}
-                <div className="bg-gradient-to-r from-amber-500/15 via-white/5 to-amber-500/15 border border-amber-500/30 rounded-2xl p-3.5 text-right shadow-lg backdrop-blur-md" dir="rtl">
-                  <div className="flex items-center justify-between gap-2 mb-1.5 border-b border-white/10 pb-1.5">
-                    <span className={`text-black text-[9px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-sm ${isImportedProduct ? "bg-amber-400" : "bg-emerald-400"}`}>
-                      {isImportedProduct ? "Importation High Quality 🇩🇿" : "Qualité Premium ⚡"}
-                    </span>
-                    <span className="text-amber-400 text-xs font-black flex items-center gap-1">
-                      <Sparkles className="w-3.5 h-3.5" />
-                      {isImportedProduct ? "ضمان الجودة المستوردة" : "ضمان الجودة والنوعية"}
-                    </span>
-                  </div>
+                <div className={`bg-gradient-to-r ${isImportedProduct ? "from-amber-500/15 via-white/5 to-amber-500/15 border-amber-500/30" : "from-white/10 via-white/5 to-white/10 border-white/15"} border rounded-2xl p-3.5 text-right shadow-lg backdrop-blur-md`} dir="rtl">
+                  {isImportedProduct && (
+                    <div className="flex items-center justify-between gap-2 mb-1.5 border-b border-white/10 pb-1.5">
+                      <span className="bg-amber-400 text-black text-[9px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-sm">
+                        Importation High Quality 🇩🇿
+                      </span>
+                      <span className="text-amber-400 text-xs font-black flex items-center gap-1">
+                        <Sparkles className="w-3.5 h-3.5" />
+                        ضمان الجودة المستوردة
+                      </span>
+                    </div>
+                  )}
                   <p className="text-white font-medium text-xs leading-relaxed mb-2" style={{ fontFamily: "var(--font-dm)" }}>
                     {item.desc || (isImportedProduct ? "سلعة مستوردة ذات جودة عالية جداً (Importation High Quality - مشي كما السلعة اللوكال). خامة ممتازة وأناقة استثنائية." : "سلعة ذات جودة عالية وخامة ممتازة في منتهى الأناقة والراحة.")}
                   </p>
-                  <div className="flex items-center justify-start gap-1.5 text-[10px] text-amber-300 font-bold bg-amber-500/10 px-2.5 py-1 rounded-xl w-fit border border-amber-500/20">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-amber-400" />
-                    <span>{isImportedProduct ? "سلعة مستوردة 100% — مشي كيمـا اللوكـال" : "قماش ممتاز 100% — خياطة وتنقاس عالي الجودة"}</span>
-                  </div>
+                  {isImportedProduct && (
+                    <div className="flex items-center justify-start gap-1.5 text-[10px] text-amber-300 font-bold bg-amber-500/10 px-2.5 py-1 rounded-xl w-fit border border-amber-500/20">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-amber-400" />
+                      <span>سلعة مستوردة 100% — مشي كيمـا اللوكـال</span>
+                    </div>
+                  )}
                 </div>
 
                 <input required name="name" placeholder="الاسم الكامل" onChange={(e) => { formNameRef.current = e.target.value; }} className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-[15px] text-white placeholder-white/40 focus:outline-none focus:border-white/40 transition-colors" />
