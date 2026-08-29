@@ -161,6 +161,33 @@ export const nikeJoggerProducts: ShowcaseProduct[] = [
   },
 ];
 
+export const chineseJacketProducts: ShowcaseProduct[] = [
+  {
+    id: 2200,
+    name: "Veste Chinese Style",
+    bg: "#0a0a0a",
+    tag: "Importation High Quality",
+    swatch: "#111111",
+    desc: "سلعة مستوردة ذات جودة عالية جداً (Importation High Quality - مشي كما السلعة اللوكال). خامة ممتازة وأزرار عُقد صينية تقليدية باللون الأبيض مع سحاب متين وقماش راقي.",
+    review: '"سلعة مستوردة جودة خيالية والفينيسيون طوب روعة، مشي كيمـا اللوكال 🔥" — كريم ر.',
+    productType: "set",
+    image: "/products/chinese_jacket_1.jpg",
+    colorName: "Full Black",
+  },
+  {
+    id: 2201,
+    name: "Veste Chinese Style",
+    bg: "#0a0a0a",
+    tag: "Toutes les Couleurs",
+    swatch: "#111111",
+    desc: "متوفرة في 5 ألوان رائعة: أسود، زيتوني، أزرق، بني، ورمادي. سلعة مستوردة ذات جودة عالية جداً وخياطة متقنة.",
+    review: '"الألوان كامل متوفرين، القماش مستورد والفينيسيون بزاف فور" — أمين ب.',
+    productType: "set",
+    image: "/products/chinese_jacket_2.jpg",
+    colorName: "Couleurs Disponibles",
+  },
+];
+
 export const adidasSnapProducts: ShowcaseProduct[] = [
   {
     id: 2000,
@@ -364,10 +391,32 @@ export interface Product {
   reviewCount: number;
   stock: number;
   dateAdded: string;
-  showcaseType: "nocta" | "nocta_sweat" | "nocta_tee" | "polo" | "bmw" | "jordan" | "jordan_paris" | "debardeur" | "ny" | "nike_jogger" | "adidas_snap";
+  showcaseType: "nocta" | "nocta_sweat" | "nocta_tee" | "polo" | "bmw" | "jordan" | "jordan_paris" | "debardeur" | "ny" | "nike_jogger" | "adidas_snap" | "chinese_jacket";
+  upsellPrice?: number;
 }
 
 export const products: Product[] = [
+  {
+    id: 22,
+    slug: "chinese-jacket",
+    name: "Veste Chinese Style",
+    description: "Veste Track Chinese Style d'exception. سلعة مستوردة ذات جودة عالية جداً (Importation High Quality - مشي كما السلعة اللوكال). تتميز بأزرار عُقد صينية تقليدية باللون الأبيض، 3 أشرطة جانبية، وسحاب متين وقماش راقي وعالي الجودة.",
+    price: 8900,
+    bundlePrice: 15900,
+    upsellPrice: 4200,
+    images: ["/products/chinese_jacket_1.jpg", "/products/chinese_jacket_2.jpg"],
+    category: "ensembles",
+    sizes: ["S", "M", "L", "XL"],
+    colors: [{ name: "Full Black", hex: "#111111" }],
+    tag: "Importation High Quality",
+    status: "active",
+    isFeatured: true,
+    rating: 4.9,
+    reviewCount: 88,
+    stock: 50,
+    dateAdded: "2026-08-29",
+    showcaseType: "chinese_jacket",
+  },
   {
     id: 21,
     slug: "nike-nocta-tshirt-pantalon-ensemble",

@@ -16,6 +16,7 @@ interface ProductShowcaseProps {
   singlePrice: number;
   bundlePrice: number;
   triplePrice?: number;
+  upsellPrice?: number;
   sizes?: string[];
   hasColorSelector?: boolean;
   hasSizeSelector?: boolean;
@@ -53,6 +54,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
   singlePrice,
   bundlePrice,
   triplePrice,
+  upsellPrice: upsellPriceProp,
   sizes: sizesProp,
   hasColorSelector = false,
   hasSizeSelector = true,
@@ -72,6 +74,47 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
   const [selectedSize, setSelectedSize] = useState(availableSizes[1] || availableSizes[0] || "");
   const effectiveTriplePrice = triplePrice ?? (productSlug === "debardeur-nike-dri-fit" || productName?.includes("Débardeur") || variants[0]?.name?.includes("Débardeur") ? 4500 : undefined);
   const effectiveBundlePrice = (productSlug === "debardeur-nike-dri-fit" || productName?.includes("Débardeur") || variants[0]?.name?.includes("Débardeur")) && (bundlePrice === 4500 || !bundlePrice) ? 3100 : bundlePrice;
+  const effectiveUpsellPrice =
+    upsellPriceProp ??
+    (productSlug === "chinese-jacket" ||
+    productSlug === "veste-chinese-style-importation" ||
+    productName?.toLowerCase().includes("chinese") ||
+    variants[0]?.name?.toLowerCase().includes("chinese")
+      ? 4200
+      : 2700);
+
+  const isChineseJacketProduct =
+    productSlug === "chinese-jacket" ||
+    productSlug === "veste-chinese-style-importation" ||
+    productName?.toLowerCase().includes("chinese") ||
+    variants[0]?.name?.toLowerCase().includes("chinese");
+
+  const upsellImages = isChineseJacketProduct
+    ? ["/products/ogiy_white.jpg", "/products/ogiy_panda.jpg", "/products/ogiy_black.jpg"]
+    : ["/products/sac_a_dos_2.jpg", "/products/sac_a_dos_1.jpg"];
+
+  const upsellBadgeText = isChineseJacketProduct
+    ? "عرض خاص: أضف حذاء Ogiy™ لطلبك!"
+    : "عرض خاص: أضف حقيبة Nike لطلبك!";
+
+  const upsellTitleText = isChineseJacketProduct
+    ? "حذاء Baskets Ogiy™ Streetwear"
+    : "حقيبة ظهر Nike \"Just Do It\"";
+
+  const upsellItemLabel = isChineseJacketProduct
+    ? "Baskets Ogiy™"
+    : "Sac à dos Nike";
+
+  const upsellOriginalPriceText = isChineseJacketProduct ? "6,500 DA" : "3,900 DA";
+  const upsellSavingsText = isChineseJacketProduct ? "وفّر 2300 دج" : "وفّر 1200 دج";
+
+  const upsellYesButtonText = isChineseJacketProduct
+    ? `نعم! أضف الحذاء (بـ ${effectiveUpsellPrice.toLocaleString("en")} دج) 👟`
+    : `نعم! أضف الحقيبة (بـ ${effectiveUpsellPrice.toLocaleString("en")} دج) 🛍️`;
+
+  const upsellNoButtonText = isChineseJacketProduct
+    ? "لا شكراً، تأكيد طلب السترة فقط ❌"
+    : "لا شكراً، تأكيد طلب الطقم فقط ❌";
 
   const [selectedQuantity, setSelectedQuantity] = useState<1 | 2 | 3>(1);
   const [selectedWilaya, setSelectedWilaya] = useState("");
@@ -233,9 +276,9 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
     setShowUpsellModal(false);
 
     const finalItemName = includeUpsell
-      ? `${item.name} + Sac à dos Nike`
+      ? `${item.name} + ${upsellItemLabel}`
       : item.name;
-    const upsellPrice = includeUpsell ? 2700 : 0;
+    const upsellPrice = includeUpsell ? effectiveUpsellPrice : 0;
     const finalProductPrice = productPrice + upsellPrice;
     const finalTotalPrice = totalPrice + upsellPrice;
 
@@ -255,7 +298,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
           price: finalProductPrice,
           delivery: deliveryPrice,
           total: finalTotalPrice,
-          upsellAdded: includeUpsell ? "Sac à dos Nike (2700 DA)" : null,
+          upsellAdded: includeUpsell ? `${upsellItemLabel} (${effectiveUpsellPrice} DA)` : null,
         }),
       });
 
@@ -625,6 +668,27 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
               >
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-[-1]" />
                 <h3 className="text-white font-black tracking-tight text-2xl mb-1 relative z-10" style={{ fontFamily: "var(--font-heading)" }}>تأكيد الطلبية</h3>
+                
+                {/* Description & High Quality Banner (Desktop) */}
+                <div className="bg-gradient-to-r from-amber-500/15 via-white/5 to-amber-500/15 border border-amber-500/30 rounded-xl p-3 text-right shadow-lg backdrop-blur-md relative z-10" dir="rtl">
+                  <div className="flex items-center justify-between gap-2 mb-1.5 border-b border-white/10 pb-1.5">
+                    <span className="bg-amber-400 text-black text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider shadow-sm">
+                      Importation High Quality 🇩🇿
+                    </span>
+                    <span className="text-amber-400 text-xs font-black flex items-center gap-1">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      ضمان الجودة
+                    </span>
+                  </div>
+                  <p className="text-white font-medium text-xs leading-relaxed mb-1.5" style={{ fontFamily: "var(--font-dm)" }}>
+                    {item.desc || "سلعة مستوردة ذات جودة عالية جداً (Importation High Quality - مشي كما السلعة اللوكال). خامة ممتازة وأناقة استثنائية."}
+                  </p>
+                  <div className="flex items-center justify-start gap-1.5 text-[10px] text-amber-300 font-bold bg-amber-500/10 px-2 py-0.5 rounded-lg w-fit border border-amber-500/20">
+                    <CheckCircle2 className="w-3 h-3 text-amber-400" />
+                    <span>سلعة مستوردة 100% — مشي كيمـا اللوكـال</span>
+                  </div>
+                </div>
+
                 <input required name="name" placeholder="الاسم الكامل" onChange={(e) => { formNameRef.current = e.target.value; }} className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-white/50 transition-colors text-base relative z-10" />
                 <input required type="tel" name="phone" placeholder="رقم الهاتف" pattern="[0-9]{10,}" minLength={10} title="يرجى إدخال رقم هاتف لا يقل عن 10 أرقام" onChange={(e) => { const val = e.target.value.replace(/\D/g, ''); e.target.value = val; formPhoneRef.current = val; }} className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-white/50 transition-colors text-right text-base relative z-10" dir="ltr" />
                 <div className="flex gap-2 relative z-10">
@@ -877,6 +941,26 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
               onSubmit={handleOrderSubmit}
             >
               <div className="bg-white/10 p-5 rounded-3xl backdrop-blur-xl border border-white/10 mt-1 shadow-2xl flex flex-col gap-3">
+                {/* Product Description & Importation Quality Banner (Mobile) */}
+                <div className="bg-gradient-to-r from-amber-500/15 via-white/5 to-amber-500/15 border border-amber-500/30 rounded-2xl p-3.5 text-right shadow-lg backdrop-blur-md" dir="rtl">
+                  <div className="flex items-center justify-between gap-2 mb-1.5 border-b border-white/10 pb-1.5">
+                    <span className="bg-amber-400 text-black text-[9px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-sm">
+                      Importation High Quality 🇩🇿
+                    </span>
+                    <span className="text-amber-400 text-xs font-black flex items-center gap-1">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      ضمان الجودة المستوردة
+                    </span>
+                  </div>
+                  <p className="text-white font-medium text-xs leading-relaxed mb-2" style={{ fontFamily: "var(--font-dm)" }}>
+                    {item.desc || "سلعة مستوردة ذات جودة عالية جداً (Importation High Quality - مشي كما السلعة اللوكال). خامة ممتازة وأناقة استثنائية."}
+                  </p>
+                  <div className="flex items-center justify-start gap-1.5 text-[10px] text-amber-300 font-bold bg-amber-500/10 px-2.5 py-1 rounded-xl w-fit border border-amber-500/20">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-amber-400" />
+                    <span>سلعة مستوردة 100% — مشي كيمـا اللوكـال</span>
+                  </div>
+                </div>
+
                 <input required name="name" placeholder="الاسم الكامل" onChange={(e) => { formNameRef.current = e.target.value; }} className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-[15px] text-white placeholder-white/40 focus:outline-none focus:border-white/40 transition-colors" />
                 <input required type="tel" name="phone" placeholder="رقم الهاتف" pattern="[0-9]{10,}" minLength={10} title="يرجى إدخال رقم هاتف لا يقل عن 10 أرقام" onChange={(e) => { const val = e.target.value.replace(/\D/g, ''); e.target.value = val; formPhoneRef.current = val; }} className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-[15px] text-white placeholder-white/40 focus:outline-none focus:border-white/40 transition-colors text-right" dir="ltr" />
                 <div className="flex flex-col gap-2">
@@ -992,25 +1076,31 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
               {/* Header Badge */}
               <div className="bg-amber-400/10 border border-amber-400/30 text-amber-400 text-xs font-extrabold px-3 py-1 rounded-full mb-3 flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5" />
-                <span>عرض خاص: أضف حقيبة Nike لطلبك!</span>
+                <span>{upsellBadgeText}</span>
               </div>
 
               {/* Title & Price */}
               <h3 className="text-white text-lg font-black text-center mb-1" style={{ fontFamily: "var(--font-heading)" }}>
-                حقيبة ظهر Nike &quot;Just Do It&quot;
+                {upsellTitleText}
               </h3>
               
               <div className="flex items-center justify-center gap-3 my-2 bg-white/5 border border-white/10 rounded-xl px-4 py-2 w-full">
-                <span className="text-white/40 text-xs line-through font-bold">3,900 DA</span>
-                <span className="text-amber-400 text-xl font-black" style={{ fontFamily: "var(--font-heading)" }}>2,700 DA</span>
-                <span className="bg-red-500/20 text-red-400 text-[10px] font-bold px-2 py-0.5 rounded-md border border-red-500/30">وفر 1200 دج</span>
+                <span className="text-white/40 text-xs line-through font-bold">
+                  {upsellOriginalPriceText}
+                </span>
+                <span className="text-amber-400 text-xl font-black" style={{ fontFamily: "var(--font-heading)" }}>
+                  {effectiveUpsellPrice.toLocaleString("en")} DA
+                </span>
+                <span className="bg-red-500/20 text-red-400 text-[10px] font-bold px-2 py-0.5 rounded-md border border-red-500/30">
+                  {upsellSavingsText}
+                </span>
               </div>
 
               {/* Image */}
-              <div className="relative w-full aspect-[4/3] rounded-xl overflow-hidden bg-black/40 border border-white/10 mb-4 group cursor-pointer" onClick={() => setUpsellImgIdx((prev) => (prev === 0 ? 1 : 0))}>
+              <div className="relative w-full aspect-[4/3] rounded-xl overflow-hidden bg-black/40 border border-white/10 mb-4 group cursor-pointer" onClick={() => setUpsellImgIdx((prev) => (prev + 1) % upsellImages.length)}>
                 <Image
-                  src={backpackImages[upsellImgIdx]}
-                  alt="Sac à dos Nike"
+                  src={upsellImages[upsellImgIdx % upsellImages.length]}
+                  alt={upsellItemLabel}
                   fill
                   sizes="(max-width: 640px) 100vw, 360px"
                   className="object-cover"
@@ -1019,10 +1109,10 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                 {/* Image Nav hint */}
                 <button
                   type="button"
-                  onClick={(e) => { e.stopPropagation(); setUpsellImgIdx((prev) => (prev === 0 ? 1 : 0)); }}
+                  onClick={(e) => { e.stopPropagation(); setUpsellImgIdx((prev) => (prev + 1) % upsellImages.length); }}
                   className="absolute bottom-2 left-2 bg-black/70 backdrop-blur-sm text-white/80 text-[10px] px-2.5 py-1 rounded-md border border-white/10 flex items-center gap-1 hover:text-white"
                 >
-                  صورة {upsellImgIdx + 1}/2 🔄
+                  صورة {(upsellImgIdx % upsellImages.length) + 1}/{upsellImages.length} 🔄
                 </button>
               </div>
 
@@ -1042,7 +1132,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                   className="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-black text-sm tracking-wide shadow-lg shadow-emerald-500/25 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70"
                   style={{ fontFamily: "var(--font-heading)" }}
                 >
-                  {isSubmitting ? "جاري الإضافة..." : "نعم! أضف الحقيبة (بـ 2700 دج) 🛍️"}
+                  {isSubmitting ? "جاري الإضافة..." : upsellYesButtonText}
                 </button>
 
                 {/* NO Button - STYLED IN RED as requested */}
@@ -1053,7 +1143,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                   className="w-full py-3 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 text-xs font-bold transition-all cursor-pointer text-center block active:scale-[0.98] disabled:opacity-70"
                   style={{ fontFamily: "var(--font-dm)" }}
                 >
-                  لا شكراً، تأكيد طلب الطقم فقط ❌
+                  {upsellNoButtonText}
                 </button>
               </div>
             </motion.div>
@@ -1106,18 +1196,18 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                   </div>
                   <div className="text-left" dir="ltr">
                     <p className="text-sm font-bold text-gray-900" style={{ fontFamily: "var(--font-dm)" }}>
-                      {confirmedUpsell ? `${item.name} + Sac à dos Nike` : item.name}
+                      {confirmedUpsell ? `${item.name} + ${upsellItemLabel}` : item.name}
                     </p>
                     <p className="text-xs text-gray-500">
                       {hasColorSelector ? `${item.colorName} • ` : ""}{showSizes ? `${selectedSize} • ` : ""}{selectedQuantity}x
-                      {confirmedUpsell ? " • Sac à dos (2,700 DA)" : ""}
+                      {confirmedUpsell ? ` • ${upsellItemLabel} (${effectiveUpsellPrice.toLocaleString("en")} DA)` : ""}
                     </p>
                   </div>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-xs text-gray-500 font-medium">المبلغ الإجمالي</span>
                   <span className="text-lg font-black text-gray-900" style={{ fontFamily: "var(--font-heading)" }} dir="ltr">
-                    {(totalPrice + (confirmedUpsell ? 2700 : 0)).toLocaleString("en")} DA
+                    {(totalPrice + (confirmedUpsell ? effectiveUpsellPrice : 0)).toLocaleString("en")} DA
                   </span>
                 </div>
               </motion.div>

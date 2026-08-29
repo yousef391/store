@@ -15,6 +15,7 @@ import {
   debardeurProducts,
   jordanProducts,
   jordanParisProducts,
+  chineseJacketProducts,
   ShowcaseProduct,
 } from "@/data/products";
 import { supabase } from "@/lib/supabase";
@@ -65,6 +66,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
             reviewCount: data.review_count || 50,
             dateAdded: data.date_added,
             showcaseType: data.showcase_type || "nocta",
+            upsellPrice: data.upsell_price || staticProduct?.upsellPrice || (params.slug === "chinese-jacket" || data.showcase_type === "chinese_jacket" ? 4200 : undefined),
           };
           setProductData(currentProduct);
 
@@ -93,6 +95,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
           } else {
             // Build dynamic variants from DB images so edits are reflected
             const getBaseVariants = (type: string) => {
+              if (params.slug === "chinese-jacket" || params.slug === "veste-chinese-style-importation" || type === "chinese_jacket") return chineseJacketProducts;
               if (params.slug === "pantalon-track-adidas-3-stripes-snap" || type === "adidas_snap") return adidasSnapProducts;
               if (params.slug === "pantalon-jogger-nike-straight-leg" || type === "nike_jogger") return nikeJoggerProducts;
               if (params.slug === "ensemble-ny-yankees-heavy-fleece" || type === "ny") return nyProducts;
@@ -150,7 +153,9 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
   if (!productData) notFound();
 
   const fallbackVariants =
-    params.slug === "pantalon-track-adidas-3-stripes-snap" || productData.showcaseType === "adidas_snap"
+    params.slug === "chinese-jacket" || params.slug === "veste-chinese-style-importation" || productData.showcaseType === "chinese_jacket"
+      ? chineseJacketProducts
+      : params.slug === "pantalon-track-adidas-3-stripes-snap" || productData.showcaseType === "adidas_snap"
       ? adidasSnapProducts
       : params.slug === "pantalon-jogger-nike-straight-leg" || productData.showcaseType === "nike_jogger"
       ? nikeJoggerProducts
@@ -179,6 +184,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
       singlePrice={productData.price}
       bundlePrice={productData.bundlePrice}
       triplePrice={productData.triplePrice}
+      upsellPrice={productData.upsellPrice}
       sizes={productData.sizes}
       hasColorSelector={false}
       hasSizeSelector={true}
