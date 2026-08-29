@@ -116,6 +116,12 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
     ? "لا شكراً، تأكيد طلب السترة فقط ❌"
     : "لا شكراً، تأكيد طلب الطقم فقط ❌";
 
+  const isImportedProduct =
+    productSlug === "chinese-jacket" ||
+    productSlug === "veste-chinese-style-importation" ||
+    productCategory === "importation" ||
+    variants.some((v) => v.tag === "Importation High Quality");
+
   const [selectedQuantity, setSelectedQuantity] = useState<1 | 2 | 3>(1);
   const [selectedWilaya, setSelectedWilaya] = useState("");
   const [selectedCommune, setSelectedCommune] = useState("");
@@ -669,23 +675,23 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-[-1]" />
                 <h3 className="text-white font-black tracking-tight text-2xl mb-1 relative z-10" style={{ fontFamily: "var(--font-heading)" }}>تأكيد الطلبية</h3>
                 
-                {/* Description & High Quality Banner (Desktop) */}
+                {/* Description & Quality Banner (Desktop) */}
                 <div className="bg-gradient-to-r from-amber-500/15 via-white/5 to-amber-500/15 border border-amber-500/30 rounded-xl p-3 text-right shadow-lg backdrop-blur-md relative z-10" dir="rtl">
                   <div className="flex items-center justify-between gap-2 mb-1.5 border-b border-white/10 pb-1.5">
-                    <span className="bg-amber-400 text-black text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider shadow-sm">
-                      Importation High Quality 🇩🇿
+                    <span className={`text-black text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider shadow-sm ${isImportedProduct ? "bg-amber-400" : "bg-emerald-400"}`}>
+                      {isImportedProduct ? "Importation High Quality 🇩🇿" : "Qualité Premium ⚡"}
                     </span>
                     <span className="text-amber-400 text-xs font-black flex items-center gap-1">
                       <Sparkles className="w-3.5 h-3.5" />
-                      ضمان الجودة
+                      {isImportedProduct ? "ضمان الجودة المستوردة" : "ضمان الجودة والنوعية"}
                     </span>
                   </div>
                   <p className="text-white font-medium text-xs leading-relaxed mb-1.5" style={{ fontFamily: "var(--font-dm)" }}>
-                    {item.desc || "سلعة مستوردة ذات جودة عالية جداً (Importation High Quality - مشي كما السلعة اللوكال). خامة ممتازة وأناقة استثنائية."}
+                    {item.desc || (isImportedProduct ? "سلعة مستوردة ذات جودة عالية جداً (Importation High Quality - مشي كما السلعة اللوكال). خامة ممتازة وأناقة استثنائية." : "سلعة ذات جودة عالية وخامة ممتازة في منتهى الأناقة والراحة.")}
                   </p>
                   <div className="flex items-center justify-start gap-1.5 text-[10px] text-amber-300 font-bold bg-amber-500/10 px-2 py-0.5 rounded-lg w-fit border border-amber-500/20">
                     <CheckCircle2 className="w-3 h-3 text-amber-400" />
-                    <span>سلعة مستوردة 100% — مشي كيمـا اللوكـال</span>
+                    <span>{isImportedProduct ? "سلعة مستوردة 100% — مشي كيمـا اللوكـال" : "قماش ممتاز 100% — خياطة وتنقاس عالي الجودة"}</span>
                   </div>
                 </div>
 
@@ -941,23 +947,23 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
               onSubmit={handleOrderSubmit}
             >
               <div className="bg-white/10 p-5 rounded-3xl backdrop-blur-xl border border-white/10 mt-1 shadow-2xl flex flex-col gap-3">
-                {/* Product Description & Importation Quality Banner (Mobile) */}
+                {/* Product Description & Quality Banner (Mobile) */}
                 <div className="bg-gradient-to-r from-amber-500/15 via-white/5 to-amber-500/15 border border-amber-500/30 rounded-2xl p-3.5 text-right shadow-lg backdrop-blur-md" dir="rtl">
                   <div className="flex items-center justify-between gap-2 mb-1.5 border-b border-white/10 pb-1.5">
-                    <span className="bg-amber-400 text-black text-[9px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-sm">
-                      Importation High Quality 🇩🇿
+                    <span className={`text-black text-[9px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-sm ${isImportedProduct ? "bg-amber-400" : "bg-emerald-400"}`}>
+                      {isImportedProduct ? "Importation High Quality 🇩🇿" : "Qualité Premium ⚡"}
                     </span>
                     <span className="text-amber-400 text-xs font-black flex items-center gap-1">
                       <Sparkles className="w-3.5 h-3.5" />
-                      ضمان الجودة المستوردة
+                      {isImportedProduct ? "ضمان الجودة المستوردة" : "ضمان الجودة والنوعية"}
                     </span>
                   </div>
                   <p className="text-white font-medium text-xs leading-relaxed mb-2" style={{ fontFamily: "var(--font-dm)" }}>
-                    {item.desc || "سلعة مستوردة ذات جودة عالية جداً (Importation High Quality - مشي كما السلعة اللوكال). خامة ممتازة وأناقة استثنائية."}
+                    {item.desc || (isImportedProduct ? "سلعة مستوردة ذات جودة عالية جداً (Importation High Quality - مشي كما السلعة اللوكال). خامة ممتازة وأناقة استثنائية." : "سلعة ذات جودة عالية وخامة ممتازة في منتهى الأناقة والراحة.")}
                   </p>
                   <div className="flex items-center justify-start gap-1.5 text-[10px] text-amber-300 font-bold bg-amber-500/10 px-2.5 py-1 rounded-xl w-fit border border-amber-500/20">
                     <CheckCircle2 className="w-3.5 h-3.5 text-amber-400" />
-                    <span>سلعة مستوردة 100% — مشي كيمـا اللوكـال</span>
+                    <span>{isImportedProduct ? "سلعة مستوردة 100% — مشي كيمـا اللوكـال" : "قماش ممتاز 100% — خياطة وتنقاس عالي الجودة"}</span>
                   </div>
                 </div>
 
