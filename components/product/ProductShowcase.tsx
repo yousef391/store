@@ -82,16 +82,28 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
     productName?.toLowerCase().includes("chinese") ||
     variants[0]?.name?.toLowerCase().includes("chinese");
 
-  const upsellImages = backpackImages;
+  const isNoctaHoodieProduct =
+    productSlug === "nike-nocta-zip-hoodie-ensemble" ||
+    productSlug?.includes("nocta-zip-hoodie") ||
+    productName?.toLowerCase().includes("nocta zip hoodie") ||
+    variants[0]?.name?.toLowerCase().includes("nocta zip hoodie");
 
-  const upsellBadgeText = "عرض خاص: أضف حقيبة Nike لطلبك!";
+  const upsellImages = isNoctaHoodieProduct
+    ? ["/products/sacoche_lacoste_black.jpg"]
+    : backpackImages;
 
-  const upsellTitleText = "حقيبة ظهر Nike \"Just Do It\"";
+  const upsellBadgeText = isNoctaHoodieProduct
+    ? "عرض خاص: أضف حقيبة Lacoste لطلبك!"
+    : "عرض خاص: أضف حقيبة Nike لطلبك!";
 
-  const upsellItemLabel = "Sac à dos Nike";
+  const upsellTitleText = isNoctaHoodieProduct
+    ? "حقيبة كتف فاخرة Lacoste Black"
+    : "حقيبة ظهر Nike \"Just Do It\"";
 
-  const upsellOriginalPriceText = "3,900 DA";
-  const upsellSavingsText = "وفّر 1200 دج";
+  const upsellItemLabel = isNoctaHoodieProduct ? "Sacoche Lacoste" : "Sac à dos Nike";
+
+  const upsellOriginalPriceText = isNoctaHoodieProduct ? "4,200 DA" : "3,900 DA";
+  const upsellSavingsText = isNoctaHoodieProduct ? "وفّر 1500 دج" : "وفّر 1200 دج";
 
   const upsellYesButtonText = `نعم! أضف الحقيبة (بـ ${effectiveUpsellPrice.toLocaleString("en")} دج) 🛍️`;
 
@@ -1059,16 +1071,23 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
               onClick={(e) => e.stopPropagation()}
               dir="rtl"
             >
-              <div className="bg-amber-400/10 border border-amber-400/30 text-amber-400 text-xs font-extrabold px-3 py-1 rounded-full mb-3 flex items-center gap-1.5">
+              <div className="bg-amber-400/10 border border-amber-400/30 text-amber-400 text-xs font-extrabold px-3 py-1 rounded-full mb-2 flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5" />
                 <span>{upsellBadgeText}</span>
               </div>
 
-              <h3 className="text-white text-lg font-black text-center mb-1" style={{ fontFamily: "var(--font-heading)" }}>
+              <h3 className="text-white text-lg font-black text-center mb-1.5" style={{ fontFamily: "var(--font-heading)" }}>
                 {upsellTitleText}
               </h3>
+
+              {/* Exclusive offer note for ordering the ensemble */}
+              <div className="bg-gradient-to-r from-amber-500/20 via-amber-400/10 to-amber-500/20 border border-amber-400/30 rounded-2xl p-2.5 mb-2 w-full text-center shadow-inner">
+                <p className="text-amber-300 font-bold text-xs leading-relaxed" style={{ fontFamily: "var(--font-dm)" }}>
+                  🔥 لأنك قمت بطلب هذا الطقم، نهديك هذا العرض الحصري بأفضل وأقل سعر على الإطلاق!
+                </p>
+              </div>
               
-              <div className="flex items-center justify-center gap-3 my-2 bg-white/5 border border-white/10 rounded-xl px-4 py-2 w-full">
+              <div className="flex items-center justify-center gap-3 my-1.5 bg-white/5 border border-white/10 rounded-xl px-4 py-2 w-full">
                 <span className="text-white/40 text-xs line-through font-bold">
                   {upsellOriginalPriceText}
                 </span>
@@ -1089,13 +1108,15 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                   className="object-cover"
                 />
                 
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); setUpsellImgIdx((prev) => (prev + 1) % upsellImages.length); }}
-                  className="absolute bottom-2 left-2 bg-black/70 backdrop-blur-sm text-white/80 text-[10px] px-2.5 py-1 rounded-md border border-white/10 flex items-center gap-1 hover:text-white"
-                >
-                  صورة {(upsellImgIdx % upsellImages.length) + 1}/{upsellImages.length} 🔄
-                </button>
+                {upsellImages.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); setUpsellImgIdx((prev) => (prev + 1) % upsellImages.length); }}
+                    className="absolute bottom-2 left-2 bg-black/70 backdrop-blur-sm text-white/80 text-[10px] px-2.5 py-1 rounded-md border border-white/10 flex items-center gap-1 hover:text-white"
+                  >
+                    صورة {(upsellImgIdx % upsellImages.length) + 1}/{upsellImages.length} 🔄
+                  </button>
+                )}
               </div>
 
               <p className="text-white/70 text-xs text-center mb-4 leading-relaxed font-dm">
