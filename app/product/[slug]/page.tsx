@@ -67,7 +67,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
             reviewCount: data.review_count || 50,
             dateAdded: data.date_added,
             showcaseType: data.showcase_type || "nocta",
-            upsellPrice: data.upsell_price || staticProduct?.upsellPrice || (params.slug === "chinese-jacket" || data.showcase_type === "chinese_jacket" ? 4200 : undefined),
+            upsellPrice: data.upsell_price || staticProduct?.upsellPrice,
           };
           setProductData(currentProduct);
 
@@ -189,6 +189,11 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
       bundlePrice={productData.bundlePrice}
       triplePrice={productData.triplePrice}
       upsellPrice={productData.upsellPrice}
+      hasBagUpsell={
+        params.slug !== "chinese-jacket" &&
+        params.slug !== "veste-chinese-style-importation" &&
+        productData.showcaseType !== "chinese_jacket"
+      }
       sizes={productData.sizes}
       hasColorSelector={false}
       hasSizeSelector={true}

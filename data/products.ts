@@ -438,7 +438,6 @@ export const products: Product[] = [
     description: "Veste Track Chinese Style d'exception. سلعة مستوردة ذات جودة عالية جداً (Importation High Quality - مشي كما السلعة اللوكال). تتميز بأزرار عُقد صينية تقليدية باللون الأبيض، 3 أشرطة جانبية، وسحاب متين وقماش راقي وعالي الجودة.",
     price: 8900,
     bundlePrice: 15900,
-    upsellPrice: 4200,
     images: ["/products/chinese_jacket_1.jpg", "/products/chinese_jacket_2.jpg"],
     category: "ensembles",
     sizes: ["S", "M", "L", "XL"],

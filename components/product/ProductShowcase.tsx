@@ -74,14 +74,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
   const [selectedSize, setSelectedSize] = useState(availableSizes[1] || availableSizes[0] || "");
   const effectiveTriplePrice = triplePrice ?? (productSlug === "debardeur-nike-dri-fit" || productName?.includes("Débardeur") || variants[0]?.name?.includes("Débardeur") ? 4500 : undefined);
   const effectiveBundlePrice = (productSlug === "debardeur-nike-dri-fit" || productName?.includes("Débardeur") || variants[0]?.name?.includes("Débardeur")) && (bundlePrice === 4500 || !bundlePrice) ? 3100 : bundlePrice;
-  const effectiveUpsellPrice =
-    upsellPriceProp ??
-    (productSlug === "chinese-jacket" ||
-    productSlug === "veste-chinese-style-importation" ||
-    productName?.toLowerCase().includes("chinese") ||
-    variants[0]?.name?.toLowerCase().includes("chinese")
-      ? 4200
-      : 2700);
+  const effectiveUpsellPrice = upsellPriceProp ?? 2700;
 
   const isChineseJacketProduct =
     productSlug === "chinese-jacket" ||
@@ -89,32 +82,20 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
     productName?.toLowerCase().includes("chinese") ||
     variants[0]?.name?.toLowerCase().includes("chinese");
 
-  const upsellImages = isChineseJacketProduct
-    ? ["/products/ogiy_white.jpg", "/products/ogiy_panda.jpg", "/products/ogiy_black.jpg"]
-    : backpackImages;
+  const upsellImages = backpackImages;
 
-  const upsellBadgeText = isChineseJacketProduct
-    ? "عرض خاص: أضف حذاء Ogiy™ لطلبك!"
-    : "عرض خاص: أضف حقيبة Nike لطلبك!";
+  const upsellBadgeText = "عرض خاص: أضف حقيبة Nike لطلبك!";
 
-  const upsellTitleText = isChineseJacketProduct
-    ? "حذاء Baskets Ogiy™ Streetwear"
-    : "حقيبة ظهر Nike \"Just Do It\"";
+  const upsellTitleText = "حقيبة ظهر Nike \"Just Do It\"";
 
-  const upsellItemLabel = isChineseJacketProduct
-    ? "Baskets Ogiy™"
-    : "Sac à dos Nike";
+  const upsellItemLabel = "Sac à dos Nike";
 
-  const upsellOriginalPriceText = isChineseJacketProduct ? "6,500 DA" : "3,900 DA";
-  const upsellSavingsText = isChineseJacketProduct ? "وفّر 2300 دج" : "وفّر 1200 دج";
+  const upsellOriginalPriceText = "3,900 DA";
+  const upsellSavingsText = "وفّر 1200 دج";
 
-  const upsellYesButtonText = isChineseJacketProduct
-    ? `نعم! أضف الحذاء (بـ ${effectiveUpsellPrice.toLocaleString("en")} دج) 👟`
-    : `نعم! أضف الحقيبة (بـ ${effectiveUpsellPrice.toLocaleString("en")} دج) 🛍️`;
+  const upsellYesButtonText = `نعم! أضف الحقيبة (بـ ${effectiveUpsellPrice.toLocaleString("en")} دج) 🛍️`;
 
-  const upsellNoButtonText = isChineseJacketProduct
-    ? "لا شكراً، تأكيد طلب السترة فقط ❌"
-    : "لا شكراً، تأكيد طلب الطقم فقط ❌";
+  const upsellNoButtonText = "لا شكراً، تأكيد طلب الطقم فقط ❌";
 
   const isImportedProduct =
     productSlug === "chinese-jacket" ||
@@ -158,7 +139,6 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
 
   // ── Track ViewContent on page load ──
   useEffect(() => {
-    // Use real product identity for accurate attribution
     const trackingId = productId ?? productSlug ?? String(variants[0]?.id);
     const trackingName = productName ?? variants[0]?.name;
     const trackingCategory = productCategory ?? variants[0]?.productType;
@@ -199,11 +179,9 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
   const totalPrice = productPrice + deliveryPrice;
 
   // ── Abandoned Lead Detection ──
-  // Send lead data when user leaves without completing the order
   const sendAbandonedLead = useCallback(() => {
     const name = formNameRef.current;
     const phone = formPhoneRef.current;
-    // Only send if user has entered both name and phone but hasn't ordered
     if (!name || !phone || orderSuccess || isSubmitting || abandonedLeadSent.current) return;
     abandonedLeadSent.current = true;
 
@@ -224,7 +202,6 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
       total: selectedWilaya ? `${totalPrice.toLocaleString('en')} DA` : null,
     });
 
-    // Use sendBeacon for reliable delivery on page unload
     if (navigator.sendBeacon) {
       navigator.sendBeacon('/api/abandoned-lead', new Blob([payload], { type: 'application/json' }));
     } else {
@@ -281,9 +258,10 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
     setOrderError("");
     setShowUpsellModal(false);
 
+    const baseItemName = item.name;
     const finalItemName = includeUpsell
-      ? `${item.name} + ${upsellItemLabel}`
-      : item.name;
+      ? `${baseItemName} + ${upsellItemLabel}`
+      : baseItemName;
     const upsellPrice = includeUpsell ? effectiveUpsellPrice : 0;
     const finalProductPrice = productPrice + upsellPrice;
     const finalTotalPrice = totalPrice + upsellPrice;
@@ -320,7 +298,6 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
       setConfirmedUpsell(includeUpsell);
       setOrderSuccess(true);
 
-      // Track Purchase event via CAPI + browser pixel
       const purchaseId = productId ?? productSlug ?? String(item.id);
       const purchaseName = productName ?? finalItemName;
       const purchaseCategory = productCategory ?? item.productType;
@@ -342,7 +319,6 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
   const handleOrderSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    // Check if item itself is a bag
     const isBagProduct =
       productSlug?.includes("sac") ||
       productName?.toLowerCase().includes("sac") ||
@@ -379,7 +355,39 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
     </div>
   );
 
-  /* CustomerReviewsSection removed */
+  const QualityBanner = ({ isMobile = false }: { isMobile?: boolean }) => {
+    return (
+      <div
+        className={`bg-gradient-to-r ${
+          isImportedProduct
+            ? "from-amber-500/15 via-white/5 to-amber-500/15 border-amber-500/30"
+            : "from-white/10 via-white/5 to-white/10 border-white/15"
+        } border rounded-2xl ${isMobile ? "p-3.5" : "p-3"} text-right shadow-lg backdrop-blur-md relative z-10`}
+        dir="rtl"
+      >
+        {isImportedProduct && (
+          <div className="flex items-center justify-between gap-2 mb-1.5 border-b border-white/10 pb-1.5">
+            <span className="bg-amber-400 text-black text-[9px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-sm">
+              Importation High Quality 🇩🇿
+            </span>
+            <span className="text-amber-400 text-xs font-black flex items-center gap-1">
+              <Sparkles className="w-3.5 h-3.5" />
+              ضمان الجودة المستوردة
+            </span>
+          </div>
+        )}
+        <p className="text-white font-medium text-xs leading-relaxed mb-1.5" style={{ fontFamily: "var(--font-dm)" }}>
+          {item.desc || (isImportedProduct ? "سلعة مستوردة ذات جودة عالية جداً (Importation High Quality - مشي كما السلعة اللوكال). خامة ممتازة وأناقة استثنائية." : "سلعة ذات جودة عالية وخامة ممتازة في منتهى الأناقة والراحة.")}
+        </p>
+        {isImportedProduct && (
+          <div className="flex items-center justify-start gap-1.5 text-[10px] text-amber-300 font-bold bg-amber-500/10 px-2.5 py-1 rounded-xl w-fit border border-amber-500/20">
+            <CheckCircle2 className="w-3.5 h-3.5 text-amber-400" />
+            <span>سلعة مستوردة 100% — مشي كيمـا اللوكـال</span>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   const SizeRecommender = ({ onClose }: { onClose: () => void }) => (
     <motion.div
@@ -399,7 +407,6 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
         onClick={(e) => e.stopPropagation()}
         dir="rtl"
       >
-        {/* Header */}
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2">
             <div className="w-9 h-9 rounded-xl bg-accent/15 flex items-center justify-center">
@@ -411,14 +418,10 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
           </button>
         </div>
-
-        {/* Quick Tip */}
         <div className="bg-accent/10 border border-accent/20 rounded-xl p-3 mb-4">
           <p className="text-accent text-[11px] font-bold mb-0.5">💡 نصيحة سريعة</p>
           <p className="text-white/60 text-[10px] leading-relaxed">إذا كنت بين مقاسين، اختر المقاس الأكبر للراحة المثالية.</p>
         </div>
-
-        {/* Size Table */}
         <div className="overflow-hidden rounded-xl border border-white/10">
           <table className="w-full text-center" dir="ltr">
             <thead>
@@ -445,12 +448,9 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
             </tbody>
           </table>
         </div>
-
-        {/* Currently Selected */}
         <div className="flex items-center justify-center gap-2 mt-4 bg-white/5 rounded-xl p-3 border border-white/10">
-          <span className="text-white/50 text-xs">المقاس المختار:</span>
-          <span className="text-white font-black text-lg" style={{ fontFamily: "var(--font-heading)" }}>{selectedSize}</span>
-          <span className="text-emerald-400 text-[10px] font-bold">✓</span>
+          <span className="text-white/60 text-xs font-medium">المقاس المختار:</span>
+          <span className="text-accent text-sm font-black">{selectedSize}</span>
         </div>
       </motion.div>
     </motion.div>
@@ -458,15 +458,15 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
 
   return (
     <motion.div
-      className="relative w-full min-h-screen flex flex-col no-scrollbar"
-      animate={{ backgroundColor: item.bg }}
-      transition={{ duration: 0.6 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.5 }}
+      className="min-h-screen bg-[#0a0a0a] text-white flex flex-col justify-between overflow-x-hidden relative selection:bg-accent selection:text-black select-none"
     >
-      {/* ────── DESKTOP VIEW ────── */}
-      <div className="hidden lg:block relative w-full h-[100dvh] shrink-0">
-        {/* ────── HEADER (Desktop Only) ────── */}
-        <header className="flex relative z-30 justify-between items-center px-10 py-8 shrink-0 w-full">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
+      {/* ────── DESKTOP LAYOUT (Hidden on mobile) ────── */}
+      <div className="hidden lg:flex flex-col relative overflow-hidden h-[100dvh] shrink-0">
+        <header className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-10 py-6">
           <img src="/logo.png" alt="Logo" className="h-20 w-auto object-contain drop-shadow-2xl" style={{ width: "auto", height: "auto" }} />
           <div className="flex items-center bg-white/10 backdrop-blur-md rounded-full px-5 py-2.5 gap-2.5 border border-white/20 shadow-xl shadow-black/20">
             <Globe2 className="w-4 h-4 text-white/70" />
@@ -477,7 +477,6 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
           <div className="w-20" />
         </header>
 
-        {/* Floating tag */}
         <div className="hidden lg:block absolute top-36 left-10 z-20">
           <AnimatePresence mode="wait">
             <motion.span
@@ -486,15 +485,18 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.7, y: 5 }}
               transition={{ type: "spring", stiffness: 400, damping: 22 }}
-              className="inline-block px-4 py-2 rounded-full text-sm font-semibold tracking-wide backdrop-blur-md border border-white/10 bg-white/5"
-              style={{ color: "white", fontFamily: "var(--font-dm)" }}
+              className={`inline-block px-4 py-2 rounded-full text-sm font-semibold tracking-wide backdrop-blur-md border ${
+                isImportedProduct
+                  ? "border-amber-400/40 bg-amber-500/15 text-amber-300 shadow-[0_0_15px_rgba(251,191,36,0.25)]"
+                  : "border-white/10 bg-white/5 text-white"
+              }`}
+              style={{ fontFamily: "var(--font-dm)" }}
             >
               {item.tag}
             </motion.span>
           </AnimatePresence>
         </div>
 
-        {/* Hero text — left */}
         <div className="hidden lg:flex absolute left-10 top-1/2 -translate-y-1/2 z-20 max-w-[380px] flex-col">
           <AnimatePresence mode="wait">
             <motion.h1
@@ -521,7 +523,6 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
             </motion.p>
           </AnimatePresence>
 
-          {/* Desktop Trust Badges (below description) */}
           <div className="grid grid-cols-2 gap-2">
             {trustBadges.map((b, i) => (
               <div key={i} className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl p-2.5 backdrop-blur-sm" dir="rtl">
@@ -537,7 +538,6 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
           </div>
         </div>
 
-        {/* Center image — desktop */}
         <div className="hidden lg:flex absolute inset-0 items-center justify-center z-10 pointer-events-none">
           <AnimatePresence mode="wait">
             <motion.div
@@ -553,7 +553,6 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
           </AnimatePresence>
         </div>
 
-        {/* Right Sidebar — desktop */}
         <div className="hidden lg:flex absolute right-10 top-1/2 -translate-y-1/2 z-20 flex-col gap-10 w-[120px] items-end">
           {hasColorSelector && uniqueColors.length > 1 && (
             <div className="flex flex-col gap-4 items-end">
@@ -593,7 +592,9 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
             </div>
           )}
           <div className="flex flex-col gap-3 items-end">
-            <span className="text-white/60 text-xs uppercase tracking-[0.2em] font-bold" style={{ fontFamily: "var(--font-heading)" }}>Qty</span>
+            <span className="text-white/60 text-xs uppercase tracking-[0.2em] font-bold" style={{ fontFamily: "var(--font-heading)" }}>
+              Qty
+            </span>
             <button onClick={() => setSelectedQuantity(1)} className={`h-auto px-3 py-2 rounded-xl flex flex-col items-center justify-center transition-all ${selectedQuantity === 1 ? "bg-white text-black" : "bg-white/10 text-white hover:bg-white/20"}`} style={{ fontFamily: "var(--font-dm)" }}>
               <span className="text-xs font-bold">1 pc</span>
               <span className="text-[10px] font-bold opacity-70">{singlePrice.toLocaleString("en")}</span>
@@ -611,9 +612,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
           </div>
         </div>
 
-        {/* Bottom bar — desktop */}
         <div className="hidden lg:flex absolute bottom-0 left-0 right-0 z-20 items-end justify-between px-10 pb-8">
-          {/* Review */}
           {showReviews && (
           <div className="max-w-[280px]">
             <div className="flex items-center gap-1 mb-1.5">
@@ -630,7 +629,6 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
           </div>
           )}
 
-          {/* Price + arrows */}
           <div className="flex flex-col items-center gap-3">
             <AnimatePresence mode="wait">
               <motion.div key={`d-price-${item.id}-${selectedQuantity}`} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} transition={{ duration: 0.3 }} className="flex flex-col items-center">
@@ -662,7 +660,6 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
             </div>
           </div>
 
-          {/* Desktop Form */}
           <div className="relative">
             <AnimatePresence mode="wait">
               <motion.form
@@ -675,29 +672,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-[-1]" />
                 <h3 className="text-white font-black tracking-tight text-2xl mb-1 relative z-10" style={{ fontFamily: "var(--font-heading)" }}>تأكيد الطلبية</h3>
                 
-                {/* Description & Quality Banner (Desktop) */}
-                <div className={`bg-gradient-to-r ${isImportedProduct ? "from-amber-500/15 via-white/5 to-amber-500/15 border-amber-500/30" : "from-white/10 via-white/5 to-white/10 border-white/15"} border rounded-xl p-3 text-right shadow-lg backdrop-blur-md relative z-10`} dir="rtl">
-                  {isImportedProduct && (
-                    <div className="flex items-center justify-between gap-2 mb-1.5 border-b border-white/10 pb-1.5">
-                      <span className="bg-amber-400 text-black text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider shadow-sm">
-                        Importation High Quality 🇩🇿
-                      </span>
-                      <span className="text-amber-400 text-xs font-black flex items-center gap-1">
-                        <Sparkles className="w-3.5 h-3.5" />
-                        ضمان الجودة المستوردة
-                      </span>
-                    </div>
-                  )}
-                  <p className="text-white font-medium text-xs leading-relaxed mb-1.5" style={{ fontFamily: "var(--font-dm)" }}>
-                    {item.desc || (isImportedProduct ? "سلعة مستوردة ذات جودة عالية جداً (Importation High Quality - مشي كما السلعة اللوكال). خامة ممتازة وأناقة استثنائية." : "سلعة ذات جودة عالية وخامة ممتازة في منتهى الأناقة والراحة.")}
-                  </p>
-                  {isImportedProduct && (
-                    <div className="flex items-center justify-start gap-1.5 text-[10px] text-amber-300 font-bold bg-amber-500/10 px-2 py-0.5 rounded-lg w-fit border border-amber-500/20">
-                      <CheckCircle2 className="w-3 h-3 text-amber-400" />
-                      <span>سلعة مستوردة 100% — مشي كيمـا اللوكـال</span>
-                    </div>
-                  )}
-                </div>
+                <QualityBanner />
 
                 <input required name="name" placeholder="الاسم الكامل" onChange={(e) => { formNameRef.current = e.target.value; }} className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-white/50 transition-colors text-base relative z-10" />
                 <input required type="tel" name="phone" placeholder="رقم الهاتف" pattern="[0-9]{10,}" minLength={10} title="يرجى إدخال رقم هاتف لا يقل عن 10 أرقام" onChange={(e) => { const val = e.target.value.replace(/\D/g, ''); e.target.value = val; formPhoneRef.current = val; }} className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-white/50 transition-colors text-right text-base relative z-10" dir="ltr" />
@@ -716,10 +691,12 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                   </select>
                 </div>
 
-                {/* Desktop Order Summary */}
                 <div className="bg-white/5 border border-white/10 rounded-xl p-4 flex flex-col gap-2 mt-1 font-sans relative z-10">
                   <div className="flex justify-between text-white/70 text-sm">
-                    <span>المجموع ({selectedQuantity} {selectedQuantity === 1 ? "قطعة" : "قطع"}{showSizes && selectedSize ? ` - المقاس: ${selectedSize}` : ""})</span>
+                    <span>
+                      المجموع ({selectedQuantity} {selectedQuantity === 1 ? "قطعة" : "قطع"}
+                      {showSizes && selectedSize ? ` - المقاس: ${selectedSize}` : ""})
+                    </span>
                     <span dir="ltr">{productPrice.toLocaleString("en")} DA</span>
                   </div>
                   <div className="flex justify-between text-white/70 text-sm">
@@ -749,26 +726,36 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
         </div>
       </div>
 
-      {/* ────── REVIEWS DESKTOP ────── */}
+      {isChineseJacketProduct && (
+        <div className="hidden lg:flex flex-col items-center justify-center w-full py-12 px-10 bg-black/40 border-t border-white/10 shrink-0">
+          <div className="max-w-4xl w-full rounded-3xl overflow-hidden border border-white/15 shadow-[0_20px_50px_rgba(0,0,0,0.8)]">
+            <Image
+              src="/products/chinese-jacket-comparison.jpg"
+              alt="لماذا نسختنا التركية هي الأفضل؟ مقارنة بين النسخة التركية المستوردة والنسخة المحلية"
+              width={1200}
+              height={780}
+              className="w-full h-auto object-contain"
+              priority
+            />
+          </div>
+        </div>
+      )}
+
       {showReviews && (
         <div className="hidden lg:block w-full bg-black/20 backdrop-blur-3xl shrink-0 border-t border-white/5">
           <Reviews />
         </div>
       )}
 
-      {/* ────── MOBILE LAYOUT ────── */}
       <div className="flex flex-col lg:hidden flex-1 px-4 pt-3 pb-6 gap-4 overflow-y-auto no-scrollbar">
-        {/* Mobile Header */}
         <div className="flex items-center justify-between w-full flex-shrink-0 py-1">
           <button onClick={() => router.back()} className="w-8 h-8 rounded-full bg-white/10 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white/70 active:scale-95 transition-all">
             <ArrowLeft className="w-4 h-4" />
           </button>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo.png" alt="Logo" className="h-6 max-w-[100px] w-auto object-contain" />
           <div className="w-8" />
         </div>
 
-        {/* Product Image Box */}
         <div className="relative w-full aspect-[4/5] rounded-3xl overflow-hidden bg-white/5 border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex-shrink-0 z-40">
           <AnimatePresence mode="wait">
             <motion.div
@@ -791,7 +778,6 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
             </motion.div>
           </AnimatePresence>
 
-          {/* Floating Badges */}
           <div className="absolute top-3 left-3 flex flex-col gap-2 pointer-events-none z-50">
             <div className="bg-white/90 backdrop-blur-md rounded-full px-2.5 py-1.5 flex items-center gap-1.5 shadow-md">
               <Globe2 className="w-3.5 h-3.5 text-black" />
@@ -799,14 +785,19 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                 Livraison 58 Wilayas
               </span>
             </div>
-            <div className="bg-black/80 backdrop-blur-md rounded-full px-3 py-1.5 border border-white/10 w-fit">
-              <span className="text-white font-bold tracking-widest uppercase text-[9px]" style={{ fontFamily: "var(--font-dm)" }}>
+            <div className={`backdrop-blur-md rounded-full px-3 py-1.5 border w-fit ${
+              isImportedProduct
+                ? "bg-amber-950/80 border-amber-400/40 shadow-[0_0_10px_rgba(251,191,36,0.3)]"
+                : "bg-black/80 border-white/10"
+            }`}>
+              <span className={`font-bold tracking-widest uppercase text-[9px] ${
+                isImportedProduct ? "text-amber-300" : "text-white"
+              }`} style={{ fontFamily: "var(--font-dm)" }}>
                 {item.tag}
               </span>
             </div>
           </div>
 
-          {/* Dots */}
           <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5 z-50 pointer-events-none">
             {variants.map((_, i) => (
               <div key={i} className={`h-1.5 rounded-full transition-all duration-300 ${i === currentIndex ? "w-5 bg-white shadow-[0_0_10px_rgba(255,255,255,0.5)]" : "w-1.5 bg-white/30"}`} />
@@ -814,7 +805,6 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
           </div>
         </div>
 
-        {/* Product Info */}
         <div className="flex flex-col flex-1 justify-between gap-4 mt-1">
           <div className="flex justify-between items-start z-30">
             <div className="flex flex-col">
@@ -859,7 +849,6 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                   <span className="text-amber-400 text-[10px] font-bold tracking-wide" style={{ fontFamily: "var(--font-dm)" }}>وفّر {(singlePrice * 3 - effectiveTriplePrice).toLocaleString("en")} DA! 🔥🔥</span>
                 )}
                 
-                {/* Risk Reversal */}
                 <div className="flex flex-col items-end gap-1 mt-1.5" dir="rtl">
                   <span className="text-emerald-400 text-[9px] font-bold flex items-center gap-1 bg-emerald-500/10 px-1.5 py-0.5 rounded-md"><CheckCircle2 className="w-3 h-3" /> 0 دج تسبيق</span>
                   <span className="text-white/60 text-[9px] font-medium flex items-center gap-1"><Eye className="w-3 h-3" /> تأكد من طلبك قبل الدفع</span>
@@ -868,7 +857,6 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
             </AnimatePresence>
           </div>
 
-          {/* Variants & Form */}
           <div className="flex flex-col gap-3">
             {hasColorSelector && uniqueColors.length > 1 && (
               <div className="flex justify-between items-center bg-white/5 border border-white/10 rounded-[1.2rem] p-3.5 shadow-inner backdrop-blur-sm">
@@ -891,7 +879,6 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
               </div>
             )}
 
-            {/* Size + Size Guide */}
             {showSizes && (
               <div className="flex justify-between items-center bg-white/5 border border-white/10 rounded-[1.2rem] p-3.5 shadow-inner backdrop-blur-sm">
                 <div className="flex items-center gap-2">
@@ -915,7 +902,6 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
               </div>
             )}
 
-            {/* Quantity */}
             <div className="flex flex-col gap-2">
               <span className="text-white/60 text-[11px] uppercase tracking-widest font-bold font-dm px-1">الكمية</span>
               <div className="flex gap-2">
@@ -940,7 +926,6 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
               </div>
             </div>
 
-            {/* Order Form */}
             <motion.form
               id="order-form"
               ref={formRef}
@@ -951,30 +936,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
               onSubmit={handleOrderSubmit}
             >
               <div className="bg-white/10 p-5 rounded-3xl backdrop-blur-xl border border-white/10 mt-1 shadow-2xl flex flex-col gap-3">
-                {/* Product Description & Quality Banner (Mobile) */}
-                <div className={`bg-gradient-to-r ${isImportedProduct ? "from-amber-500/15 via-white/5 to-amber-500/15 border-amber-500/30" : "from-white/10 via-white/5 to-white/10 border-white/15"} border rounded-2xl p-3.5 text-right shadow-lg backdrop-blur-md`} dir="rtl">
-                  {isImportedProduct && (
-                    <div className="flex items-center justify-between gap-2 mb-1.5 border-b border-white/10 pb-1.5">
-                      <span className="bg-amber-400 text-black text-[9px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-sm">
-                        Importation High Quality 🇩🇿
-                      </span>
-                      <span className="text-amber-400 text-xs font-black flex items-center gap-1">
-                        <Sparkles className="w-3.5 h-3.5" />
-                        ضمان الجودة المستوردة
-                      </span>
-                    </div>
-                  )}
-                  <p className="text-white font-medium text-xs leading-relaxed mb-2" style={{ fontFamily: "var(--font-dm)" }}>
-                    {item.desc || (isImportedProduct ? "سلعة مستوردة ذات جودة عالية جداً (Importation High Quality - مشي كما السلعة اللوكال). خامة ممتازة وأناقة استثنائية." : "سلعة ذات جودة عالية وخامة ممتازة في منتهى الأناقة والراحة.")}
-                  </p>
-                  {isImportedProduct && (
-                    <div className="flex items-center justify-start gap-1.5 text-[10px] text-amber-300 font-bold bg-amber-500/10 px-2.5 py-1 rounded-xl w-fit border border-amber-500/20">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-amber-400" />
-                      <span>سلعة مستوردة 100% — مشي كيمـا اللوكـال</span>
-                    </div>
-                  )}
-                </div>
-
+                <QualityBanner isMobile />
                 <input required name="name" placeholder="الاسم الكامل" onChange={(e) => { formNameRef.current = e.target.value; }} className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-[15px] text-white placeholder-white/40 focus:outline-none focus:border-white/40 transition-colors" />
                 <input required type="tel" name="phone" placeholder="رقم الهاتف" pattern="[0-9]{10,}" minLength={10} title="يرجى إدخال رقم هاتف لا يقل عن 10 أرقام" onChange={(e) => { const val = e.target.value.replace(/\D/g, ''); e.target.value = val; formPhoneRef.current = val; }} className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-[15px] text-white placeholder-white/40 focus:outline-none focus:border-white/40 transition-colors text-right" dir="ltr" />
                 <div className="flex flex-col gap-2">
@@ -992,10 +954,12 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                   </select>
                 </div>
 
-                {/* Order Summary */}
                 <div className="bg-white/5 border border-white/10 rounded-xl p-3 flex flex-col gap-1 mt-1 font-sans">
                   <div className="flex justify-between text-white/70 text-xs">
-                    <span>المجموع ({selectedQuantity} {selectedQuantity === 1 ? "قطعة" : "قطع"}{showSizes && selectedSize ? ` - المقاس: ${selectedSize}` : ""})</span>
+                    <span>
+                      المجموع ({selectedQuantity} {selectedQuantity === 1 ? "قطعة" : "قطع"}
+                      {showSizes && selectedSize ? ` - المقاس: ${selectedSize}` : ""})
+                    </span>
                     <span dir="ltr">{productPrice.toLocaleString("en")} DA</span>
                   </div>
                   <div className="flex justify-between text-white/70 text-xs">
@@ -1020,11 +984,22 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
               </div>
             </motion.form>
 
-            {/* ──── TRUST BADGES (Mobile — after form) ──── */}
+            {isChineseJacketProduct && (
+              <div className="w-full rounded-3xl overflow-hidden border border-white/15 shadow-2xl bg-black/40 my-2">
+                <Image
+                  src="/products/chinese-jacket-comparison.jpg"
+                  alt="لماذا نسختنا التركية هي الأفضل؟ مقارنة بين النسخة الأصلية والنسخة المحلية"
+                  width={1000}
+                  height={650}
+                  className="w-full h-auto object-contain rounded-3xl"
+                  priority
+                />
+              </div>
+            )}
+
             <TrustBadgesRow compact />
           </div>
 
-          {/* ──── CUSTOMER REVIEWS (Mobile) ──── */}
           {showReviews && (
             <div className="-mx-4 pb-12 mt-4">
               <Reviews />
@@ -1033,7 +1008,6 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
         </div>
       </div>
 
-      {/* ────── MOBILE STICKY CTA ────── */}
       <AnimatePresence>
         {!isFormInView && (
           <motion.div
@@ -1047,7 +1021,6 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                 const form = document.getElementById('order-form');
                 if (form) {
                   form.scrollIntoView({ behavior: 'smooth' });
-                  // Focus the name input after scrolling
                   setTimeout(() => {
                     const nameInput = form.querySelector('input[name="name"]') as HTMLInputElement;
                     if (nameInput) nameInput.focus();
@@ -1064,7 +1037,6 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
         )}
       </AnimatePresence>
 
-      {/* ────── UPSELL MODAL ────── */}
       <AnimatePresence>
         {showUpsellModal && (
           <motion.div
@@ -1087,13 +1059,11 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
               onClick={(e) => e.stopPropagation()}
               dir="rtl"
             >
-              {/* Header Badge */}
               <div className="bg-amber-400/10 border border-amber-400/30 text-amber-400 text-xs font-extrabold px-3 py-1 rounded-full mb-3 flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5" />
                 <span>{upsellBadgeText}</span>
               </div>
 
-              {/* Title & Price */}
               <h3 className="text-white text-lg font-black text-center mb-1" style={{ fontFamily: "var(--font-heading)" }}>
                 {upsellTitleText}
               </h3>
@@ -1110,7 +1080,6 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                 </span>
               </div>
 
-              {/* Image */}
               <div className="relative w-full aspect-[4/3] rounded-xl overflow-hidden bg-black/40 border border-white/10 mb-4 group cursor-pointer" onClick={() => setUpsellImgIdx((prev) => (prev + 1) % upsellImages.length)}>
                 <Image
                   src={upsellImages[upsellImgIdx % upsellImages.length]}
@@ -1120,7 +1089,6 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                   className="object-cover"
                 />
                 
-                {/* Image Nav hint */}
                 <button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); setUpsellImgIdx((prev) => (prev + 1) % upsellImages.length); }}
@@ -1130,15 +1098,12 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                 </button>
               </div>
 
-              {/* Quick bullets */}
               <p className="text-white/70 text-xs text-center mb-4 leading-relaxed font-dm">
                 ✓ توصيل مجاني مع نفس الطرد <br />
                 ✓ الدفع عند الاستلام مع إمكانية فتح الطرد قبل الدفع
               </p>
 
-              {/* Action Buttons */}
               <div className="w-full space-y-2">
-                {/* YES Button - Green / Emerald */}
                 <button
                   type="button"
                   onClick={() => executeOrderSubmit(true)}
@@ -1149,7 +1114,6 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                   {isSubmitting ? "جاري الإضافة..." : upsellYesButtonText}
                 </button>
 
-                {/* NO Button - STYLED IN RED as requested */}
                 <button
                   type="button"
                   onClick={() => executeOrderSubmit(false)}
@@ -1165,28 +1129,23 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
         )}
       </AnimatePresence>
 
-      {/* ────── SIZE GUIDE MODAL ────── */}
       <AnimatePresence>
         {sizeGuideOpen && <SizeRecommender onClose={() => setSizeGuideOpen(false)} />}
       </AnimatePresence>
 
-      {/* ────── SUCCESS DIALOG ────── */}
       <AnimatePresence>
         {orderSuccess && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }} className="fixed inset-0 z-[100] flex items-center justify-center p-4" onClick={() => setOrderSuccess(false)}>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/70 backdrop-blur-md" />
 
-            {/* Confetti particles */}
             {Array.from({ length: 20 }).map((_, i) => (
               <motion.div key={i} initial={{ opacity: 0, scale: 0, x: 0, y: 0 }} animate={{ opacity: [0, 1, 1, 0], scale: [0, 1, 1, 0.5], x: (Math.random() - 0.5) * 400, y: (Math.random() - 0.5) * 600 - 100 }} transition={{ duration: 2 + Math.random() * 1.5, delay: Math.random() * 0.5, ease: "easeOut" }} className="absolute pointer-events-none" style={{ width: 6 + Math.random() * 10, height: 6 + Math.random() * 10, borderRadius: Math.random() > 0.5 ? "50%" : "2px", backgroundColor: ["#fbbf24", "#34d399", "#60a5fa", "#f472b6", "#a78bfa", "#fb923c"][Math.floor(Math.random() * 6)], rotate: Math.random() * 360 }} />
             ))}
 
-            {/* Dialog Card */}
             <motion.div initial={{ opacity: 0, scale: 0.7, y: 40 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.8, y: 20 }} transition={{ type: "spring", stiffness: 300, damping: 22, delay: 0.1 }} className="relative z-10 bg-white rounded-[2.5rem] w-full max-w-sm p-8 flex flex-col items-center text-center shadow-[0_40px_100px_rgba(0,0,0,0.5)] overflow-hidden" onClick={(e) => e.stopPropagation()}>
               <div className="absolute -top-20 -right-20 w-40 h-40 bg-green-200 rounded-full blur-3xl opacity-50" />
               <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-blue-200 rounded-full blur-3xl opacity-50" />
 
-              {/* Animated checkmark */}
               <motion.div initial={{ scale: 0, rotate: -180 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.3 }} className="relative w-24 h-24 mb-6">
                 <div className="absolute inset-0 bg-gradient-to-br from-green-400 to-emerald-600 rounded-full shadow-lg shadow-green-500/30" />
                 <motion.svg viewBox="0 0 24 24" className="absolute inset-0 w-full h-full p-6" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
@@ -1202,7 +1161,6 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                 شكراً لك! سيتم التواصل معك قريباً لتأكيد الطلبية.
               </motion.p>
 
-              {/* Summary */}
               <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }} className="w-full bg-gray-50 rounded-2xl p-5 mb-6 border border-gray-100">
                 <div className="flex items-center gap-3 mb-3 pb-3 border-b border-gray-100">
                   <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
