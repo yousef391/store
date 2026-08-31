@@ -731,7 +731,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
           <div className="max-w-4xl w-full rounded-3xl overflow-hidden border border-white/15 shadow-[0_20px_50px_rgba(0,0,0,0.8)]">
             <Image
               src="/products/chinese-jacket-comparison.jpg"
-              alt="لماذا نسختنا التركية هي الأفضل؟ مقارنة بين النسخة التركية المستوردة والنسخة المحلية"
+              alt="لماذا نسختنا هي الأفضل؟ مقارنة بين النسخة الأصلية استيراد والنسخة المحلية"
               width={1200}
               height={780}
               className="w-full h-auto object-contain"
@@ -988,7 +988,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
               <div className="w-full rounded-3xl overflow-hidden border border-white/15 shadow-2xl bg-black/40 my-2">
                 <Image
                   src="/products/chinese-jacket-comparison.jpg"
-                  alt="لماذا نسختنا التركية هي الأفضل؟ مقارنة بين النسخة الأصلية والنسخة المحلية"
+                  alt="لماذا نسختنا هي الأفضل؟ مقارنة بين النسخة الأصلية استيراد والنسخة المحلية"
                   width={1000}
                   height={650}
                   className="w-full h-auto object-contain rounded-3xl"
