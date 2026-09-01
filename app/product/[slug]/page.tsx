@@ -196,7 +196,15 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
       hasBagUpsell={
         params.slug !== "chinese-jacket" &&
         params.slug !== "veste-chinese-style-importation" &&
-        productData.showcaseType !== "chinese_jacket"
+        productData.showcaseType !== "chinese_jacket" &&
+        !params.slug.includes("nike") &&
+        !params.slug.includes("nocta") &&
+        productData.showcaseType !== "nocta" &&
+        productData.showcaseType !== "nocta_hoodie" &&
+        productData.showcaseType !== "nocta_sweat" &&
+        productData.showcaseType !== "nocta_tee" &&
+        !productData.name?.toLowerCase().includes("nike") &&
+        !productData.name?.toLowerCase().includes("nocta")
       }
       sizes={productData.sizes}
       hasColorSelector={true}

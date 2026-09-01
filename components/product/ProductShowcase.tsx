@@ -353,7 +353,15 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
       item?.name?.toLowerCase().includes("sac") ||
       productCategory === "bags";
 
-    const shouldShowUpsell = hasBagUpsell && !isBagProduct;
+    const isNikeEnsemble =
+      productSlug?.includes("nike") ||
+      productSlug?.includes("nocta") ||
+      productName?.toLowerCase().includes("nike") ||
+      productName?.toLowerCase().includes("nocta") ||
+      item?.name?.toLowerCase().includes("nike") ||
+      item?.name?.toLowerCase().includes("nocta");
+
+    const shouldShowUpsell = hasBagUpsell && !isBagProduct && !isNikeEnsemble;
 
     if (shouldShowUpsell && !upsellShown) {
       setUpsellShown(true);
