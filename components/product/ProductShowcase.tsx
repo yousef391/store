@@ -417,7 +417,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
     );
   };
 
-  const DeliveryOptionSelector = ({ isMobile = false }: { isMobile?: boolean }) => {
+  const DeliveryOptionSelector = () => {
     const rates = selectedWilaya ? { domicile: domicileDeliveryPrice, stopdesk: stopdeskDeliveryPrice } : null;
 
     return (
@@ -1099,7 +1099,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                   </select>
                 </div>
 
-                <DeliveryOptionSelector isMobile />
+                <DeliveryOptionSelector />
 
                 <div className="bg-white/5 border border-white/10 rounded-xl p-3 flex flex-col gap-1 mt-1 font-sans">
                   <div className="flex justify-between text-white/70 text-xs">

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Save, DollarSign, Truck, Check, Lock, Building2, Home } from "lucide-react";
+import { Save, DollarSign, Check, Lock, Building2, Home } from "lucide-react";
 import { defaultZonePrices, defaultStopdeskZonePrices, zoneLabels } from "@/data/wilayas";
 import { fetchStoreSettings, updateStoreSettings } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
