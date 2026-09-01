@@ -9,12 +9,16 @@ export async function POST(request: Request) {
     const clientIp = forwarded ? forwarded.split(',')[0].trim() : (headersList.get('x-real-ip') ?? 'unknown');
 
     const body = await request.json();
-    const { name, phone, wilaya, commune, item, color, size, quantity, price, delivery, total } = body;
+    const { name, phone, wilaya, commune, deliveryType, item, color, size, quantity, price, delivery, total } = body;
 
     // Don't save if critical info is missing
     if (!name || !phone) {
       return NextResponse.json({ error: 'Name and phone are required' }, { status: 400 });
     }
+
+    const formattedCommune = deliveryType === "stopdesk" && commune && !commune.includes("[Stopdesk]")
+      ? `${commune} [Stopdesk]`
+      : commune;
 
     // Check if this phone already has a recent abandoned lead (within 2 hours) to avoid duplicates
     const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
@@ -30,7 +34,7 @@ export async function POST(request: Request) {
       await supabase
         .from('abandoned_leads')
         .update({
-          name, wilaya, commune, item, color, size,
+          name, wilaya, commune: formattedCommune, item, color, size,
           quantity: quantity || 1,
           original_price: price,
           delivery,
@@ -60,7 +64,7 @@ export async function POST(request: Request) {
         name,
         phone,
         wilaya: wilaya || null,
-        commune: commune || null,
+        commune: formattedCommune || null,
         item: item || null,
         color: color || null,
         size: size || null,
@@ -101,6 +105,10 @@ export async function POST(request: Request) {
         // fallback to raw value
       }
 
+      const cleanCommune = commune ? commune.replace(/\s*\[Stopdesk\]/i, "") : "";
+      const isStopdesk = deliveryType === "stopdesk" || (commune && commune.includes("[Stopdesk]"));
+      const deliveryModeLabel = isStopdesk ? "🏢 استلام من المكتب (Stopdesk)" : "🏠 توصيل للمنزل (Domicile)";
+
       const message = `
 ⚠️  *ABANDONED LEAD — ROVA*
 ━━━━━━━━━━━━━━━━━━━━━
@@ -109,7 +117,8 @@ export async function POST(request: Request) {
 📞  *Phone:*  ${phone}
 
 📍  *Wilaya:*  ${wilayaDisplay}
-🏘️  *Commune:*  ${commune || 'Not selected'}
+🏘️  *Commune:*  ${cleanCommune || 'Not selected'}
+🚚  *Mode:*  ${deliveryModeLabel}
 
 ━━━━━━━━━━━━━━━━━━━━━
 

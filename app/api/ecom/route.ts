@@ -43,8 +43,9 @@ export async function POST(request: Request) {
     const finalName = overrides?.name || order.name;
     const finalPhone = overrides?.phone || order.phone;
     const finalWilaya = overrides?.wilaya || order.wilaya; // Wilaya ID string e.g., "16"
-    const finalCommune = overrides?.commune || order.commune;
-    const finalAddress = overrides?.address || order.commune || "Adresse non spécifiée";
+    const rawCommune = overrides?.commune || order.commune || "";
+    const cleanCommune = rawCommune.replace(/\s*\[Stopdesk\]/i, "").trim();
+    const finalAddress = overrides?.address || cleanCommune || "Adresse non spécifiée";
     
     // Parse price
     let priceNumber = 0;
@@ -61,20 +62,24 @@ export async function POST(request: Request) {
       wilayaId = wilayaIdMatch[1];
     }
 
+    const isStopdeskOrder = overrides?.is_stopdesk !== undefined
+      ? Boolean(overrides.is_stopdesk)
+      : Boolean(order.commune?.includes("[Stopdesk]") || order.delivery_type === "stopdesk");
+
     const referenceId = order.order_number ? order.order_number.toString() : order.id.toString();
 
     const ecomPayload = {
       Colis: [
         {
           Echange: overrides?.has_exchange ? 1 : 0,
-          Stopdesk: overrides?.is_stopdesk ? 1 : 0,
-          CodeStopdesk: overrides?.is_stopdesk ? (overrides?.stopdesk_id || "") : "",
+          Stopdesk: isStopdeskOrder ? 1 : 0,
+          CodeStopdesk: isStopdeskOrder ? (overrides?.stopdesk_id || "") : "",
           NomComplet: finalName,
           Mobile_1: finalPhone,
           Mobile_2: "",
           Adresse: finalAddress,
           Wilaya: wilayaId,
-          Commune: finalCommune,
+          Commune: cleanCommune,
           Article: overrides?.product_list || `${order.item} - ${order.color} - ${order.size}`,
           Ref_Article: order.item || "",
           NoteFournisseur: overrides?.note || "",

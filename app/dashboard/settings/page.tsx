@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Save, DollarSign, Truck, Check, Lock } from "lucide-react";
-import { zonePrices as defaultZones, zoneLabels } from "@/data/wilayas";
+import { Save, DollarSign, Truck, Check, Lock, Building2, Home } from "lucide-react";
+import { defaultZonePrices, defaultStopdeskZonePrices, zoneLabels } from "@/data/wilayas";
 import { fetchStoreSettings, updateStoreSettings } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
 
@@ -14,7 +14,9 @@ export default function SettingsPage() {
   const [singlePrice, setSinglePrice] = useState(5400);
   const [bundlePrice, setBundlePrice] = useState(8200);
   const [fbPixelId, setFbPixelId] = useState("");
-  const [zones, setZones] = useState<Record<number, number>>(defaultZones);
+  const [domicileZones, setDomicileZones] = useState<Record<number, number>>(defaultZonePrices);
+  const [stopdeskZones, setStopdeskZones] = useState<Record<number, number>>(defaultStopdeskZonePrices);
+  const [extraSettingsData, setExtraSettingsData] = useState<Record<string, unknown>>({});
 
   // Telegram
   const [telegramToken, setTelegramToken] = useState("");
@@ -39,7 +41,25 @@ export default function SettingsPage() {
         setSinglePrice(data.single_price || 5400);
         setBundlePrice(data.bundle_price || 8200);
         setFbPixelId(data.fb_pixel_id || "");
-        setZones(data.zone_prices || defaultZones);
+
+        if (data.zone_prices) {
+          setExtraSettingsData(data.zone_prices);
+          const zp = data.zone_prices;
+          const domMap: Record<number, number> = { ...defaultZonePrices };
+          [0, 1, 2, 3, 4, 5].forEach((z) => {
+            if (zp[z] !== undefined) domMap[z] = Number(zp[z]);
+          });
+          setDomicileZones(domMap);
+
+          const deskMap: Record<number, number> = { ...defaultStopdeskZonePrices };
+          if (zp.stopdesk && typeof zp.stopdesk === "object") {
+            [0, 1, 2, 3, 4, 5].forEach((z) => {
+              if (zp.stopdesk[z] !== undefined) deskMap[z] = Number(zp.stopdesk[z]);
+            });
+          }
+          setStopdeskZones(deskMap);
+        }
+
         setTelegramToken(data.telegram_bot_token || "");
         setTelegramChatId(data.telegram_chat_id || "");
         setMetaPixelId(data.meta_pixel_id || "");
@@ -55,11 +75,17 @@ export default function SettingsPage() {
     e.preventDefault();
     setIsSaving(true);
     try {
+      const mergedZonePrices = {
+        ...extraSettingsData,
+        ...domicileZones,
+        stopdesk: stopdeskZones,
+      };
+
       await updateStoreSettings({
         single_price: singlePrice,
         bundle_price: bundlePrice,
         fb_pixel_id: fbPixelId,
-        zone_prices: zones,
+        zone_prices: mergedZonePrices,
         telegram_bot_token: telegramToken,
         telegram_chat_id: telegramChatId,
         meta_pixel_id: metaPixelId,
@@ -127,17 +153,17 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Delivery Zone Pricing */}
+        {/* Domicile Zone Pricing */}
         <div className="bg-surface rounded-2xl border border-white/5 overflow-hidden relative">
           <div className="absolute top-0 left-0 w-1 h-full bg-orange-500" />
           <div className="p-6 md:p-8">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 bg-orange-500/10 rounded-xl flex items-center justify-center text-orange-400">
-                <Truck size={20} />
+                <Home size={20} />
               </div>
               <div>
-                <h3 className="font-bold text-lg text-white font-heading">Delivery Pricing by Zone</h3>
-                <p className="text-gray-500 text-sm">Set delivery fees per zone.</p>
+                <h3 className="font-bold text-lg text-white font-heading">Livraison à Domicile — Par Zone</h3>
+                <p className="text-gray-500 text-sm">Tarifs de livraison à domicile par zone (Modifiables).</p>
               </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -147,9 +173,41 @@ export default function SettingsPage() {
                   <div className="relative">
                     <input
                       type="number"
-                      value={zones[parseInt(zoneId)] || 0}
-                      onChange={(e) => setZones({ ...zones, [parseInt(zoneId)]: parseInt(e.target.value) || 0 })}
+                      value={domicileZones[parseInt(zoneId)] || 0}
+                      onChange={(e) => setDomicileZones({ ...domicileZones, [parseInt(zoneId)]: parseInt(e.target.value) || 0 })}
                       className="w-full bg-white/5 border border-white/10 rounded-lg pl-3 pr-12 py-2 text-white text-sm font-mono font-bold focus:ring-2 focus:ring-orange-500 outline-none"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs font-bold">DA</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Stopdesk Zone Pricing */}
+        <div className="bg-surface rounded-2xl border border-white/5 overflow-hidden relative">
+          <div className="absolute top-0 left-0 w-1 h-full bg-amber-500" />
+          <div className="p-6 md:p-8">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 bg-amber-500/10 rounded-xl flex items-center justify-center text-amber-400">
+                <Building2 size={20} />
+              </div>
+              <div>
+                <h3 className="font-bold text-lg text-white font-heading">Livraison au Bureau / Stop Desk — Par Zone</h3>
+                <p className="text-gray-500 text-sm">Tarifs de livraison au bureau (Stop Desk) par zone (Modifiables).</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {Object.entries(zoneLabels).map(([zoneId, label]) => (
+                <div key={zoneId} className="flex flex-col gap-1.5 bg-white/5 rounded-xl p-4">
+                  <label className="text-[11px] font-bold text-gray-400 uppercase tracking-wider leading-tight">Zone {zoneId} — {label}</label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      value={stopdeskZones[parseInt(zoneId)] || 0}
+                      onChange={(e) => setStopdeskZones({ ...stopdeskZones, [parseInt(zoneId)]: parseInt(e.target.value) || 0 })}
+                      className="w-full bg-white/5 border border-white/10 rounded-lg pl-3 pr-12 py-2 text-white text-sm font-mono font-bold focus:ring-2 focus:ring-amber-500 outline-none"
                     />
                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs font-bold">DA</span>
                   </div>

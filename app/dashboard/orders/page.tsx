@@ -117,18 +117,20 @@ export default function OrdersPage() {
     const wilayaMatch = order.wilaya.match(/^(\d+)/);
     const defaultWilayaId = wilayaMatch ? wilayaMatch[1] : "";
     const priceNumber = typeof order.total === "number" ? order.total : parseInt(String(order.total).replace(/[^\d]/g, ""), 10) || 0;
+    const isStopdeskOrder = Boolean(order.commune?.includes("[Stopdesk]") || (order as { delivery_type?: string }).delivery_type === "stopdesk");
+    const cleanCommune = (order.commune || "").replace(/\s*\[Stopdesk\]/i, "").trim();
 
     setDispatchData({
       name: order.name,
       phone: order.phone,
       wilaya: defaultWilayaId || order.wilaya,
-      commune: order.commune,
-      address: order.commune || "",
+      commune: cleanCommune,
+      address: cleanCommune || "",
       product_list: `${order.item} - ${order.color} - ${order.size}`,
       price: priceNumber,
       do_insurance: true,
       declared_value: priceNumber,
-      is_stopdesk: false,
+      is_stopdesk: isStopdeskOrder,
       stopdesk_id: "",
       autorisation_ouverture: false
     });
@@ -249,7 +251,14 @@ export default function OrdersPage() {
                       <span className="text-[11px] text-blue-400 font-mono" dir="ltr">{order.phone}</span>
                       {copiedPhone === order.phone ? <Check size={10} className="text-emerald-400" /> : <Copy size={10} className="text-gray-700" />}
                     </button>
-                    <span className="text-[10px] text-gray-600">{order.wilaya} · {order.size}</span>
+                    <div className="flex items-center gap-1">
+                      <span className="text-[10px] text-gray-600">{order.wilaya} · {order.size}</span>
+                      {order.commune?.includes("[Stopdesk]") ? (
+                        <span className="text-[9px] font-bold text-amber-400 bg-amber-400/10 border border-amber-400/20 px-1 py-0.2 rounded">🏢 Stopdesk</span>
+                      ) : (
+                        <span className="text-[9px] font-bold text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-1 py-0.2 rounded">🏠 Domicile</span>
+                      )}
+                    </div>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <select value={order.status} onChange={(e) => handleUpdateStatus(order.id, e.target.value)}
@@ -309,7 +318,14 @@ export default function OrdersPage() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="text-sm text-gray-300">{order.wilaya}</div>
-                        <div className="text-xs text-gray-500">{order.commune}</div>
+                        <div className="text-xs text-gray-500 flex items-center gap-1.5 mt-0.5">
+                          <span>{order.commune?.replace(/\s*\[Stopdesk\]/i, "") || "---"}</span>
+                          {order.commune?.includes("[Stopdesk]") ? (
+                            <span className="text-[9px] font-bold text-amber-400 bg-amber-400/10 border border-amber-400/20 px-1.5 py-0.5 rounded">🏢 Bureau</span>
+                          ) : (
+                            <span className="text-[9px] font-bold text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-1.5 py-0.5 rounded">🏠 Domicile</span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-4 py-3">
                         <div className="text-sm font-semibold text-gray-200">{order.item}</div>

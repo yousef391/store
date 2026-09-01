@@ -26,12 +26,16 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { name, phone, wilaya, commune, item, color, size, quantity, price, delivery, total } = body;
+    const { name, phone, wilaya, commune, deliveryType, item, color, size, quantity, price, delivery, total } = body;
+
+    const formattedCommune = deliveryType === "stopdesk" && commune && !commune.includes("[Stopdesk]")
+      ? `${commune} [Stopdesk]`
+      : commune;
 
     // 1. Insert order into Supabase
     const { data: order, error: dbError } = await supabase
       .from("orders")
-      .insert([{ name, phone, wilaya, commune, item, color, size, quantity: quantity || 1, price, delivery, total, status: "new" }])
+      .insert([{ name, phone, wilaya, commune: formattedCommune, item, color, size, quantity: quantity || 1, price, delivery, total, status: "new" }])
       .select()
       .single();
 
@@ -68,8 +72,11 @@ export async function POST(request: Request) {
       // fallback to raw value
     }
 
-    const locationDisplay = commune ? `${wilayaDisplay} - ${commune}` : wilayaDisplay;
+    const cleanCommune = commune ? commune.replace(/\s*\[Stopdesk\]/i, "") : "";
+    const locationDisplay = cleanCommune ? `${wilayaDisplay} - ${cleanCommune}` : wilayaDisplay;
     const itemDisplay = color && !item.includes(color) ? `${item} (${color})` : item;
+    const isStopdesk = deliveryType === "stopdesk" || (commune && commune.includes("[Stopdesk]"));
+    const deliveryTypeTag = isStopdesk ? "🏢 استلام من المكتب (Stopdesk)" : "🏠 توصيل للمنزل (Domicile)";
 
     // 4. Format price values
     const formatPrice = (val: number | string) => {
@@ -83,13 +90,14 @@ export async function POST(request: Request) {
 👤 Name: ${name}
 📞 Phone: ${phone}
 📍 Location: ${locationDisplay}
+🚚 Mode: ${deliveryTypeTag}
 
 👕 Item: ${itemDisplay}
 📦 Quantity: ${quantity || 1} piece(s)
 📏 Size: ${size || "N/A"}
 
 💰 Product: ${formatPrice(price)} DA
-🚚 Delivery: ${formatPrice(delivery)} DA
+🚚 Delivery: ${formatPrice(delivery)} DA (${isStopdesk ? "Stopdesk" : "Domicile"})
 🛒 Total: ${formatPrice(total)} DA`;
 
     // 6. Send to Telegram

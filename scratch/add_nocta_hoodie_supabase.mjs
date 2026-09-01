@@ -15,10 +15,13 @@ async function main() {
     description: "طقم رياضي فخم Veste Zippée à Capuche & Pantalon Nike NOCTA. قماش 3 iplik ملتون سميك ودافئ عالي الجودة مع خطوط بيضاء جانبية مميزة ولوغو Nike & NOCTA مطرز بإتقان. قصة استثنائية توفر لك الأناقة والراحة المطلقة 🔥",
     price: 5900,
     bundle_price: 9900,
-    images: ["/products/nocta_hoodie_1.jpg"],
+    images: ["/products/nocta_hoodie_1.jpg", "/products/nocta_hoodie_grey.jpg"],
     category: "ensembles",
     sizes: ["S", "M", "L", "XL"],
-    colors: [{ name: "Full Black", hex: "#111111" }],
+    colors: [
+      { name: "Noir", hex: "#111111" },
+      { name: "Gris", hex: "#9ca3af" }
+    ],
     tag: "Heavy Fleece Zip",
     status: "active",
     is_featured: true,
@@ -48,14 +51,27 @@ async function main() {
       product_id: 23,
       name: "Ensemble Nike Nocta Zip Hoodie & Pantalon",
       bg: "#050505",
-      tag: "Heavy Fleece Zip",
+      tag: "Noir",
       swatch: "#111111",
       description: "طقم رياضي فخم Veste Zippée à Capuche & Pantalon Nike NOCTA. قماش 3 iplik ملتون سميك ودافئ عالي الجودة مع خطوط بيضاء جانبية مميزة ولوغو Nike & NOCTA مطرز بإتقان. قصة استثنائية توفر لك الأناقة والراحة المطلقة 🔥",
       review: '"طقم النوكتا الزيب هودي روعة بزاف، القماش سميك ودافئ والفينيسيون عالمية 🔥" — سليم خ.',
       product_type: "set",
       image: "/products/nocta_hoodie_1.jpg",
-      color_name: "Full Black",
+      color_name: "Noir",
       sort_order: 1
+    },
+    {
+      product_id: 23,
+      name: "Ensemble Nike Nocta Zip Hoodie & Pantalon",
+      bg: "#050505",
+      tag: "Gris",
+      swatch: "#9ca3af",
+      description: "النسخة الرمادية الفاخرة (Gris) لطقم Nike NOCTA. قماش 3 iplik ملتون سميك ودافئ مع تفاصيل بيضاء جانبية وتطريز رسمي عالي الجودة لمظهر عصري ورياضي أنيق.",
+      review: '"اللون الرمادي يخرج فور بزاف مع السنيكرز الأبيض 🔥" — وليد ب.',
+      product_type: "set",
+      image: "/products/nocta_hoodie_grey.jpg",
+      color_name: "Gris",
+      sort_order: 2
     }
   ];
 

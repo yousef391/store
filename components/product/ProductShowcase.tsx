@@ -5,10 +5,11 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { ShowcaseProduct } from "@/data/products";
 import algeriaData from "@/data/algeria.json";
-import { zonePrices as defaultZonePrices } from "@/data/wilayas";
+import { defaultZonePrices, defaultStopdeskZonePrices } from "@/data/wilayas";
+import { DeliveryType } from "@/data/deliveryPrices";
 import { useMetaEvents } from "@/hooks/useMetaEvents";
 import Image from "next/image";
-import { ShieldCheck, PackageOpen, Truck, Banknote, Ruler, Globe2, CheckCircle2, Eye, ArrowLeft, Sparkles } from "lucide-react";
+import { ShieldCheck, PackageOpen, Truck, Banknote, Ruler, Globe2, CheckCircle2, Eye, ArrowLeft, Sparkles, Building2, Home } from "lucide-react";
 import Reviews from "@/components/home/Reviews";
 
 interface ProductShowcaseProps {
@@ -22,6 +23,7 @@ interface ProductShowcaseProps {
   hasSizeSelector?: boolean;
   hasBagUpsell?: boolean;
   zonePrices?: Record<number, number>;
+  stopdeskZonePrices?: Record<number, number>;
   showReviews?: boolean;
   // Real product identity for accurate Meta pixel tracking
   productId?: string | number;
@@ -60,6 +62,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
   hasSizeSelector = true,
   hasBagUpsell = true,
   zonePrices = defaultZonePrices,
+  stopdeskZonePrices = defaultStopdeskZonePrices,
   showReviews = true,
   productId,
   productSlug,
@@ -118,6 +121,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
   const [selectedQuantity, setSelectedQuantity] = useState<1 | 2 | 3>(1);
   const [selectedWilaya, setSelectedWilaya] = useState("");
   const [selectedCommune, setSelectedCommune] = useState("");
+  const [deliveryType, setDeliveryType] = useState<DeliveryType>("domicile");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [orderError, setOrderError] = useState("");
@@ -183,8 +187,18 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
   const selectedWilayaObj = algeriaData.wilayas.find(
     (w: { wilaya_id: string; zone: number }) => w.wilaya_id.toString() === selectedWilaya
   );
-  const deliveryPrice = selectedWilayaObj
-    ? (zonePrices[(selectedWilayaObj as { zone: number }).zone] ?? 900)
+  const wilayaZone = selectedWilayaObj ? (selectedWilayaObj as { zone: number }).zone : 2;
+
+  const domicileDeliveryPrice = selectedWilaya
+    ? (zonePrices[wilayaZone] ?? defaultZonePrices[wilayaZone] ?? 700)
+    : 0;
+
+  const stopdeskDeliveryPrice = selectedWilaya
+    ? (stopdeskZonePrices[wilayaZone] ?? defaultStopdeskZonePrices[wilayaZone] ?? 400)
+    : 0;
+
+  const deliveryPrice = selectedWilaya
+    ? (deliveryType === "stopdesk" ? stopdeskDeliveryPrice : domicileDeliveryPrice)
     : 0;
 
   const productPrice = selectedQuantity === 3 && effectiveTriplePrice ? effectiveTriplePrice : selectedQuantity === 2 ? effectiveBundlePrice : singlePrice;
@@ -205,6 +219,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
       phone,
       wilaya: wilayaObj ? `${wilayaObj.wilaya_id} - ${wilayaObj.wilaya_name_latin}` : selectedWilaya || null,
       commune: selectedCommune || null,
+      deliveryType,
       item: variants[currentIndex]?.name,
       color: variants[currentIndex]?.colorName || variants[currentIndex]?.tag,
       size: selectedSize,
@@ -219,7 +234,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
     } else {
       fetch('/api/abandoned-lead', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload, keepalive: true }).catch(() => {});
     }
-  }, [selectedWilaya, selectedCommune, selectedSize, selectedQuantity, productPrice, deliveryPrice, totalPrice, currentIndex, orderSuccess, isSubmitting, variants]);
+  }, [selectedWilaya, selectedCommune, deliveryType, selectedSize, selectedQuantity, productPrice, deliveryPrice, totalPrice, currentIndex, orderSuccess, isSubmitting, variants]);
 
   useEffect(() => {
     const handleBeforeUnload = () => sendAbandonedLead();
@@ -287,6 +302,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
           phone: formPhoneRef.current,
           wilaya: selectedWilaya,
           commune: selectedCommune,
+          deliveryType,
           item: finalItemName,
           color: item.colorName || item.tag,
           size: selectedSize,
@@ -397,6 +413,121 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
             <span>سلعة مستوردة 100% — مشي كيمـا اللوكـال</span>
           </div>
         )}
+      </div>
+    );
+  };
+
+  const DeliveryOptionSelector = ({ isMobile = false }: { isMobile?: boolean }) => {
+    const rates = selectedWilaya ? { domicile: domicileDeliveryPrice, stopdesk: stopdeskDeliveryPrice } : null;
+
+    return (
+      <div className="flex flex-col gap-1.5 w-full relative z-10" dir="rtl">
+        <div className="flex items-center justify-between px-1">
+          <span className="text-white/80 text-xs font-bold font-heading flex items-center gap-1.5">
+            <Truck className="w-3.5 h-3.5 text-white/70" />
+            خيارات التوصيل
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2">
+          {/* Domicile option */}
+          <button
+            type="button"
+            onClick={() => setDeliveryType("domicile")}
+            className={`flex flex-col items-start text-right p-2.5 rounded-2xl border transition-all relative overflow-hidden cursor-pointer ${
+              deliveryType === "domicile"
+                ? "bg-white text-black border-white shadow-[0_0_20px_rgba(255,255,255,0.25)] ring-1 ring-white"
+                : "bg-white/5 text-white border-white/10 hover:bg-white/10 hover:border-white/20 opacity-80"
+            }`}
+          >
+            <div className="flex items-center justify-between w-full mb-1">
+              <div className="flex items-center gap-1.5">
+                <Home className={`w-4 h-4 ${deliveryType === "domicile" ? "text-black" : "text-white/80"}`} />
+                <span className={`font-black text-xs ${deliveryType === "domicile" ? "text-black" : "text-white"}`}>
+                  توصيل للمنزل
+                </span>
+              </div>
+              <div
+                className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${
+                  deliveryType === "domicile"
+                    ? "border-black bg-black text-white"
+                    : "border-white/30"
+                }`}
+              >
+                {deliveryType === "domicile" && (
+                  <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                )}
+              </div>
+            </div>
+            <div className="flex items-baseline justify-between w-full mt-0.5">
+              <span className={`text-[10px] ${deliveryType === "domicile" ? "text-black/60 font-bold" : "text-white/40"}`}>
+                لباب الدار
+              </span>
+              <span
+                className={`text-xs font-black tabular-nums font-mono ${
+                  deliveryType === "domicile" ? "text-black" : "text-white"
+                }`}
+              >
+                {rates ? `${rates.domicile} DA` : "---"}
+              </span>
+            </div>
+          </button>
+
+          {/* Stopdesk / Bureau option */}
+          <button
+            type="button"
+            onClick={() => setDeliveryType("stopdesk")}
+            className={`flex flex-col items-start text-right p-2.5 rounded-2xl border transition-all relative overflow-hidden cursor-pointer ${
+              deliveryType === "stopdesk"
+                ? "bg-white text-black border-white shadow-[0_0_20px_rgba(255,255,255,0.25)] ring-1 ring-white"
+                : "bg-white/5 text-white border-white/10 hover:bg-white/10 hover:border-white/20 opacity-80"
+            }`}
+          >
+            <div className="flex items-center justify-between w-full mb-1">
+              <div className="flex items-center gap-1.5">
+                <Building2 className={`w-4 h-4 ${deliveryType === "stopdesk" ? "text-black" : "text-white/80"}`} />
+                <span className={`font-black text-xs ${deliveryType === "stopdesk" ? "text-black" : "text-white"}`}>
+                  استلام من المكتب
+                </span>
+              </div>
+              <div
+                className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${
+                  deliveryType === "stopdesk"
+                    ? "border-black bg-black text-white"
+                    : "border-white/30"
+                }`}
+              >
+                {deliveryType === "stopdesk" && (
+                  <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                )}
+              </div>
+            </div>
+            <div className="flex items-baseline justify-between w-full mt-0.5">
+              <span className={`text-[10px] ${deliveryType === "stopdesk" ? "text-black/60 font-bold" : "text-white/40"}`}>
+                Stop Desk
+              </span>
+              <span
+                className={`text-xs font-black tabular-nums font-mono ${
+                  deliveryType === "stopdesk" ? "text-black" : "text-white"
+                }`}
+              >
+                {rates ? `${rates.stopdesk} DA` : "---"}
+              </span>
+            </div>
+          </button>
+        </div>
+
+        <div className="px-1 pt-0.5">
+          {deliveryType === "stopdesk" ? (
+            <p className="text-[10px] text-white/60 font-medium flex items-center gap-1">
+              <span>📍 استلام الطرد من أقرب مكتب شحن (Stop Desk) لولايتك</span>
+            </p>
+          ) : (
+            <p className="text-[10px] text-white/60 font-medium flex items-center gap-1">
+              <span>🚚 التوصيل مباشرة إلى عنوانك أو باب منزلك</span>
+            </p>
+          )}
+        </div>
       </div>
     );
   };
@@ -703,6 +834,8 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                   </select>
                 </div>
 
+                <DeliveryOptionSelector />
+
                 <div className="bg-white/5 border border-white/10 rounded-xl p-4 flex flex-col gap-2 mt-1 font-sans relative z-10">
                   <div className="flex justify-between text-white/70 text-sm">
                     <span>
@@ -712,7 +845,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                     <span dir="ltr">{productPrice.toLocaleString("en")} DA</span>
                   </div>
                   <div className="flex justify-between text-white/70 text-sm">
-                    <span>التوصيل</span>
+                    <span>التوصيل ({deliveryType === "stopdesk" ? "استلام من المكتب 🏢" : "توصيل للمنزل 🏠"})</span>
                     <span className="text-white font-medium" dir="ltr">{selectedWilaya ? `${deliveryPrice} DA` : "---"}</span>
                   </div>
                   <div className="h-[1px] w-full bg-white/10 my-1" />
@@ -966,6 +1099,8 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                   </select>
                 </div>
 
+                <DeliveryOptionSelector isMobile />
+
                 <div className="bg-white/5 border border-white/10 rounded-xl p-3 flex flex-col gap-1 mt-1 font-sans">
                   <div className="flex justify-between text-white/70 text-xs">
                     <span>
@@ -975,7 +1110,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                     <span dir="ltr">{productPrice.toLocaleString("en")} DA</span>
                   </div>
                   <div className="flex justify-between text-white/70 text-xs">
-                    <span>التوصيل</span>
+                    <span>التوصيل ({deliveryType === "stopdesk" ? "استلام من المكتب 🏢" : "توصيل للمنزل 🏠"})</span>
                     <span className="text-white font-medium" dir="ltr">{selectedWilaya ? `${deliveryPrice} DA` : "---"}</span>
                   </div>
                   <div className="h-[1px] w-full bg-white/10 my-1" />
@@ -1194,6 +1329,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                     <p className="text-xs text-gray-500">
                       {hasColorSelector ? `${item.colorName} • ` : ""}{showSizes ? `${selectedSize} • ` : ""}{selectedQuantity}x
                       {confirmedUpsell ? ` • ${upsellItemLabel} (${effectiveUpsellPrice.toLocaleString("en")} DA)` : ""}
+                      {` • ${deliveryType === "stopdesk" ? "🏢 استلام من المكتب (Stop Desk)" : "🏠 توصيل للمنزل (Domicile)"}`}
                     </p>
                   </div>
                 </div>

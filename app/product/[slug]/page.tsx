@@ -27,6 +27,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
   const [productData, setProductData] = useState(staticProduct);
   const [dynamicVariants, setDynamicVariants] = useState<ShowcaseProduct[] | null>(null);
   const [zonePrices, setZonePrices] = useState<Record<number, number> | undefined>(undefined);
+  const [stopdeskZonePrices, setStopdeskZonePrices] = useState<Record<number, number> | undefined>(undefined);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -135,6 +136,9 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
         // Load zone prices from store_settings
         if (settingsRes.data?.zone_prices) {
           setZonePrices(settingsRes.data.zone_prices);
+          if (settingsRes.data.zone_prices.stopdesk) {
+            setStopdeskZonePrices(settingsRes.data.zone_prices.stopdesk);
+          }
         }
 
         setLoading(false);
@@ -195,9 +199,10 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
         productData.showcaseType !== "chinese_jacket"
       }
       sizes={productData.sizes}
-      hasColorSelector={false}
+      hasColorSelector={true}
       hasSizeSelector={true}
       zonePrices={zonePrices}
+      stopdeskZonePrices={stopdeskZonePrices}
       showReviews={true}
       productId={productData.id}
       productSlug={productData.slug}

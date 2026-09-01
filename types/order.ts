@@ -12,6 +12,7 @@ export interface Order {
   price: string;
   delivery: number;
   total: string;
+  delivery_type?: "domicile" | "stopdesk";
   status: "confirmed" | "cancelled" | "recall";
   createdAt: string;
 }
@@ -29,6 +30,7 @@ export interface AbandonedLead {
   original_price: string | null;
   delivery: number | null;
   original_total: string | null;
+  delivery_type?: "domicile" | "stopdesk" | null;
   reduced_price: string | null;
   reduced_total: string | null;
   status: string;
