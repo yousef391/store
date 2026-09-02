@@ -456,7 +456,7 @@ export const products: Product[] = [
     bundlePrice: 15900,
     images: ["/products/chinese_jacket_1.jpg", "/products/chinese_jacket_2.jpg"],
     category: "ensembles",
-    sizes: ["S", "M", "L", "XL"],
+    sizes: ["XS", "S", "M", "L", "XL"],
     colors: [{ name: "Full Black", hex: "#111111" }],
     tag: "Importation High Quality",
     status: "active",

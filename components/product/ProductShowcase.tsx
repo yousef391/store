@@ -32,8 +32,8 @@ interface ProductShowcaseProps {
   productCategory?: string;
 }
 
-/* ──── SIZE GUIDE DATA ──── */
 const sizeChart = [
+  { size: "XS", height: "155–165 cm", weight: "45–55 kg", chest: "84–88 cm" },
   { size: "S", height: "160–170 cm", weight: "50–60 kg", chest: "90 cm" },
   { size: "M", height: "170–175 cm", weight: "60–70 kg", chest: "96 cm" },
   { size: "L", height: "175–180 cm", weight: "70–80 kg", chest: "102 cm" },
@@ -347,14 +347,6 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
         });
 
         setConfirmedUpsell(true);
-        sendEvent("Purchase", {
-          value: effectiveUpsellPrice,
-          currency: "DZD",
-          contentIds: ["upsell-sac-a-dos"],
-          contentName: `[UPSELL] ${upsellItemLabel}`,
-          contentCategory: "accessories",
-          contentType: "product",
-        });
       } catch (err) {
         console.error("Upsell order submit failed:", err);
       } finally {
@@ -627,7 +619,9 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
               </tr>
             </thead>
             <tbody>
-              {sizeChart.map((row) => (
+              {sizeChart
+                .filter((row) => !availableSizes || availableSizes.length === 0 || availableSizes.includes(row.size))
+                .map((row) => (
                 <tr
                   key={row.size}
                   className={`border-t border-white/5 transition-colors ${selectedSize === row.size ? "bg-accent/10" : "hover:bg-white/5"}`}
