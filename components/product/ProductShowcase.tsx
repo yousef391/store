@@ -9,7 +9,7 @@ import { defaultZonePrices, defaultStopdeskZonePrices } from "@/data/wilayas";
 import { DeliveryType } from "@/data/deliveryPrices";
 import { useMetaEvents } from "@/hooks/useMetaEvents";
 import Image from "next/image";
-import { ShieldCheck, PackageOpen, Truck, Banknote, Ruler, Globe2, CheckCircle2, Eye, ArrowLeft, Sparkles, Building2, Home } from "lucide-react";
+import { ShieldCheck, PackageOpen, Truck, Banknote, Ruler, Globe2, CheckCircle2, Eye, ArrowLeft, Sparkles, Building2, Home, Star, Flame, Zap, RotateCw, MapPin, Lightbulb, Check, ShoppingBag, X, Tag } from "lucide-react";
 import Reviews from "@/components/home/Reviews";
 
 interface ProductShowcaseProps {
@@ -108,9 +108,9 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
   const upsellOriginalPriceText = isNoctaHoodieProduct ? "4,200 DA" : "3,900 DA";
   const upsellSavingsText = isNoctaHoodieProduct ? "وفّر 1500 دج" : "وفّر 1200 دج";
 
-  const upsellYesButtonText = `نعم! أضف الحقيبة (بـ ${effectiveUpsellPrice.toLocaleString("en")} دج) 🛍️`;
+  const upsellYesButtonText = `نعم! أضف الحقيبة (بـ ${effectiveUpsellPrice.toLocaleString("en")} دج)`;
 
-  const upsellNoButtonText = "لا شكراً، تأكيد طلب الطقم فقط ❌";
+  const upsellNoButtonText = "لا شكراً، تأكيد طلب الطقم فقط";
 
   const isImportedProduct =
     productSlug === "chinese-jacket" ||
@@ -403,8 +403,9 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
       >
         {isImportedProduct && (
           <div className="flex items-center justify-between gap-2 mb-1.5 border-b border-white/10 pb-1.5">
-            <span className="bg-amber-400 text-black text-[9px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-sm">
-              Importation High Quality 🇩🇿
+            <span className="bg-amber-400 text-black text-[9px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-sm flex items-center gap-1">
+              <ShieldCheck className="w-3 h-3 text-black" />
+              Importation High Quality
             </span>
             <span className="text-amber-400 text-xs font-black flex items-center gap-1">
               <Sparkles className="w-3.5 h-3.5" />
@@ -426,7 +427,8 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
   };
 
   const DeliveryOptionSelector = () => {
-    const rates = selectedWilaya ? { domicile: domicileDeliveryPrice, stopdesk: stopdeskDeliveryPrice } : null;
+    if (!selectedWilaya) return null;
+    const rates = { domicile: domicileDeliveryPrice, stopdesk: stopdeskDeliveryPrice };
 
     return (
       <div className="flex flex-col gap-1.5 w-full relative z-10" dir="rtl">
@@ -476,7 +478,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                   deliveryType === "domicile" ? "text-black" : "text-white"
                 }`}
               >
-                {rates ? `${rates.domicile} DA` : "---"}
+                {rates.domicile} DA
               </span>
             </div>
           </button>
@@ -519,7 +521,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                   deliveryType === "stopdesk" ? "text-black" : "text-white"
                 }`}
               >
-                {rates ? `${rates.stopdesk} DA` : "---"}
+                {rates.stopdesk} DA
               </span>
             </div>
           </button>
@@ -527,12 +529,14 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
 
         <div className="px-1 pt-0.5">
           {deliveryType === "stopdesk" ? (
-            <p className="text-[10px] text-white/60 font-medium flex items-center gap-1">
-              <span>📍 استلام الطرد من أقرب مكتب شحن (Stop Desk) لولايتك</span>
+            <p className="text-[10px] text-white/60 font-medium flex items-center gap-1.5">
+              <MapPin className="w-3.5 h-3.5 text-white/70 shrink-0" />
+              <span>استلام الطرد من أقرب مكتب شحن (Stop Desk) لولايتك</span>
             </p>
           ) : (
-            <p className="text-[10px] text-white/60 font-medium flex items-center gap-1">
-              <span>🚚 التوصيل مباشرة إلى عنوانك أو باب منزلك</span>
+            <p className="text-[10px] text-white/60 font-medium flex items-center gap-1.5">
+              <Truck className="w-3.5 h-3.5 text-white/70 shrink-0" />
+              <span>التوصيل مباشرة إلى عنوانك أو باب منزلك</span>
             </p>
           )}
         </div>
@@ -570,7 +574,10 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
           </button>
         </div>
         <div className="bg-accent/10 border border-accent/20 rounded-xl p-3 mb-4">
-          <p className="text-accent text-[11px] font-bold mb-0.5">💡 نصيحة سريعة</p>
+          <p className="text-accent text-[11px] font-bold mb-0.5 flex items-center gap-1.5">
+            <Lightbulb className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+            <span>نصيحة سريعة</span>
+          </p>
           <p className="text-white/60 text-[10px] leading-relaxed">إذا كنت بين مقاسين، اختر المقاس الأكبر للراحة المثالية.</p>
         </div>
         <div className="overflow-hidden rounded-xl border border-white/10">
@@ -751,12 +758,12 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
               <span className="text-[10px] font-bold opacity-70">{singlePrice.toLocaleString("en")}</span>
             </button>
             <button onClick={() => setSelectedQuantity(2)} className={`h-auto px-3 py-2 rounded-xl flex flex-col items-center justify-center transition-all relative ${selectedQuantity === 2 ? "bg-gradient-to-r from-amber-400 to-orange-500 text-black shadow-[0_0_15px_rgba(251,191,36,0.4)]" : "bg-white/10 text-white hover:bg-white/20"}`} style={{ fontFamily: "var(--font-dm)" }}>
-              <span className="text-xs font-bold">2 pcs 🔥</span>
+              <span className="text-xs font-bold flex items-center gap-1">2 pcs <Flame className="w-3 h-3 text-amber-400 inline" /></span>
               <span className="text-[10px] font-bold opacity-70">{effectiveBundlePrice.toLocaleString("en")}</span>
             </button>
             {effectiveTriplePrice && (
             <button onClick={() => setSelectedQuantity(3)} className={`h-auto px-3 py-2 rounded-xl flex flex-col items-center justify-center transition-all relative ${selectedQuantity === 3 ? "bg-gradient-to-r from-red-500 to-orange-600 text-white shadow-[0_0_15px_rgba(239,68,68,0.4)]" : "bg-white/10 text-white hover:bg-white/20"}`} style={{ fontFamily: "var(--font-dm)" }}>
-              <span className="text-xs font-bold">3 pcs 🔥🔥</span>
+              <span className="text-xs font-bold flex items-center gap-1">3 pcs <Zap className="w-3 h-3 text-orange-400 inline" /></span>
               <span className="text-[10px] font-bold opacity-70">{effectiveTriplePrice.toLocaleString("en")}</span>
             </button>
             )}
@@ -773,8 +780,9 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
               <span className="text-white/50 text-xs ml-1" style={{ fontFamily: "var(--font-dm)" }}>4.9</span>
             </div>
             <AnimatePresence mode="wait">
-              <motion.p key={`d-rev-${item.id}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.3 }} className="text-white/35 text-xs italic leading-relaxed" style={{ fontFamily: "var(--font-dm)" }} dir="rtl">
-                {"منتج ممتاز، جودة عالية ومقاسات مضبوطة. خدمة التوصيل في المستوى 👍"}
+              <motion.p key={`d-rev-${item.id}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.3 }} className="text-white/35 text-xs italic leading-relaxed flex items-center gap-1.5" style={{ fontFamily: "var(--font-dm)" }} dir="rtl">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400/70 shrink-0 inline" />
+                <span>{"منتج ممتاز، جودة عالية ومقاسات مضبوطة. خدمة التوصيل في المستوى"}</span>
               </motion.p>
             </AnimatePresence>
           </div>
@@ -793,10 +801,16 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                   {productPrice.toLocaleString("en")} DA
                 </span>
                 {selectedQuantity === 2 && (
-                  <span className="text-amber-400 text-xs font-bold mt-0.5" style={{ fontFamily: "var(--font-dm)" }}>وفّر {((singlePrice * 2) - effectiveBundlePrice).toLocaleString("en")} DA 🔥</span>
+                  <span className="text-amber-400 text-xs font-bold mt-0.5 flex items-center gap-1" style={{ fontFamily: "var(--font-dm)" }}>
+                    <Tag className="w-3 h-3" />
+                    وفّر {((singlePrice * 2) - effectiveBundlePrice).toLocaleString("en")} DA
+                  </span>
                 )}
                 {selectedQuantity === 3 && effectiveTriplePrice && (
-                  <span className="text-amber-400 text-xs font-bold mt-0.5" style={{ fontFamily: "var(--font-dm)" }}>وفّر {((singlePrice * 3) - effectiveTriplePrice).toLocaleString("en")} DA 🔥🔥</span>
+                  <span className="text-amber-400 text-xs font-bold mt-0.5 flex items-center gap-1" style={{ fontFamily: "var(--font-dm)" }}>
+                    <Sparkles className="w-3 h-3" />
+                    وفّر {((singlePrice * 3) - effectiveTriplePrice).toLocaleString("en")} DA
+                  </span>
                 )}
               </motion.div>
             </AnimatePresence>
@@ -842,7 +856,19 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                   </select>
                 </div>
 
-                <DeliveryOptionSelector />
+                <AnimatePresence>
+                  {selectedWilaya && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0, y: -6 }}
+                      animate={{ opacity: 1, height: "auto", y: 0 }}
+                      exit={{ opacity: 0, height: 0, y: -6 }}
+                      transition={{ duration: 0.25, ease: "easeOut" }}
+                      className="overflow-hidden w-full"
+                    >
+                      <DeliveryOptionSelector />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
                 <div className="bg-white/5 border border-white/10 rounded-xl p-4 flex flex-col gap-2 mt-1 font-sans relative z-10">
                   <div className="flex justify-between text-white/70 text-sm">
@@ -853,7 +879,10 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                     <span dir="ltr">{productPrice.toLocaleString("en")} DA</span>
                   </div>
                   <div className="flex justify-between text-white/70 text-sm">
-                    <span>التوصيل ({deliveryType === "stopdesk" ? "استلام من المكتب 🏢" : "توصيل للمنزل 🏠"})</span>
+                    <span className="flex items-center gap-1.5">
+                      {deliveryType === "stopdesk" ? <Building2 className="w-3.5 h-3.5 text-white/70" /> : <Home className="w-3.5 h-3.5 text-white/70" />}
+                      <span>التوصيل ({deliveryType === "stopdesk" ? "استلام من المكتب" : "توصيل للمنزل"})</span>
+                    </span>
                     <span className="text-white font-medium" dir="ltr">{selectedWilaya ? `${deliveryPrice} DA` : "---"}</span>
                   </div>
                   <div className="h-[1px] w-full bg-white/10 my-1" />
@@ -864,8 +893,14 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                 </div>
 
                 <div className="flex gap-3 mt-3 font-sans relative z-10 w-full flex-col" dir="ltr">
-                  <button disabled={isSubmitting || orderSuccess} type="submit" className="w-full py-4 rounded-xl bg-white text-black font-black uppercase text-sm tracking-wider hover:bg-white/90 transition-transform active:scale-[0.98] shadow-[0_0_20px_rgba(255,255,255,0.3)] cursor-pointer disabled:opacity-75 disabled:scale-100 flex items-center justify-center">
-                    {isSubmitting ? "جاري الإرسال..." : orderSuccess ? "تم الطلب بنجاح ✓" : "تأكيد الطلب"}
+                  <button disabled={isSubmitting || orderSuccess} type="submit" className="w-full py-4 rounded-xl bg-white text-black font-black uppercase text-sm tracking-wider hover:bg-white/90 transition-transform active:scale-[0.98] shadow-[0_0_20px_rgba(255,255,255,0.3)] cursor-pointer disabled:opacity-75 disabled:scale-100 flex items-center justify-center gap-2">
+                    {isSubmitting ? (
+                      "جاري الإرسال..."
+                    ) : orderSuccess ? (
+                      <span className="flex items-center gap-1.5"><Check className="w-4 h-4 text-emerald-600" /> تم الطلب بنجاح</span>
+                    ) : (
+                      "تأكيد الطلب"
+                    )}
                   </button>
                   {orderError && (
                     <div className="w-full text-center py-2 px-3 rounded-xl bg-red-500/10 border border-red-500/20">
@@ -973,8 +1008,12 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
               </AnimatePresence>
 
               {showReviews && (
-              <div className="flex items-center gap-1 mt-1.5">
-                <span className="text-[#fbbf24] text-[11px] tracking-widest">★★★★★</span>
+              <div className="flex items-center gap-1.5 mt-1.5">
+                <div className="flex items-center gap-0.5">
+                  {[1, 2, 3, 4, 5].map((s) => (
+                    <Star key={s} className="w-3 h-3 fill-amber-400 text-amber-400" />
+                  ))}
+                </div>
                 <span className="text-white/40 text-[10px] ml-1 font-medium" style={{ fontFamily: "var(--font-dm)" }}>4.8 (120+ avis)</span>
               </div>
               )}
@@ -996,10 +1035,16 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                   {productPrice.toLocaleString("en")} DA
                 </span>
                 {selectedQuantity === 2 && (
-                  <span className="text-amber-400 text-[10px] font-bold tracking-wide" style={{ fontFamily: "var(--font-dm)" }}>وفّر {(singlePrice * 2 - effectiveBundlePrice).toLocaleString("en")} DA! 🔥</span>
+                  <span className="text-amber-400 text-[10px] font-bold tracking-wide flex items-center gap-1" style={{ fontFamily: "var(--font-dm)" }}>
+                    <Tag className="w-2.5 h-2.5" />
+                    وفّر {(singlePrice * 2 - effectiveBundlePrice).toLocaleString("en")} DA!
+                  </span>
                 )}
                 {selectedQuantity === 3 && effectiveTriplePrice && (
-                  <span className="text-amber-400 text-[10px] font-bold tracking-wide" style={{ fontFamily: "var(--font-dm)" }}>وفّر {(singlePrice * 3 - effectiveTriplePrice).toLocaleString("en")} DA! 🔥🔥</span>
+                  <span className="text-amber-400 text-[10px] font-bold tracking-wide flex items-center gap-1" style={{ fontFamily: "var(--font-dm)" }}>
+                    <Sparkles className="w-2.5 h-2.5" />
+                    وفّر {(singlePrice * 3 - effectiveTriplePrice).toLocaleString("en")} DA!
+                  </span>
                 )}
                 
                 <div className="flex flex-col items-end gap-1 mt-1.5" dir="rtl">
@@ -1064,16 +1109,22 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                 </button>
                 <button type="button" onClick={() => setSelectedQuantity(2)} className={`flex-1 flex flex-col items-center justify-center gap-0.5 rounded-[1.2rem] p-3 transition-all duration-300 border relative overflow-hidden ${selectedQuantity === 2 ? "bg-gradient-to-r from-amber-400 to-orange-500 text-black border-amber-400 shadow-[0_0_25px_rgba(251,191,36,0.4)]" : "bg-white/5 text-white border-white/10"}`}>
                   <span className="absolute -top-0 -right-0 bg-red-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-bl-lg rounded-tr-[1.1rem]">PROMO</span>
-                  <span className="text-[13px] font-black" style={{ fontFamily: "var(--font-dm)" }}>2 قطع 🔥</span>
+                  <span className="text-[13px] font-black flex items-center gap-1" style={{ fontFamily: "var(--font-dm)" }}>2 قطع <Flame className="w-3 h-3 text-amber-400 inline" /></span>
                   <span className="text-[15px] font-black" style={{ fontFamily: "var(--font-heading)" }}>{effectiveBundlePrice.toLocaleString("en")} DA</span>
-                  <span className={`text-[9px] font-bold ${selectedQuantity === 2 ? "text-black/60" : "text-amber-400"}`} style={{ fontFamily: "var(--font-dm)" }}>وفّر 700 دج!</span>
+                  <span className={`text-[9px] font-bold flex items-center gap-0.5 ${selectedQuantity === 2 ? "text-black/60" : "text-amber-400"}`} style={{ fontFamily: "var(--font-dm)" }}>
+                    <Tag className="w-2.5 h-2.5 inline" />
+                    وفّر 700 دج!
+                  </span>
                 </button>
                 {effectiveTriplePrice && (
                 <button type="button" onClick={() => setSelectedQuantity(3)} className={`flex-1 flex flex-col items-center justify-center gap-0.5 rounded-[1.2rem] p-3 transition-all duration-300 border relative overflow-hidden ${selectedQuantity === 3 ? "bg-gradient-to-r from-red-500 to-orange-600 text-white border-red-500 shadow-[0_0_25px_rgba(239,68,68,0.4)]" : "bg-white/5 text-white border-white/10"}`}>
                   <span className="absolute -top-0 -right-0 bg-emerald-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-bl-lg rounded-tr-[1.1rem]">BEST</span>
-                  <span className="text-[13px] font-black" style={{ fontFamily: "var(--font-dm)" }}>3 قطع 🔥🔥</span>
+                  <span className="text-[13px] font-black flex items-center gap-1" style={{ fontFamily: "var(--font-dm)" }}>3 قطع <Zap className="w-3 h-3 text-orange-400 inline" /></span>
                   <span className="text-[15px] font-black" style={{ fontFamily: "var(--font-heading)" }}>{effectiveTriplePrice.toLocaleString("en")} DA</span>
-                  <span className={`text-[9px] font-bold ${selectedQuantity === 3 ? "text-white/70" : "text-emerald-400"}`} style={{ fontFamily: "var(--font-dm)" }}>وفّر 2200 دج! 🔥</span>
+                  <span className={`text-[9px] font-bold flex items-center gap-0.5 ${selectedQuantity === 3 ? "text-white/70" : "text-emerald-400"}`} style={{ fontFamily: "var(--font-dm)" }}>
+                    <Tag className="w-2.5 h-2.5 inline" />
+                    وفّر 2200 دج!
+                  </span>
                 </button>
                 )}
               </div>
@@ -1107,7 +1158,19 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                   </select>
                 </div>
 
-                <DeliveryOptionSelector />
+                <AnimatePresence>
+                  {selectedWilaya && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0, y: -6 }}
+                      animate={{ opacity: 1, height: "auto", y: 0 }}
+                      exit={{ opacity: 0, height: 0, y: -6 }}
+                      transition={{ duration: 0.25, ease: "easeOut" }}
+                      className="overflow-hidden w-full"
+                    >
+                      <DeliveryOptionSelector />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
                 <div className="bg-white/5 border border-white/10 rounded-xl p-3 flex flex-col gap-1 mt-1 font-sans">
                   <div className="flex justify-between text-white/70 text-xs">
@@ -1118,7 +1181,10 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                     <span dir="ltr">{productPrice.toLocaleString("en")} DA</span>
                   </div>
                   <div className="flex justify-between text-white/70 text-xs">
-                    <span>التوصيل ({deliveryType === "stopdesk" ? "استلام من المكتب 🏢" : "توصيل للمنزل 🏠"})</span>
+                    <span className="flex items-center gap-1.5">
+                      {deliveryType === "stopdesk" ? <Building2 className="w-3.5 h-3.5 text-white/70" /> : <Home className="w-3.5 h-3.5 text-white/70" />}
+                      <span>التوصيل ({deliveryType === "stopdesk" ? "استلام من المكتب" : "توصيل للمنزل"})</span>
+                    </span>
                     <span className="text-white font-medium" dir="ltr">{selectedWilaya ? `${deliveryPrice} DA` : "---"}</span>
                   </div>
                   <div className="h-[1px] w-full bg-white/10 my-1" />
@@ -1129,7 +1195,13 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                 </div>
 
                 <button disabled={isSubmitting || orderSuccess} type="submit" className="w-full py-4 mt-2 rounded-[1.2rem] bg-white text-black font-black uppercase text-[15px] tracking-tight shadow-[0_10px_40px_rgba(255,255,255,0.3)] active:scale-[0.98] transition-transform flex justify-center items-center gap-2 cursor-pointer disabled:opacity-75 disabled:scale-100">
-                  {isSubmitting ? "جاري الإرسال..." : orderSuccess ? "تم الطلب بنجاح ✓" : "تأكيد الطلب"}
+                  {isSubmitting ? (
+                    "جاري الإرسال..."
+                  ) : orderSuccess ? (
+                    <span className="flex items-center gap-1.5"><Check className="w-4 h-4 text-emerald-600" /> تم الطلب بنجاح</span>
+                  ) : (
+                    "تأكيد الطلب"
+                  )}
                 </button>
                 {orderError && (
                   <div className="w-full text-center py-2 px-3 mt-2 rounded-xl bg-red-500/10 border border-red-500/20">
@@ -1225,8 +1297,9 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
 
               {/* Exclusive offer note for ordering the ensemble */}
               <div className="bg-gradient-to-r from-amber-500/20 via-amber-400/10 to-amber-500/20 border border-amber-400/30 rounded-2xl p-2.5 mb-2 w-full text-center shadow-inner">
-                <p className="text-amber-300 font-bold text-xs leading-relaxed" style={{ fontFamily: "var(--font-dm)" }}>
-                  🔥 لأنك قمت بطلب هذا الطقم، نهديك هذا العرض الحصري بأفضل وأقل سعر على الإطلاق!
+                <p className="text-amber-300 font-bold text-xs leading-relaxed flex items-center justify-center gap-1.5" style={{ fontFamily: "var(--font-dm)" }}>
+                  <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span>لأنك قمت بطلب هذا الطقم، نهديك هذا العرض الحصري بأفضل وأقل سعر على الإطلاق!</span>
                 </p>
               </div>
               
@@ -1257,15 +1330,22 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                     onClick={(e) => { e.stopPropagation(); setUpsellImgIdx((prev) => (prev + 1) % upsellImages.length); }}
                     className="absolute bottom-2 left-2 bg-black/70 backdrop-blur-sm text-white/80 text-[10px] px-2.5 py-1 rounded-md border border-white/10 flex items-center gap-1 hover:text-white"
                   >
-                    صورة {(upsellImgIdx % upsellImages.length) + 1}/{upsellImages.length} 🔄
+                    <RotateCw className="w-3 h-3 text-white/80" />
+                    <span>صورة {(upsellImgIdx % upsellImages.length) + 1}/{upsellImages.length}</span>
                   </button>
                 )}
               </div>
 
-              <p className="text-white/70 text-xs text-center mb-4 leading-relaxed font-dm">
-                ✓ توصيل مجاني مع نفس الطرد <br />
-                ✓ الدفع عند الاستلام مع إمكانية فتح الطرد قبل الدفع
-              </p>
+              <div className="flex flex-col items-center gap-1.5 mb-4 text-white/70 text-xs font-dm">
+                <span className="flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                  توصيل مجاني مع نفس الطرد
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                  الدفع عند الاستلام مع إمكانية فتح الطرد قبل الدفع
+                </span>
+              </div>
 
               <div className="w-full space-y-2">
                 <button
@@ -1275,17 +1355,19 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                   className="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-black text-sm tracking-wide shadow-lg shadow-emerald-500/25 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70"
                   style={{ fontFamily: "var(--font-heading)" }}
                 >
-                  {isSubmitting ? "جاري الإضافة..." : upsellYesButtonText}
+                  <ShoppingBag className="w-4 h-4" />
+                  <span>{isSubmitting ? "جاري الإضافة..." : upsellYesButtonText}</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => executeOrderSubmit(false)}
                   disabled={isSubmitting}
-                  className="w-full py-3 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 text-xs font-bold transition-all cursor-pointer text-center block active:scale-[0.98] disabled:opacity-70"
+                  className="w-full py-3 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 text-xs font-bold transition-all cursor-pointer text-center flex items-center justify-center gap-1.5 active:scale-[0.98] disabled:opacity-70"
                   style={{ fontFamily: "var(--font-dm)" }}
                 >
-                  {upsellNoButtonText}
+                  <X className="w-3.5 h-3.5" />
+                  <span>{upsellNoButtonText}</span>
                 </button>
               </div>
             </motion.div>
@@ -1337,7 +1419,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                     <p className="text-xs text-gray-500">
                       {hasColorSelector ? `${item.colorName} • ` : ""}{showSizes ? `${selectedSize} • ` : ""}{selectedQuantity}x
                       {confirmedUpsell ? ` • ${upsellItemLabel} (${effectiveUpsellPrice.toLocaleString("en")} DA)` : ""}
-                      {` • ${deliveryType === "stopdesk" ? "🏢 استلام من المكتب (Stop Desk)" : "🏠 توصيل للمنزل (Domicile)"}`}
+                      {` • ${deliveryType === "stopdesk" ? "استلام من المكتب (Stop Desk)" : "توصيل للمنزل (Domicile)"}`}
                     </p>
                   </div>
                 </div>
