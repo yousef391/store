@@ -85,28 +85,12 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
     productName?.toLowerCase().includes("chinese") ||
     variants[0]?.name?.toLowerCase().includes("chinese");
 
-  const isNoctaHoodieProduct =
-    productSlug === "nike-nocta-zip-hoodie-ensemble" ||
-    productSlug?.includes("nocta-zip-hoodie") ||
-    productName?.toLowerCase().includes("nocta zip hoodie") ||
-    variants[0]?.name?.toLowerCase().includes("nocta zip hoodie");
-
-  const upsellImages = isNoctaHoodieProduct
-    ? ["/products/sacoche_lacoste_black.jpg"]
-    : backpackImages;
-
-  const upsellBadgeText = isNoctaHoodieProduct
-    ? "عرض خاص: أضف حقيبة Lacoste لطلبك!"
-    : "عرض خاص: أضف حقيبة Nike لطلبك!";
-
-  const upsellTitleText = isNoctaHoodieProduct
-    ? "حقيبة كتف فاخرة Lacoste Black"
-    : "حقيبة ظهر Nike \"Just Do It\"";
-
-  const upsellItemLabel = isNoctaHoodieProduct ? "Sacoche Lacoste" : "Sac à dos Nike";
-
-  const upsellOriginalPriceText = isNoctaHoodieProduct ? "4,200 DA" : "3,900 DA";
-  const upsellSavingsText = isNoctaHoodieProduct ? "وفّر 1500 دج" : "وفّر 1200 دج";
+  const upsellImages = backpackImages;
+  const upsellBadgeText = "عرض خاص: أضف حقيبة ظهر Nike لطلبك!";
+  const upsellTitleText = "حقيبة ظهر Nike \"Just Do It\"";
+  const upsellItemLabel = "Sac à dos Nike Just Do It";
+  const upsellOriginalPriceText = "3,900 DA";
+  const upsellSavingsText = "وفّر 1200 دج";
 
   const upsellYesButtonText = `نعم! أضف الحقيبة (بـ ${effectiveUpsellPrice.toLocaleString("en")} دج)`;
 
@@ -280,18 +264,11 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
     [currentIndex]
   );
 
-  const executeOrderSubmit = async (includeUpsell: boolean) => {
+  const submitBaseOrder = async (): Promise<boolean> => {
     setIsSubmitting(true);
     setOrderError("");
-    setShowUpsellModal(false);
 
     const baseItemName = item.name;
-    const finalItemName = includeUpsell
-      ? `${baseItemName} + ${upsellItemLabel}`
-      : baseItemName;
-    const upsellPrice = includeUpsell ? effectiveUpsellPrice : 0;
-    const finalProductPrice = productPrice + upsellPrice;
-    const finalTotalPrice = totalPrice + upsellPrice;
 
     try {
       const res = await fetch("/api/order", {
@@ -303,14 +280,13 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
           wilaya: selectedWilaya,
           commune: selectedCommune,
           deliveryType,
-          item: finalItemName,
+          item: baseItemName,
           color: item.colorName || item.tag,
           size: selectedSize,
           quantity: selectedQuantity,
-          price: finalProductPrice,
+          price: productPrice,
           delivery: deliveryPrice,
-          total: finalTotalPrice,
-          upsellAdded: includeUpsell ? `${upsellItemLabel} (${effectiveUpsellPrice} DA)` : null,
+          total: totalPrice,
         }),
       });
 
@@ -318,50 +294,94 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
         const data = await res.json();
         setOrderError(data.error || "لقد قمت بطلب مؤخراً. يرجى المحاولة بعد 48 ساعة.");
         setIsSubmitting(false);
-        return;
+        return false;
       }
       if (!res.ok) throw new Error("Order failed");
 
-      setIsSubmitting(false);
-      setConfirmedUpsell(includeUpsell);
-      setOrderSuccess(true);
-
       const purchaseId = productId ?? productSlug ?? String(item.id);
-      const purchaseName = productName ?? finalItemName;
+      const purchaseName = productName ?? baseItemName;
       const purchaseCategory = productCategory ?? item.productType;
       sendEvent("Purchase", {
-        value: finalTotalPrice,
+        value: totalPrice,
         currency: "DZD",
         contentIds: [String(purchaseId)],
         contentName: purchaseName,
         contentCategory: purchaseCategory,
         contentType: "product",
       });
+
+      setIsSubmitting(false);
+      return true;
     } catch (err) {
       console.error("Order failed:", err);
       setIsSubmitting(false);
       setOrderError("حدث خطأ. يرجى المحاولة مرة أخرى.");
+      return false;
     }
+  };
+
+  const executeUpsellDecision = async (includeUpsell: boolean) => {
+    setShowUpsellModal(false);
+
+    if (includeUpsell) {
+      setIsSubmitting(true);
+      try {
+        await fetch("/api/order", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: formNameRef.current,
+            phone: formPhoneRef.current,
+            wilaya: selectedWilaya,
+            commune: selectedCommune,
+            deliveryType,
+            item: `[UPSELL] ${upsellItemLabel}`,
+            color: "Noir",
+            size: "Unique",
+            quantity: 1,
+            price: effectiveUpsellPrice,
+            delivery: 0,
+            total: effectiveUpsellPrice,
+            isUpsell: true,
+          }),
+        });
+
+        setConfirmedUpsell(true);
+        sendEvent("Purchase", {
+          value: effectiveUpsellPrice,
+          currency: "DZD",
+          contentIds: ["upsell-sac-a-dos"],
+          contentName: `[UPSELL] ${upsellItemLabel}`,
+          contentCategory: "accessories",
+          contentType: "product",
+        });
+      } catch (err) {
+        console.error("Upsell order submit failed:", err);
+      } finally {
+        setIsSubmitting(false);
+      }
+    } else {
+      setConfirmedUpsell(false);
+    }
+
+    setOrderSuccess(true);
   };
 
   const handleOrderSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
+    // 1. Submit the base normal order first
+    const success = await submitBaseOrder();
+    if (!success) return;
+
+    // 2. Check if upsell should be offered
     const isBagProduct =
       productSlug?.includes("sac") ||
       productName?.toLowerCase().includes("sac") ||
       item?.name?.toLowerCase().includes("sac") ||
       productCategory === "bags";
 
-    const isNikeEnsemble =
-      productSlug?.includes("nike") ||
-      productSlug?.includes("nocta") ||
-      productName?.toLowerCase().includes("nike") ||
-      productName?.toLowerCase().includes("nocta") ||
-      item?.name?.toLowerCase().includes("nike") ||
-      item?.name?.toLowerCase().includes("nocta");
-
-    const shouldShowUpsell = hasBagUpsell && !isBagProduct && !isNikeEnsemble;
+    const shouldShowUpsell = hasBagUpsell && !isBagProduct;
 
     if (shouldShowUpsell && !upsellShown) {
       setUpsellShown(true);
@@ -369,7 +389,9 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
       return;
     }
 
-    await executeOrderSubmit(false);
+    // 3. Otherwise show success modal immediately
+    setConfirmedUpsell(false);
+    setOrderSuccess(true);
   };
 
   /* ──── SHARED SUB-COMPONENTS ──── */
@@ -431,37 +453,46 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
     const rates = { domicile: domicileDeliveryPrice, stopdesk: stopdeskDeliveryPrice };
 
     return (
-      <div className="flex flex-col gap-1.5 w-full relative z-10" dir="rtl">
-        <div className="flex items-center justify-between px-1">
-          <span className="text-white/80 text-xs font-bold font-heading flex items-center gap-1.5">
-            <Truck className="w-3.5 h-3.5 text-white/70" />
-            خيارات التوصيل
+      <div className="flex flex-col gap-3 w-full relative z-10 p-3.5 my-1.5 rounded-2xl bg-gradient-to-b from-amber-500/15 via-white/[0.05] to-white/[0.02] border border-amber-400/35 shadow-xl backdrop-blur-md" dir="rtl">
+        {/* Remarkable Header with Amber Accent */}
+        <div className="flex items-center justify-between px-0.5">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-lg bg-amber-400/20 border border-amber-400/40 flex items-center justify-center text-amber-400 shadow-sm">
+              <Truck className="w-3.5 h-3.5 text-amber-400" />
+            </div>
+            <span className="text-amber-400 text-xs font-black font-heading tracking-wide">
+              طريقة واستلام التوصيل
+            </span>
+          </div>
+          <span className="text-[10px] font-bold text-amber-300 bg-amber-400/15 border border-amber-400/30 px-2 py-0.5 rounded-full">
+            اختر المناسب لك
           </span>
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
+        {/* 2 Options Cards Grid */}
+        <div className="grid grid-cols-2 gap-2.5">
           {/* Domicile option */}
           <button
             type="button"
             onClick={() => setDeliveryType("domicile")}
-            className={`flex flex-col items-start text-right p-2.5 rounded-2xl border transition-all relative overflow-hidden cursor-pointer ${
+            className={`flex flex-col items-start text-right p-3 rounded-xl border transition-all duration-200 relative overflow-hidden cursor-pointer ${
               deliveryType === "domicile"
-                ? "bg-white text-black border-white shadow-[0_0_20px_rgba(255,255,255,0.25)] ring-1 ring-white"
-                : "bg-white/5 text-white border-white/10 hover:bg-white/10 hover:border-white/20 opacity-80"
+                ? "bg-white text-black border-white shadow-[0_0_20px_rgba(255,255,255,0.3)] ring-2 ring-white scale-[1.01]"
+                : "bg-black/30 text-white border-white/10 hover:border-amber-400/40 hover:bg-black/40 opacity-85"
             }`}
           >
-            <div className="flex items-center justify-between w-full mb-1">
+            <div className="flex items-center justify-between w-full mb-1.5">
               <div className="flex items-center gap-1.5">
-                <Home className={`w-4 h-4 ${deliveryType === "domicile" ? "text-black" : "text-white/80"}`} />
+                <Home className={`w-4 h-4 ${deliveryType === "domicile" ? "text-black" : "text-amber-400"}`} />
                 <span className={`font-black text-xs ${deliveryType === "domicile" ? "text-black" : "text-white"}`}>
                   توصيل للمنزل
                 </span>
               </div>
               <div
-                className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${
+                className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center transition-colors ${
                   deliveryType === "domicile"
                     ? "border-black bg-black text-white"
-                    : "border-white/30"
+                    : "border-white/30 bg-white/5"
                 }`}
               >
                 {deliveryType === "domicile" && (
@@ -469,13 +500,15 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                 )}
               </div>
             </div>
-            <div className="flex items-baseline justify-between w-full mt-0.5">
-              <span className={`text-[10px] ${deliveryType === "domicile" ? "text-black/60 font-bold" : "text-white/40"}`}>
+            <div className="flex items-baseline justify-between w-full mt-1">
+              <span className={`text-[10px] ${deliveryType === "domicile" ? "text-black/70 font-bold" : "text-white/50"}`}>
                 لباب الدار
               </span>
               <span
-                className={`text-xs font-black tabular-nums font-mono ${
-                  deliveryType === "domicile" ? "text-black" : "text-white"
+                className={`text-xs font-black tabular-nums font-mono px-1.5 py-0.5 rounded-md ${
+                  deliveryType === "domicile"
+                    ? "bg-black/10 text-black"
+                    : "bg-amber-400/15 text-amber-300 font-bold"
                 }`}
               >
                 {rates.domicile} DA
@@ -487,24 +520,24 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
           <button
             type="button"
             onClick={() => setDeliveryType("stopdesk")}
-            className={`flex flex-col items-start text-right p-2.5 rounded-2xl border transition-all relative overflow-hidden cursor-pointer ${
+            className={`flex flex-col items-start text-right p-3 rounded-xl border transition-all duration-200 relative overflow-hidden cursor-pointer ${
               deliveryType === "stopdesk"
-                ? "bg-white text-black border-white shadow-[0_0_20px_rgba(255,255,255,0.25)] ring-1 ring-white"
-                : "bg-white/5 text-white border-white/10 hover:bg-white/10 hover:border-white/20 opacity-80"
+                ? "bg-white text-black border-white shadow-[0_0_20px_rgba(255,255,255,0.3)] ring-2 ring-white scale-[1.01]"
+                : "bg-black/30 text-white border-white/10 hover:border-amber-400/40 hover:bg-black/40 opacity-85"
             }`}
           >
-            <div className="flex items-center justify-between w-full mb-1">
+            <div className="flex items-center justify-between w-full mb-1.5">
               <div className="flex items-center gap-1.5">
-                <Building2 className={`w-4 h-4 ${deliveryType === "stopdesk" ? "text-black" : "text-white/80"}`} />
+                <Building2 className={`w-4 h-4 ${deliveryType === "stopdesk" ? "text-black" : "text-amber-400"}`} />
                 <span className={`font-black text-xs ${deliveryType === "stopdesk" ? "text-black" : "text-white"}`}>
                   استلام من المكتب
                 </span>
               </div>
               <div
-                className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${
+                className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center transition-colors ${
                   deliveryType === "stopdesk"
                     ? "border-black bg-black text-white"
-                    : "border-white/30"
+                    : "border-white/30 bg-white/5"
                 }`}
               >
                 {deliveryType === "stopdesk" && (
@@ -512,13 +545,15 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                 )}
               </div>
             </div>
-            <div className="flex items-baseline justify-between w-full mt-0.5">
-              <span className={`text-[10px] ${deliveryType === "stopdesk" ? "text-black/60 font-bold" : "text-white/40"}`}>
+            <div className="flex items-baseline justify-between w-full mt-1">
+              <span className={`text-[10px] ${deliveryType === "stopdesk" ? "text-black/70 font-bold" : "text-white/50"}`}>
                 Stop Desk
               </span>
               <span
-                className={`text-xs font-black tabular-nums font-mono ${
-                  deliveryType === "stopdesk" ? "text-black" : "text-white"
+                className={`text-xs font-black tabular-nums font-mono px-1.5 py-0.5 rounded-md ${
+                  deliveryType === "stopdesk"
+                    ? "bg-black/10 text-black"
+                    : "bg-amber-400/15 text-amber-300 font-bold"
                 }`}
               >
                 {rates.stopdesk} DA
@@ -527,15 +562,16 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
           </button>
         </div>
 
-        <div className="px-1 pt-0.5">
+        {/* Selected Mode Detail Info Banner */}
+        <div className="bg-black/40 border border-white/10 rounded-xl px-3 py-2">
           {deliveryType === "stopdesk" ? (
-            <p className="text-[10px] text-white/60 font-medium flex items-center gap-1.5">
-              <MapPin className="w-3.5 h-3.5 text-white/70 shrink-0" />
-              <span>استلام الطرد من أقرب مكتب شحن (Stop Desk) لولايتك</span>
+            <p className="text-[11px] text-amber-200/90 font-medium flex items-center gap-1.5">
+              <MapPin className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+              <span>استلام الطرد بنفسك من أقرب مكتب شحن (Stop Desk) لولايتك</span>
             </p>
           ) : (
-            <p className="text-[10px] text-white/60 font-medium flex items-center gap-1.5">
-              <Truck className="w-3.5 h-3.5 text-white/70 shrink-0" />
+            <p className="text-[11px] text-emerald-300/90 font-medium flex items-center gap-1.5">
+              <Truck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
               <span>التوصيل مباشرة إلى عنوانك أو باب منزلك</span>
             </p>
           )}
@@ -1274,7 +1310,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
           >
             <div
               className="absolute inset-0 bg-black/80 backdrop-blur-md"
-              onClick={() => executeOrderSubmit(false)}
+              onClick={() => executeUpsellDecision(false)}
             />
 
             <motion.div
@@ -1350,7 +1386,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
               <div className="w-full space-y-2">
                 <button
                   type="button"
-                  onClick={() => executeOrderSubmit(true)}
+                  onClick={() => executeUpsellDecision(true)}
                   disabled={isSubmitting}
                   className="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-black text-sm tracking-wide shadow-lg shadow-emerald-500/25 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70"
                   style={{ fontFamily: "var(--font-heading)" }}
@@ -1361,7 +1397,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
 
                 <button
                   type="button"
-                  onClick={() => executeOrderSubmit(false)}
+                  onClick={() => executeUpsellDecision(false)}
                   disabled={isSubmitting}
                   className="w-full py-3 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 text-xs font-bold transition-all cursor-pointer text-center flex items-center justify-center gap-1.5 active:scale-[0.98] disabled:opacity-70"
                   style={{ fontFamily: "var(--font-dm)" }}

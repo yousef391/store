@@ -9,33 +9,51 @@ export async function POST(request: Request) {
     const forwarded = headersList.get("x-forwarded-for");
     const clientIp = forwarded ? forwarded.split(",")[0].trim() : (headersList.get("x-real-ip") ?? "unknown");
 
-    // Check if this IP already ordered in the last 48h
-    const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
-    const { data: recentOrders } = await supabase
-      .from("order_rate_limits")
-      .select("id")
-      .eq("ip_address", clientIp)
-      .gte("created_at", fortyEightHoursAgo)
-      .limit(1);
-
-    if (recentOrders && recentOrders.length > 0) {
-      return NextResponse.json(
-        { error: "لقد قمت بطلب مؤخراً. يرجى المحاولة بعد 48 ساعة." },
-        { status: 429 }
-      );
-    }
-
     const body = await request.json();
-    const { name, phone, wilaya, commune, deliveryType, item, color, size, quantity, price, delivery, total } = body;
+    const { name, phone, wilaya, commune, deliveryType, item, color, size, quantity, price, delivery, total, isUpsell } = body;
+
+    // Check if this IP already ordered in the last 48h (bypassed for companion upsell orders)
+    if (!isUpsell) {
+      const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+      const { data: recentOrders } = await supabase
+        .from("order_rate_limits")
+        .select("id")
+        .eq("ip_address", clientIp)
+        .gte("created_at", fortyEightHoursAgo)
+        .limit(1);
+
+      if (recentOrders && recentOrders.length > 0) {
+        return NextResponse.json(
+          { error: "لقد قمت بطلب مؤخراً. يرجى المحاولة بعد 48 ساعة." },
+          { status: 429 }
+        );
+      }
+    }
 
     const formattedCommune = deliveryType === "stopdesk" && commune && !commune.includes("[Stopdesk]")
       ? `${commune} [Stopdesk]`
       : commune;
 
+    const finalItemTitle = isUpsell && !item?.startsWith("[UPSELL]") ? `[UPSELL] ${item}` : item;
+    const finalDelivery = isUpsell ? 0 : delivery;
+
     // 1. Insert order into Supabase
     const { data: order, error: dbError } = await supabase
       .from("orders")
-      .insert([{ name, phone, wilaya, commune: formattedCommune, item, color, size, quantity: quantity || 1, price, delivery, total, status: "new" }])
+      .insert([{
+        name,
+        phone,
+        wilaya,
+        commune: formattedCommune,
+        item: finalItemTitle,
+        color: color || null,
+        size: size || null,
+        quantity: quantity || 1,
+        price,
+        delivery: finalDelivery,
+        total,
+        status: "new"
+      }])
       .select()
       .single();
 
@@ -44,8 +62,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Failed to save order." }, { status: 500 });
     }
 
-    // Record this IP for rate limiting
-    await supabase.from("order_rate_limits").insert([{ ip_address: clientIp }]);
+    // Record this IP for rate limiting (only for primary orders)
+    if (!isUpsell) {
+      await supabase.from("order_rate_limits").insert([{ ip_address: clientIp }]);
+    }
 
     // 2. Fetch Telegram credentials from store_settings
     const { data: settings } = await supabase.from("store_settings").select("*").eq("id", 1).single();
@@ -74,7 +94,7 @@ export async function POST(request: Request) {
 
     const cleanCommune = commune ? commune.replace(/\s*\[Stopdesk\]/i, "") : "";
     const locationDisplay = cleanCommune ? `${wilayaDisplay} - ${cleanCommune}` : wilayaDisplay;
-    const itemDisplay = color && !item.includes(color) ? `${item} (${color})` : item;
+    const itemDisplay = color && !finalItemTitle.includes(color) ? `${finalItemTitle} (${color})` : finalItemTitle;
     const isStopdesk = deliveryType === "stopdesk" || (commune && commune.includes("[Stopdesk]"));
     const deliveryTypeTag = isStopdesk ? "🏢 استلام من المكتب (Stopdesk)" : "🏠 توصيل للمنزل (Domicile)";
 
@@ -84,20 +104,25 @@ export async function POST(request: Request) {
       return val;
     };
 
-    // 5. Build Telegram message (Exact requested format)
-    const message = `🚨 NEW CHECKOUT ORDER
+    const headerTitle = isUpsell ? "🎁 NEW UPSELL ORDER" : "🚨 NEW CHECKOUT ORDER";
+    const deliveryDetail = isUpsell
+      ? "0 DA (Livré avec la commande principale)"
+      : `${formatPrice(delivery)} DA (${isStopdesk ? "Stopdesk" : "Domicile"})`;
+
+    // 5. Build Telegram message
+    const message = `${headerTitle}
 ━━━━━━━━━━━━━━━━━━
 👤 Name: ${name}
 📞 Phone: ${phone}
 📍 Location: ${locationDisplay}
 🚚 Mode: ${deliveryTypeTag}
 
-👕 Item: ${itemDisplay}
+${isUpsell ? "🎒" : "👕"} Item: ${itemDisplay}
 📦 Quantity: ${quantity || 1} piece(s)
 📏 Size: ${size || "N/A"}
 
 💰 Product: ${formatPrice(price)} DA
-🚚 Delivery: ${formatPrice(delivery)} DA (${isStopdesk ? "Stopdesk" : "Domicile"})
+🚚 Delivery: ${deliveryDetail}
 🛒 Total: ${formatPrice(total)} DA`;
 
     // 6. Send to Telegram
