@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { Search, Filter, ChevronLeft, ChevronRight, Trash2, Copy, Check, X, Truck } from "lucide-react";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { Search, Filter, ChevronLeft, ChevronRight, Trash2, Copy, Check, X, Truck, Package, RefreshCw } from "lucide-react";
 import { fetchOrders, updateOrderStatus, createHistory } from "@/lib/api";
+import { products } from "@/data/products";
 import algeriaData from "@/data/algeria.json";
 
 const STATUS_OPTIONS = ["new", "confirmed", "cancelled", "recall"] as const;
@@ -38,6 +39,7 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [productFilter, setProductFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [copiedPhone, setCopiedPhone] = useState<string | null>(null);
   const rowsPerPage = 10;
@@ -59,6 +61,11 @@ export default function OrdersPage() {
     }).catch(() => setLoading(false));
   }, []);
 
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter, productFilter]);
+
   const copyPhone = (phone: string) => {
     navigator.clipboard.writeText(phone).then(() => {
       setCopiedPhone(phone);
@@ -66,10 +73,49 @@ export default function OrdersPage() {
     });
   };
 
+  // Product counts and distinct list
+  const productCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    orders.forEach((o) => {
+      if (o.item) {
+        counts[o.item] = (counts[o.item] || 0) + 1;
+      }
+    });
+    return counts;
+  }, [orders]);
+
+  const productOptions = useMemo(() => {
+    const set = new Set<string>();
+    products.forEach((p) => {
+      if (p.name) set.add(p.name);
+    });
+    orders.forEach((o) => {
+      if (o.item) set.add(o.item);
+    });
+    return Array.from(set).sort();
+  }, [orders]);
+
   const filteredOrders = orders.filter((o) => {
-    const matchesSearch = o.name.includes(searchQuery) || o.phone.includes(searchQuery) || o.wilaya.toLowerCase().includes(searchQuery.toLowerCase());
+    const q = searchQuery.toLowerCase().trim();
+    const matchesSearch =
+      !q ||
+      o.name?.toLowerCase().includes(q) ||
+      o.phone?.includes(q) ||
+      o.wilaya?.toLowerCase().includes(q) ||
+      o.commune?.toLowerCase().includes(q) ||
+      o.item?.toLowerCase().includes(q) ||
+      o.color?.toLowerCase().includes(q) ||
+      o.size?.toLowerCase().includes(q) ||
+      String(o.order_number).includes(q) ||
+      (o.tracking_id && o.tracking_id.toLowerCase().includes(q));
+
     const matchesStatus = statusFilter === "all" || o.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    const matchesProduct =
+      productFilter === "all" ||
+      o.item === productFilter ||
+      o.item?.toLowerCase().includes(productFilter.toLowerCase());
+
+    return matchesSearch && matchesStatus && matchesProduct;
   });
 
   const totalPages = Math.ceil(filteredOrders.length / rowsPerPage);
@@ -132,7 +178,8 @@ export default function OrdersPage() {
       declared_value: priceNumber,
       is_stopdesk: isStopdeskOrder,
       stopdesk_id: "",
-      autorisation_ouverture: false
+      autorisation_ouverture: false,
+      forceRetry: true
     });
 
     // Fetch yalidine communes for this wilaya if using Yalidine
@@ -199,31 +246,103 @@ export default function OrdersPage() {
       </div>
 
       {/* Search + Filters */}
-      <div className="flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
         <div className="relative flex-1">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600" />
-          <input type="text" placeholder="Search..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-surface border border-white/5 rounded-xl pl-9 pr-3 py-2.5 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-accent/50" />
+          <input
+            type="text"
+            placeholder="Search by customer, phone, wilaya, item..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-surface border border-white/5 rounded-xl pl-9 pr-8 py-2.5 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-accent/50"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white"
+            >
+              <X size={14} />
+            </button>
+          )}
         </div>
-        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
-          className="bg-surface border border-white/5 rounded-xl px-3 py-2.5 text-xs font-bold text-gray-300 focus:outline-none appearance-none cursor-pointer uppercase">
-          <option value="all">All Status</option>
-          {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
-        </select>
+
+        {/* Product Filter Dropdown */}
+        <div className="relative">
+          <select
+            value={productFilter}
+            onChange={(e) => setProductFilter(e.target.value)}
+            className="w-full sm:w-auto bg-surface border border-white/5 rounded-xl pl-8 pr-8 py-2.5 text-xs font-semibold text-gray-300 focus:outline-none focus:ring-2 focus:ring-accent/50 appearance-none cursor-pointer hover:border-white/10 transition-colors"
+          >
+            <option value="all" className="bg-[#141720] text-gray-200">
+              All Products ({orders.length})
+            </option>
+            {productOptions.map((p) => (
+              <option key={p} value={p} className="bg-[#141720] text-gray-200">
+                {p} {productCounts[p] ? `(${productCounts[p]})` : "(0)"}
+              </option>
+            ))}
+          </select>
+          <Package size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
+          <ChevronRight size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 rotate-90 text-gray-500 pointer-events-none" />
+        </div>
+
+        {/* Status Dropdown (Mobile only) */}
+        <div className="relative md:hidden">
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="w-full bg-surface border border-white/5 rounded-xl px-3 py-2.5 text-xs font-bold text-gray-300 focus:outline-none appearance-none cursor-pointer uppercase"
+          >
+            <option value="all" className="bg-[#141720]">All Status</option>
+            {STATUS_OPTIONS.map((s) => (
+              <option key={s} value={s} className="bg-[#141720]">{s}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
-      {/* Status Pills */}
-      <div className="hidden md:flex items-center gap-1 bg-white/5 p-1 rounded-xl w-fit">
-        <button onClick={() => setStatusFilter("all")} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${statusFilter === "all" ? "bg-accent text-black" : "text-gray-500 hover:text-gray-300"}`}>All</button>
-        {STATUS_OPTIONS.map((s) => {
-          const colors = statusColors[s];
-          return (
-            <button key={s} onClick={() => setStatusFilter(s)} className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-colors capitalize flex items-center gap-1.5 ${statusFilter === s ? `${colors.bg} ${colors.text} border ${colors.border}` : "text-gray-500 hover:text-gray-300"}`}>
-              <span className={`w-1.5 h-1.5 rounded-full ${colors.dot}`} />
-              {s}
-            </button>
-          );
-        })}
+      {/* Status Pills & Active Filter Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="hidden md:flex items-center gap-1 bg-white/5 p-1 rounded-xl w-fit">
+          <button
+            onClick={() => setStatusFilter("all")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+              statusFilter === "all" ? "bg-accent text-black" : "text-gray-500 hover:text-gray-300"
+            }`}
+          >
+            All
+          </button>
+          {STATUS_OPTIONS.map((s) => {
+            const colors = statusColors[s];
+            return (
+              <button
+                key={s}
+                onClick={() => setStatusFilter(s)}
+                className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-colors capitalize flex items-center gap-1.5 ${
+                  statusFilter === s ? `${colors.bg} ${colors.text} border ${colors.border}` : "text-gray-500 hover:text-gray-300"
+                }`}
+              >
+                <span className={`w-1.5 h-1.5 rounded-full ${colors.dot}`} />
+                {s}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Reset Active Filters Button */}
+        {(productFilter !== "all" || statusFilter !== "all" || searchQuery) && (
+          <button
+            onClick={() => {
+              setProductFilter("all");
+              setStatusFilter("all");
+              setSearchQuery("");
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-medium hover:bg-red-500/20 transition-colors"
+          >
+            <X size={13} />
+            <span>Reset filters</span>
+          </button>
+        )}
       </div>
 
       {/* Orders Table */}
@@ -266,7 +385,15 @@ export default function OrdersPage() {
                       {STATUS_OPTIONS.map((s) => <option key={s} value={s} className="bg-surface text-white">{s}</option>)}
                     </select>
                     {order.tracking_id ? (
-                      <span className="text-[9px] font-mono font-bold text-gray-500 bg-white/5 px-1.5 py-1.5 rounded truncate max-w-[80px]">{order.tracking_id}</span>
+                      <div className="flex items-center gap-1">
+                        <span className="text-[9px] font-mono font-bold text-gray-500 bg-white/5 px-1.5 py-1.5 rounded truncate max-w-[80px]">{order.tracking_id}</span>
+                        <button onClick={() => openDispatchModal(order, "ecom")} disabled={pushingId === order.id} title="Retry Ecom" className="p-1 bg-white/5 hover:bg-emerald-500/10 text-gray-500 hover:text-emerald-400 rounded transition-colors disabled:opacity-50">
+                          <RefreshCw size={10} />
+                        </button>
+                        <button onClick={() => openDispatchModal(order, "yalidine")} disabled={pushingId === order.id} title="Retry Yalidine" className="p-1 bg-white/5 hover:bg-rose-500/10 text-gray-500 hover:text-rose-400 rounded transition-colors disabled:opacity-50">
+                          <RefreshCw size={10} />
+                        </button>
+                      </div>
                     ) : (
                       <div className="flex items-center gap-1">
                         <button onClick={() => openDispatchModal(order, "ecom")} disabled={pushingId === order.id}
@@ -342,7 +469,15 @@ export default function OrdersPage() {
                         {order.tracking_id ? (
                           <div className="flex flex-col items-center gap-0.5">
                             <span className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Tracking</span>
-                            <span className="text-xs font-mono font-bold text-gray-300 bg-white/5 px-2 py-1 rounded">{order.tracking_id}</span>
+                            <div className="flex items-center gap-1">
+                              <span className="text-xs font-mono font-bold text-gray-300 bg-white/5 px-2 py-1 rounded">{order.tracking_id}</span>
+                              <button onClick={() => openDispatchModal(order, "ecom")} disabled={pushingId === order.id} title="Retry Ecom" className="p-1.5 text-gray-500 hover:text-emerald-400 hover:bg-emerald-500/10 rounded transition-colors disabled:opacity-50">
+                                <RefreshCw size={12} />
+                              </button>
+                              <button onClick={() => openDispatchModal(order, "yalidine")} disabled={pushingId === order.id} title="Retry Yalidine" className="p-1.5 text-gray-500 hover:text-rose-400 hover:bg-rose-500/10 rounded transition-colors disabled:opacity-50">
+                                <RefreshCw size={12} />
+                              </button>
+                            </div>
                           </div>
                         ) : (
                           <div className="flex items-center justify-center gap-1.5">
