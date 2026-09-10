@@ -66,7 +66,10 @@ export async function POST(request: Request) {
       ? Boolean(overrides.is_stopdesk)
       : Boolean(order.commune?.includes("[Stopdesk]") || order.delivery_type === "stopdesk");
 
-    const referenceId = order.order_number ? order.order_number.toString() : order.id.toString();
+    let referenceId = order.order_number ? order.order_number.toString() : order.id.toString();
+    if (overrides?.forceRetry) {
+      referenceId = `${referenceId}-R${Math.floor(100 + Math.random() * 900)}`;
+    }
 
     const ecomPayload = {
       Colis: [

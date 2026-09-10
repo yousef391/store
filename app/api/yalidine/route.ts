@@ -145,7 +145,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: `La commune "${finalCommune}" n'est pas livrable par Yalidine. Veuillez choisir une commune livrable dans le formulaire.` }, { status: 400 });
     }
 
-    const referenceId = order.order_number ? order.order_number.toString() : order.id.toString();
+    let referenceId = order.order_number ? order.order_number.toString() : order.id.toString();
+    if (overrides?.forceRetry) {
+      referenceId = `${referenceId}-R${Math.floor(100 + Math.random() * 900)}`;
+    }
 
     let productDescription = overrides?.product_list || `${order.item} (${order.color}, ${order.size})`;
     if (overrides?.autorisation_ouverture) {
