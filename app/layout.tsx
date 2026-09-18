@@ -31,6 +31,8 @@ export const metadata: Metadata = {
   },
 };
 
+export const revalidate = 60; // Revalidate layout data every 60 seconds
+
 export default async function RootLayout({
   children,
 }: Readonly<{
