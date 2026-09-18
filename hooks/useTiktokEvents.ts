@@ -44,10 +44,9 @@ function getCookie(name: string): string | undefined {
 /**
  * Hook that sends TikTok events both via browser pixel and server-side Events API.
  *
- * Maps standard e-commerce events to TikTok's event names:
- *   ViewContent  → ViewContent
- *   AddToCart    → AddToCart
- *   Purchase     → CompletePayment
+ * TikTok event names (per official docs):
+ *   ViewContent, AddToCart, Purchase, InitiateCheckout,
+ *   AddPaymentInfo, Search, PlaceAnOrder, CompleteRegistration, AddToWishlist
  *
  * Usage:
  *   const { sendTiktokEvent } = useTiktokEvents();
@@ -62,39 +61,28 @@ export function useTiktokEvents() {
       if (typeof window !== "undefined") {
         const ttq = (window as unknown as { ttq?: TTQ }).ttq;
         if (ttq) {
-          // Map Meta-style event names to TikTok equivalents
-          const tiktokEventMap: Record<string, string> = {
-            Purchase: "CompletePayment",
-            ViewContent: "ViewContent",
-            AddToCart: "AddToCart",
-            InitiateCheckout: "InitiateCheckout",
-            AddPaymentInfo: "AddPaymentInfo",
-            Search: "Search",
-          };
-
-          const tiktokEventName = tiktokEventMap[eventName] || eventName;
-
-          // Build TikTok pixel params
           const pixelParams: Record<string, unknown> = {};
           if (customData?.value !== undefined) pixelParams.value = customData.value;
           if (customData?.currency) pixelParams.currency = customData.currency;
-          if (customData?.contentIds) pixelParams.contents = customData.contentIds.map(id => ({
-            content_id: id,
-            content_type: customData.contentType || "product",
-            content_name: customData.contentName,
-          }));
+          if (customData?.contentIds) {
+            pixelParams.content_id = customData.contentIds[0];
+            pixelParams.contents = customData.contentIds.map(id => ({
+              content_id: id,
+              content_type: customData.contentType || "product",
+              content_name: customData.contentName,
+            }));
+          }
           if (customData?.contentName) pixelParams.content_name = customData.contentName;
-          if (customData?.contentCategory) pixelParams.content_category = customData.contentCategory;
           if (customData?.contentType) pixelParams.content_type = customData.contentType;
-          if (customData?.orderId) pixelParams.order_id = customData.orderId;
           pixelParams.event_id = eventId;
 
-          ttq.track(tiktokEventName, pixelParams);
+          ttq.track(eventName, pixelParams);
         }
       }
 
       // ── 2. Server-side Events API (primary) ──
       const ttclid = getCookie("ttclid");
+      const ttp = getCookie("_ttp");
 
       const payload = {
         eventName,
@@ -102,6 +90,7 @@ export function useTiktokEvents() {
         eventSourceUrl: typeof window !== "undefined" ? window.location.href : undefined,
         userData: {
           ttclid,
+          ttp,
         },
         customData,
       };

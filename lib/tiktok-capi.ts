@@ -20,6 +20,7 @@ export interface TiktokUserData {
   clientIpAddress?: string;
   clientUserAgent?: string;
   ttclid?: string;
+  ttp?: string;
 }
 
 export interface TiktokCustomData {
@@ -44,6 +45,10 @@ export interface TiktokEventPayload {
 /**
  * Send a server-side event to TikTok Events API.
  * Reads credentials from store_settings in Supabase.
+ *
+ * Payload structure follows TikTok's official documentation:
+ * - Event params: value, currency, content_id, content_type, content_name, event_id, event_time, url
+ * - Customer params: email, phone, external_id, ip, user_agent, ttclid, ttp
  */
 export async function sendTiktokServerEvent(
   payload: TiktokEventPayload
@@ -72,18 +77,6 @@ export async function sendTiktokServerEvent(
     customData = {},
   } = payload;
 
-  // Map Meta-style event names to TikTok equivalents
-  const tiktokEventMap: Record<string, string> = {
-    Purchase: "CompletePayment",
-    ViewContent: "ViewContent",
-    AddToCart: "AddToCart",
-    InitiateCheckout: "InitiateCheckout",
-    AddPaymentInfo: "AddPaymentInfo",
-    Search: "Search",
-  };
-
-  const tiktokEventName = tiktokEventMap[eventName] || eventName;
-
   // Build hashed user context
   const user: Record<string, unknown> = {};
   if (userData.email) user.email = hashValue(userData.email);
@@ -92,6 +85,7 @@ export async function sendTiktokServerEvent(
   if (userData.lastName) user.last_name = hashValue(userData.lastName);
   if (userData.userId) user.external_id = hashValue(userData.userId);
   if (userData.ttclid) user.ttclid = userData.ttclid;
+  if (userData.ttp) user.ttp = userData.ttp;
 
   // Build context
   const context: Record<string, unknown> = { user };
@@ -101,13 +95,16 @@ export async function sendTiktokServerEvent(
     context.page = { url: eventSourceUrl };
   }
 
-  // Build properties (custom data)
+  // Build properties — flat fields per TikTok's official payload spec
   const properties: Record<string, unknown> = {};
-  if (customData.value !== undefined) properties.value = customData.value;
+  if (customData.value !== undefined) properties.value = String(customData.value);
   if (customData.currency) properties.currency = customData.currency;
   if (customData.contentType) properties.content_type = customData.contentType;
+  if (customData.contentName) properties.content_name = customData.contentName;
   if (customData.orderId) properties.order_id = customData.orderId;
-  if (customData.contentIds) {
+  if (customData.contentIds && customData.contentIds.length > 0) {
+    properties.content_id = customData.contentIds[0];
+    // Also provide contents array for richer data
     properties.contents = customData.contentIds.map((id) => ({
       content_id: id,
       content_type: customData.contentType || "product",
@@ -118,7 +115,7 @@ export async function sendTiktokServerEvent(
 
   const body = {
     pixel_code: pixelCode,
-    event: tiktokEventName,
+    event: eventName,
     event_id: eventId,
     timestamp: eventTime,
     context,
@@ -136,14 +133,14 @@ export async function sendTiktokServerEvent(
       body: JSON.stringify(body),
     });
 
-    if (!res.ok) {
-      const errorBody = await res.text();
-      console.error("[TikTok CAPI] Error:", res.status, errorBody);
-      return { success: false, error: `TikTok API ${res.status}: ${errorBody}` };
+    const resData = await res.json();
+
+    if (resData.code !== 0) {
+      console.error("[TikTok CAPI] Error:", resData.code, resData.message);
+      return { success: false, error: `TikTok API: ${resData.message}` };
     }
 
-    const resData = await res.json();
-    console.log(`[TikTok CAPI] Event sent: ${tiktokEventName} | code: ${resData.code ?? "?"}`);
+    console.log(`[TikTok CAPI] Event sent: ${eventName} | code: ${resData.code}`);
     return { success: true };
   } catch (err) {
     console.error("[TikTok CAPI] Network error:", err);
