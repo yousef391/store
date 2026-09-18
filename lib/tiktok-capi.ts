@@ -114,12 +114,17 @@ export async function sendTiktokServerEvent(
   }
 
   const body = {
-    pixel_code: pixelCode,
-    event: eventName,
-    event_id: eventId,
-    timestamp: eventTime,
-    context,
-    properties,
+    event_source: "web",
+    event_source_id: pixelCode,
+    data: [
+      {
+        event: eventName,
+        event_id: eventId,
+        event_time: Math.floor(new Date(eventTime).getTime() / 1000),
+        context,
+        properties,
+      }
+    ]
   };
 
   try {
