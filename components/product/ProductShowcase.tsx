@@ -8,6 +8,7 @@ import algeriaData from "@/data/algeria.json";
 import { defaultZonePrices, defaultStopdeskZonePrices } from "@/data/wilayas";
 import { DeliveryType } from "@/data/deliveryPrices";
 import { useMetaEvents } from "@/hooks/useMetaEvents";
+import { useTiktokEvents } from "@/hooks/useTiktokEvents";
 import Image from "next/image";
 import { ShieldCheck, PackageOpen, Truck, Banknote, Ruler, Globe2, CheckCircle2, Eye, ArrowLeft, Sparkles, Building2, Home, Star, Flame, Zap, RotateCw, MapPin, Lightbulb, Check, ShoppingBag, X, Tag } from "lucide-react";
 import Reviews from "@/components/home/Reviews";
@@ -73,6 +74,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
   const showSizes = hasSizeSelector && sizesProp && sizesProp.length > 0;
   const availableSizes = sizesProp && sizesProp.length > 0 ? sizesProp : ["S", "M", "L", "XL"];
   const { sendEvent } = useMetaEvents();
+  const { sendTiktokEvent } = useTiktokEvents();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedSize, setSelectedSize] = useState(availableSizes[1] || availableSizes[0] || "");
   const effectiveTriplePrice = triplePrice ?? (productSlug === "debardeur-nike-dri-fit" || productName?.includes("Débardeur") || variants[0]?.name?.includes("Débardeur") ? 4500 : undefined);
@@ -143,6 +145,14 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
     const trackingName = productName ?? variants[0]?.name;
     const trackingCategory = productCategory ?? variants[0]?.productType;
     sendEvent("ViewContent", {
+      value: singlePrice,
+      currency: "DZD",
+      contentIds: [String(trackingId)],
+      contentName: trackingName,
+      contentCategory: trackingCategory,
+      contentType: "product",
+    });
+    sendTiktokEvent("ViewContent", {
       value: singlePrice,
       currency: "DZD",
       contentIds: [String(trackingId)],
@@ -302,6 +312,14 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
       const purchaseName = productName ?? baseItemName;
       const purchaseCategory = productCategory ?? item.productType;
       sendEvent("Purchase", {
+        value: totalPrice,
+        currency: "DZD",
+        contentIds: [String(purchaseId)],
+        contentName: purchaseName,
+        contentCategory: purchaseCategory,
+        contentType: "product",
+      });
+      sendTiktokEvent("Purchase", {
         value: totalPrice,
         currency: "DZD",
         contentIds: [String(purchaseId)],
@@ -872,7 +890,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                 <input required name="name" placeholder="الاسم الكامل" onChange={(e) => { formNameRef.current = e.target.value; }} className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-white/50 transition-colors text-base relative z-10" />
                 <input required type="tel" name="phone" placeholder="رقم الهاتف" pattern="[0-9]{10,}" minLength={10} title="يرجى إدخال رقم هاتف لا يقل عن 10 أرقام" onChange={(e) => { const val = e.target.value.replace(/\D/g, ''); e.target.value = val; formPhoneRef.current = val; }} className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-white/50 transition-colors text-right text-base relative z-10" dir="ltr" />
                 <div className="flex gap-2 relative z-10">
-                  <select required value={selectedWilaya} onChange={(e) => { setSelectedWilaya(e.target.value); setSelectedCommune(""); if (!hasTrackedAddToCart) { setHasTrackedAddToCart(true); sendEvent('AddToCart', { value: productPrice, currency: 'DZD', contentIds: [String(productId ?? productSlug ?? item.id)], contentName: productName ?? item.name, contentCategory: productCategory ?? item.productType, contentType: 'product' }); } }} className="w-[45%] bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-white/50 transition-colors appearance-none cursor-pointer text-base">
+                  <select required value={selectedWilaya} onChange={(e) => { setSelectedWilaya(e.target.value); setSelectedCommune(""); if (!hasTrackedAddToCart) { setHasTrackedAddToCart(true); sendEvent('AddToCart', { value: productPrice, currency: 'DZD', contentIds: [String(productId ?? productSlug ?? item.id)], contentName: productName ?? item.name, contentCategory: productCategory ?? item.productType, contentType: 'product' }); sendTiktokEvent('AddToCart', { value: productPrice, currency: 'DZD', contentIds: [String(productId ?? productSlug ?? item.id)], contentName: productName ?? item.name, contentCategory: productCategory ?? item.productType, contentType: 'product' }); } }} className="w-[45%] bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-white/50 transition-colors appearance-none cursor-pointer text-base">
                     <option value="" disabled className="text-black">1. الولاية</option>
                     {algeriaData.wilayas.map((w: { wilaya_id: string; wilaya_name_latin: string }) => (
                       <option key={w.wilaya_id} value={w.wilaya_id} className="text-black text-left" dir="ltr">{w.wilaya_id} - {w.wilaya_name_latin}</option>
@@ -1174,7 +1192,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                 <input required name="name" placeholder="الاسم الكامل" onChange={(e) => { formNameRef.current = e.target.value; }} className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-[15px] text-white placeholder-white/40 focus:outline-none focus:border-white/40 transition-colors" />
                 <input required type="tel" name="phone" placeholder="رقم الهاتف" pattern="[0-9]{10,}" minLength={10} title="يرجى إدخال رقم هاتف لا يقل عن 10 أرقام" onChange={(e) => { const val = e.target.value.replace(/\D/g, ''); e.target.value = val; formPhoneRef.current = val; }} className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-[15px] text-white placeholder-white/40 focus:outline-none focus:border-white/40 transition-colors text-right" dir="ltr" />
                 <div className="flex flex-col gap-2">
-                  <select required value={selectedWilaya} onChange={(e) => { setSelectedWilaya(e.target.value); setSelectedCommune(""); if (!hasTrackedAddToCart) { setHasTrackedAddToCart(true); sendEvent('AddToCart', { value: productPrice, currency: 'DZD', contentIds: [String(productId ?? productSlug ?? item.id)], contentName: productName ?? item.name, contentCategory: productCategory ?? item.productType, contentType: 'product' }); } }} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-[15px] text-white focus:outline-none focus:border-white/40 transition-colors appearance-none">
+                  <select required value={selectedWilaya} onChange={(e) => { setSelectedWilaya(e.target.value); setSelectedCommune(""); if (!hasTrackedAddToCart) { setHasTrackedAddToCart(true); sendEvent('AddToCart', { value: productPrice, currency: 'DZD', contentIds: [String(productId ?? productSlug ?? item.id)], contentName: productName ?? item.name, contentCategory: productCategory ?? item.productType, contentType: 'product' }); sendTiktokEvent('AddToCart', { value: productPrice, currency: 'DZD', contentIds: [String(productId ?? productSlug ?? item.id)], contentName: productName ?? item.name, contentCategory: productCategory ?? item.productType, contentType: 'product' }); } }} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-[15px] text-white focus:outline-none focus:border-white/40 transition-colors appearance-none">
                     <option value="" disabled className="text-black">اختر الولاية</option>
                     {algeriaData.wilayas.map((w: { wilaya_id: string; wilaya_name_latin: string }) => (
                       <option key={w.wilaya_id} value={w.wilaya_id} className="text-black text-left" dir="ltr">{w.wilaya_id} - {w.wilaya_name_latin}</option>
