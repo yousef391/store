@@ -12,11 +12,11 @@ interface EventCustomData {
   orderId?: string;
 }
 
-type TTQ = (
-  action: string,
-  event: string,
-  params?: Record<string, unknown>
-) => void;
+interface TTQ {
+  track: (event: string, params?: Record<string, unknown>) => void;
+  page: () => void;
+  identify: (params: Record<string, unknown>) => void;
+}
 
 /**
  * Hook that sends TikTok Pixel events via the browser pixel.
@@ -64,7 +64,7 @@ export function useTiktokEvents() {
       if (customData?.contentType) pixelParams.content_type = customData.contentType;
       if (customData?.orderId) pixelParams.order_id = customData.orderId;
 
-      ttq("track", tiktokEventName, pixelParams);
+      ttq.track(tiktokEventName, pixelParams);
     },
     []
   );
