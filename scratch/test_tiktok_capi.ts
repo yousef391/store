@@ -1,4 +1,4 @@
-import { sendTiktokServerEvent } from "../lib/tiktok-capi.ts";
+import { sendTiktokServerEvent } from "../lib/tiktok-capi";
 
 async function runTest() {
   console.log("Sending test Purchase event to TikTok CAPI...");
