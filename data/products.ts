@@ -398,6 +398,20 @@ export const jordanParisProducts: ShowcaseProduct[] = [
   },
 ];
 
+export const nikeAirMaxProducts: ShowcaseProduct[] = [
+  {
+    id: 2500,
+    name: "Ensemble Nike Air Max",
+    bg: "#0a0a0a",
+    tag: "Gris",
+    swatch: "#9ca3af",
+    desc: "Ensemble Nike Air Max en coton molletonné d'exception. Hoodie avec logo Swoosh oversize au dos et pantalon assorti avec détails Air Max. Style streetwear ultra-confortable.",
+    review: '"طقم نايك خيالي، القماش والفينيسيون بزاف شابين" — وليد ب.',
+    productType: "set",
+    image: "/products/nike_air_max_grey.jpg",
+    colorName: "Gris",
+  },
+];
 // Simple product list for shop page and other components
 export interface Product {
   id: number;
@@ -418,11 +432,31 @@ export interface Product {
   reviewCount: number;
   stock: number;
   dateAdded: string;
-  showcaseType: "nocta" | "nocta_sweat" | "nocta_tee" | "nocta_hoodie" | "polo" | "bmw" | "jordan" | "jordan_paris" | "debardeur" | "ny" | "nike_jogger" | "adidas_snap" | "chinese_jacket";
+  showcaseType: "nocta" | "nocta_sweat" | "nocta_tee" | "nocta_hoodie" | "polo" | "bmw" | "jordan" | "jordan_paris" | "debardeur" | "ny" | "nike_jogger" | "adidas_snap" | "chinese_jacket" | "nike_air_max";
   upsellPrice?: number;
 }
 
 export const products: Product[] = [
+  {
+    id: 24,
+    slug: "nike-air-max-ensemble",
+    name: "Ensemble Nike Air Max",
+    description: "Ensemble Nike Air Max premium. Hoodie à capuche avec logo géant au dos et pantalon jogger assorti. Tissu molletonné ultra-doux pour un confort optimal.",
+    price: 5900,
+    bundlePrice: 9900,
+    images: ["/products/nike_air_max_grey.jpg"],
+    category: "ensembles",
+    sizes: ["S", "M", "L", "XL"],
+    colors: [{ name: "Gris", hex: "#9ca3af" }],
+    tag: "Swoosh Oversize",
+    status: "active",
+    isFeatured: true,
+    rating: 4.9,
+    reviewCount: 45,
+    stock: 50,
+    dateAdded: "2026-09-22",
+    showcaseType: "nike_air_max",
+  },
   {
     id: 23,
     slug: "nike-nocta-zip-hoodie-ensemble",
