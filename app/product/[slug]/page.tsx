@@ -17,6 +17,7 @@ import {
   jordanProducts,
   jordanParisProducts,
   chineseJacketProducts,
+  nikeAirMaxProducts,
   ShowcaseProduct,
 } from "@/data/products";
 import { supabase } from "@/lib/supabase";
@@ -109,6 +110,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
               if (params.slug === "tshirt-oversize-jordan-minimalist" || type === "jordan") return jordanProducts;
               if (type === "debardeur" || params.slug === "debardeur-nike-dri-fit") return debardeurProducts;
               if (type === "bmw" || params.slug === "bmw-motorsport-ensemble") return bmwProducts;
+              if (type === "nike_air_max" || params.slug === "nike-air-max-ensemble") return nikeAirMaxProducts;
               return noctaProducts;
             };
             const baseVariants = getBaseVariants(currentProduct.showcaseType);
@@ -183,6 +185,8 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
       ? debardeurProducts
       : productData.showcaseType === "bmw"
       ? bmwProducts
+      : productData.showcaseType === "nike_air_max" || params.slug === "nike-air-max-ensemble"
+      ? nikeAirMaxProducts
       : noctaProducts;
   const variants = dynamicVariants || fallbackVariants;
 
