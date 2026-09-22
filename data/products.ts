@@ -198,7 +198,7 @@ export const chineseJacketProducts: ShowcaseProduct[] = [
     desc: "سلعة مستوردة ذات جودة عالية جداً (Importation High Quality - مشي كما السلعة اللوكال). خامة ممتازة وأزرار عُقد صينية تقليدية باللون الأبيض مع سحاب متين وقماش راقي.",
     review: '"سلعة مستوردة جودة خيالية والفينيسيون طوب روعة، مشي كيمـا اللوكال" — كريم ر.',
     productType: "set",
-    image: "/products/chinese_jacket_front.jpg",
+    image: "/products/chinese_jacket_black_front.jpg",
     colorName: "Full Black",
   },
   {
@@ -454,7 +454,7 @@ export const products: Product[] = [
     description: "Veste Track Chinese Style d'exception. سلعة مستوردة ذات جودة عالية جداً (Importation High Quality - مشي كما السلعة اللوكال). تتميز بأزرار عُقد صينية تقليدية باللون الأبيض، 3 أشرطة جانبية، وسحاب متين وقماش راقي وعالي الجودة.",
     price: 8900,
     bundlePrice: 15900,
-    images: ["/products/chinese_jacket_front.jpg", "/products/chinese_jacket_1.jpg", "/products/chinese_jacket_2.jpg"],
+    images: ["/products/chinese_jacket_black_front.jpg", "/products/chinese_jacket_1.jpg", "/products/chinese_jacket_2.jpg"],
     category: "ensembles",
     sizes: ["XS", "S", "M", "L"],
     colors: [{ name: "Full Black", hex: "#111111" }],
