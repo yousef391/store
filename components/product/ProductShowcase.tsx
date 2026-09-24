@@ -12,6 +12,7 @@ import { useTiktokEvents } from "@/hooks/useTiktokEvents";
 import Image from "next/image";
 import { ShieldCheck, PackageOpen, Truck, Banknote, Ruler, Globe2, CheckCircle2, Eye, ArrowLeft, Sparkles, Building2, Home, Star, Flame, Zap, RotateCw, MapPin, Lightbulb, Check, ShoppingBag, X, Tag } from "lucide-react";
 import Reviews from "@/components/home/Reviews";
+import SizeGuide from "@/components/home/SizeGuide";
 
 interface ProductShowcaseProps {
   variants: ShowcaseProduct[];
@@ -980,6 +981,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
       {showReviews && (
         <div className="hidden lg:block w-full bg-black/20 backdrop-blur-3xl shrink-0 border-t border-white/5">
           <Reviews />
+          {productSlug === "nike-air-max-ensemble" && <SizeGuide />}
         </div>
       )}
 
@@ -1278,6 +1280,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
           {showReviews && (
             <div className="-mx-4 pb-12 mt-4">
               <Reviews />
+              {productSlug === "nike-air-max-ensemble" && <SizeGuide />}
             </div>
           )}
         </div>
