@@ -674,7 +674,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
       {/* ────── DESKTOP LAYOUT (Hidden on mobile) ────── */}
       <div className="hidden lg:flex flex-col relative overflow-hidden h-[100dvh] shrink-0">
         <header className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-10 py-6">
-          <img src="/logo.png" alt="Logo" className="h-20 w-auto object-contain drop-shadow-2xl" style={{ width: "auto", height: "auto" }} />
+          <Image src="/logo.png" alt="Logo" width={150} height={80} className="h-20 w-auto object-contain drop-shadow-2xl" />
           <div className="flex items-center bg-white/10 backdrop-blur-md rounded-full px-5 py-2.5 gap-2.5 border border-white/20 shadow-xl shadow-black/20">
             <Globe2 className="w-4 h-4 text-white/70" />
             <span className="text-white font-black tracking-widest uppercase text-sm" style={{ fontFamily: "var(--font-dm)" }}>
@@ -990,7 +990,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
           <button onClick={() => router.back()} className="w-8 h-8 rounded-full bg-white/10 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white/70 active:scale-95 transition-all">
             <ArrowLeft className="w-4 h-4" />
           </button>
-          <img src="/logo.png" alt="Logo" className="h-6 max-w-[100px] w-auto object-contain" />
+          <Image src="/logo.png" alt="Logo" width={100} height={24} className="h-6 max-w-[100px] w-auto object-contain" />
           <div className="w-8" />
         </div>
 

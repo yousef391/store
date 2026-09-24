@@ -2,7 +2,6 @@
 
 import React, { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { useI18n } from "@/hooks/useI18n";
 
 const sizeData = [
   { size: "M", heightMin: 168, heightMax: 178, weightMin: 63, weightMax: 75 },
@@ -46,7 +45,6 @@ function recommend(height: number | null, weight: number | null): string | null 
 export default function SizeGuide() {
   const [height, setHeight] = useState<number | null>(null);
   const [weight, setWeight] = useState<number | null>(null);
-  const { t } = useI18n();
 
   const recommended = useMemo(() => recommend(height, weight), [height, weight]);
 
