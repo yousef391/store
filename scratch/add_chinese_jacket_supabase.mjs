@@ -15,7 +15,7 @@ async function main() {
     description: "Veste Track Chinese Style d'exception. سلعة مستوردة ذات جودة عالية جداً (Importation High Quality - مشي كما السلعة اللوكال). تتميز بأزرار عُقد صينية تقليدية باللون الأبيض، 3 أشرطة جانبية، وسحاب متين وقماش راقي وعالي الجودة.",
     price: 8900,
     bundle_price: 15900,
-    images: ["/products/chinese_jacket_1.jpg", "/products/chinese_jacket_2.jpg"],
+    images: ["/products/chinese_jacket_black_front.jpg", "/products/chinese_jacket_1.jpg", "/products/chinese_jacket_2.jpg"],
     category: "ensembles",
     sizes: ["XS", "S", "M", "L"],
     colors: [{ name: "Full Black", hex: "#111111" }],
@@ -52,7 +52,7 @@ async function main() {
       description: "سلعة مستوردة ذات جودة عالية جداً (Importation High Quality - مشي كما السلعة اللوكال). خامة ممتازة وأزرار عُقد صينية تقليدية باللون الأبيض مع سحاب متين وقماش راقي.",
       review: '"سلعة مستوردة جودة خيالية والفينيسيون طوب روعة، مشي كيمـا اللوكال 🔥" — كريم ر.',
       product_type: "set",
-      image: "/products/chinese_jacket_1.jpg",
+      image: "/products/chinese_jacket_black_front.jpg",
       color_name: "Full Black",
       sort_order: 1
     },
@@ -60,13 +60,13 @@ async function main() {
       product_id: 22,
       name: "Veste Chinese Style",
       bg: "#0a0a0a",
-      tag: "Détails Finition",
+      tag: "Toutes les Couleurs",
       swatch: "#111111",
-      description: "تفاصيل العقد الصينية المتقنة والسحاب. خياطة وتنقاس عالي الجودة ومستورد 100%.",
-      review: '"العقد الصينية وقماش السلعة المستوردة بزاف فور ما تندمش عليها" — أمين ب.',
+      description: "متوفرة في 5 ألوان رائعة: أسود، زيتوني، أزرق، بني، ورمادي. سلعة مستوردة ذات جودة عالية جداً وخياطة متقنة.",
+      review: '"الألوان كامل متوفرين، القماش مستورد والفينيسيون بزاف فور" — أمين ب.',
       product_type: "set",
       image: "/products/chinese_jacket_2.jpg",
-      color_name: "Full Black (Détails)",
+      color_name: "Couleurs Disponibles",
       sort_order: 2
     }
   ];
