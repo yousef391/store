@@ -390,11 +390,14 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
       item?.name?.toLowerCase().includes("sac") ||
       productCategory === "bags";
 
-    // Determine if it's a Nike product
+    // Determine if it's a Nike product (checking explicitly for related brands too)
+    const searchString = `${productSlug} ${productName} ${item?.name}`.toLowerCase();
     const isNikeProduct = 
-      productSlug?.toLowerCase().includes("nike") || 
-      productName?.toLowerCase().includes("nike") || 
-      item?.name?.toLowerCase().includes("nike");
+      searchString.includes("nike") || 
+      searchString.includes("nocta") || 
+      searchString.includes("jordan") || 
+      searchString.includes("air max") ||
+      searchString.includes("air-max");
 
     const shouldShowUpsell = hasBagUpsell && !isBagProduct;
     const shouldRouteToDedicatedUpsell = isNikeProduct && shouldShowUpsell;
@@ -405,7 +408,14 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
     if (!success) return;
 
     if (shouldRouteToDedicatedUpsell) {
-      router.push("/upsell/sacoche");
+      const queryParams = new URLSearchParams({
+        name: formNameRef.current,
+        phone: formPhoneRef.current,
+        wilaya: selectedWilaya,
+        commune: selectedCommune,
+        deliveryType
+      });
+      router.push(`/upsell/sacoche?${queryParams.toString()}`);
       return;
     }
 

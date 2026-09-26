@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import React, { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { 
   Package, 
@@ -14,9 +14,11 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-export default function UpsellLandingPage() {
+function UpsellContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [showFloatingButton, setShowFloatingButton] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Show floating button after scrolling down a bit
   useEffect(() => {
@@ -31,12 +33,43 @@ export default function UpsellLandingPage() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const handleAcceptOffer = () => {
-    router.push("/shop/success");
+  const handleAcceptOffer = async () => {
+    setIsSubmitting(true);
+    try {
+      const name = searchParams.get("name");
+      const phone = searchParams.get("phone");
+      
+      if (name && phone) {
+        await fetch("/api/order", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name,
+            phone,
+            wilaya: searchParams.get("wilaya") || "",
+            commune: searchParams.get("commune") || "",
+            deliveryType: searchParams.get("deliveryType") || "domicile",
+            item: "[UPSELL] Sacoche Lacoste Premium",
+            color: "Noir",
+            size: "Unique",
+            quantity: 1,
+            price: 2500,
+            delivery: 0,
+            total: 2500,
+            isUpsell: true,
+          }),
+        });
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsSubmitting(false);
+      router.push("/success");
+    }
   };
 
   const handleDeclineOffer = () => {
-    router.push("/shop/success");
+    router.push("/success");
   };
 
   return (
@@ -138,10 +171,11 @@ export default function UpsellLandingPage() {
           {/* Add Now Button inside Card */}
           <button 
             onClick={handleAcceptOffer}
-            className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 text-black font-black text-lg py-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-[0_4px_14px_0_rgba(249,115,22,0.39)]"
+            disabled={isSubmitting}
+            className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 text-black font-black text-lg py-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-[0_4px_14px_0_rgba(249,115,22,0.39)] disabled:opacity-50"
           >
-            أضف الآن - 2500 د.ج
-            <ArrowLeft className="w-5 h-5" />
+            {isSubmitting ? "جاري التأكيد..." : "أضف الآن - 2500 د.ج"}
+            {!isSubmitting && <ArrowLeft className="w-5 h-5" />}
           </button>
         </div>
 
@@ -211,10 +245,11 @@ export default function UpsellLandingPage() {
             <div className="max-w-md w-full">
               <button 
                 onClick={handleAcceptOffer}
-                className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 text-black font-black text-lg py-4 rounded-xl flex items-center justify-center gap-2 shadow-[0_10px_30px_rgba(249,115,22,0.3)] transform transition-transform active:scale-95"
+                disabled={isSubmitting}
+                className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 text-black font-black text-lg py-4 rounded-xl flex items-center justify-center gap-2 shadow-[0_10px_30px_rgba(249,115,22,0.3)] transform transition-transform active:scale-95 disabled:opacity-50"
               >
-                أضف الآن - 2500 د.ج
-                <ArrowLeft className="w-5 h-5" />
+                {isSubmitting ? "جاري التأكيد..." : "أضف الآن - 2500 د.ج"}
+                {!isSubmitting && <ArrowLeft className="w-5 h-5" />}
               </button>
               <button 
                 onClick={handleDeclineOffer}
@@ -228,5 +263,13 @@ export default function UpsellLandingPage() {
       </AnimatePresence>
       
     </div>
+  );
+}
+
+export default function UpsellLandingPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#0F0F0F]" />}>
+      <UpsellContent />
+    </Suspense>
   );
 }
