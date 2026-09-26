@@ -275,7 +275,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
     [currentIndex]
   );
 
-  const submitBaseOrder = async (): Promise<boolean> => {
+  const submitBaseOrder = async (trackPurchase: boolean = true): Promise<boolean> => {
     setIsSubmitting(true);
     setOrderError("");
 
@@ -309,25 +309,27 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
       }
       if (!res.ok) throw new Error("Order failed");
 
-      const purchaseId = productId ?? productSlug ?? String(item.id);
-      const purchaseName = productName ?? baseItemName;
-      const purchaseCategory = productCategory ?? item.productType;
-      sendEvent("Purchase", {
-        value: totalPrice,
-        currency: "DZD",
-        contentIds: [String(purchaseId)],
-        contentName: purchaseName,
-        contentCategory: purchaseCategory,
-        contentType: "product",
-      });
-      sendTiktokEvent("Purchase", {
-        value: totalPrice,
-        currency: "DZD",
-        contentIds: [String(purchaseId)],
-        contentName: purchaseName,
-        contentCategory: purchaseCategory,
-        contentType: "product",
-      });
+      if (trackPurchase) {
+        const purchaseId = productId ?? productSlug ?? String(item.id);
+        const purchaseName = productName ?? baseItemName;
+        const purchaseCategory = productCategory ?? item.productType;
+        sendEvent("Purchase", {
+          value: totalPrice,
+          currency: "DZD",
+          contentIds: [String(purchaseId)],
+          contentName: purchaseName,
+          contentCategory: purchaseCategory,
+          contentType: "product",
+        });
+        sendTiktokEvent("Purchase", {
+          value: totalPrice,
+          currency: "DZD",
+          contentIds: [String(purchaseId)],
+          contentName: purchaseName,
+          contentCategory: purchaseCategory,
+          contentType: "product",
+        });
+      }
 
       setIsSubmitting(false);
       return true;
@@ -381,19 +383,33 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
   const handleOrderSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    // 1. Submit the base normal order first
-    const success = await submitBaseOrder();
-    if (!success) return;
-
-    // 2. Check if upsell should be offered
+    // Determine if it's a bag product
     const isBagProduct =
       productSlug?.includes("sac") ||
       productName?.toLowerCase().includes("sac") ||
       item?.name?.toLowerCase().includes("sac") ||
       productCategory === "bags";
 
-    const shouldShowUpsell = hasBagUpsell && !isBagProduct;
+    // Determine if it's a Nike product
+    const isNikeProduct = 
+      productSlug?.toLowerCase().includes("nike") || 
+      productName?.toLowerCase().includes("nike") || 
+      item?.name?.toLowerCase().includes("nike");
 
+    const shouldShowUpsell = hasBagUpsell && !isBagProduct;
+    const shouldRouteToDedicatedUpsell = isNikeProduct && shouldShowUpsell;
+
+    // 1. Submit the base normal order first
+    // If routing to dedicated upsell page, DO NOT fire pixel Purchase event here
+    const success = await submitBaseOrder(!shouldRouteToDedicatedUpsell);
+    if (!success) return;
+
+    if (shouldRouteToDedicatedUpsell) {
+      router.push("/upsell/sacoche");
+      return;
+    }
+
+    // 2. Check if upsell modal should be offered
     if (shouldShowUpsell && !upsellShown) {
       setUpsellShown(true);
       setShowUpsellModal(true);
