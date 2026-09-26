@@ -2,12 +2,11 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { 
-  CheckCircle, 
   Package, 
   Heart, 
   ArrowLeft,
-  ArrowRight,
   ShieldCheck,
   Truck,
   Star,
@@ -116,19 +115,21 @@ export default function UpsellLandingPage() {
 
             {/* 2. Uploaded Image 1 (Flat lay) */}
             <div className="relative w-full aspect-square bg-black rounded-2xl overflow-hidden border border-white/5">
-              <img 
+              <Image 
                 src="/sacoche-1.jpg" 
                 alt="Sacoche Lacoste 1"
-                className="absolute inset-0 w-full h-full object-cover"
+                fill
+                className="object-cover"
               />
             </div>
 
             {/* 3. Uploaded Image 2 (On person) */}
             <div className="relative w-full aspect-[4/5] bg-black rounded-2xl overflow-hidden border border-white/5">
-              <img 
+              <Image 
                 src="/sacoche-2.jpg" 
                 alt="Sacoche Lacoste 2"
-                className="absolute inset-0 w-full h-full object-cover"
+                fill
+                className="object-cover"
               />
             </div>
             
