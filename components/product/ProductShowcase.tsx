@@ -403,8 +403,8 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
     const shouldRouteToDedicatedUpsell = isNikeProduct && shouldShowUpsell;
 
     // 1. Submit the base normal order first
-    // If routing to dedicated upsell page, DO NOT fire pixel Purchase event here
-    const success = await submitBaseOrder(!shouldRouteToDedicatedUpsell);
+    // Always fire pixel Purchase event here for the base product
+    const success = await submitBaseOrder(true);
     if (!success) return;
 
     if (shouldRouteToDedicatedUpsell) {
