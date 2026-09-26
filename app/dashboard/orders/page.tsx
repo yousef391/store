@@ -95,6 +95,16 @@ export default function OrdersPage() {
     return Array.from(set).sort();
   }, [orders]);
 
+  const phoneCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    orders.forEach((o) => {
+      if (o.phone) {
+        counts[o.phone] = (counts[o.phone] || 0) + 1;
+      }
+    });
+    return counts;
+  }, [orders]);
+
   const filteredOrders = orders.filter((o) => {
     const q = searchQuery.toLowerCase().trim();
     const matchesSearch =
@@ -369,6 +379,11 @@ export default function OrdersPage() {
                     <button onClick={() => copyPhone(order.phone)} className="flex items-center gap-1">
                       <span className="text-[11px] text-blue-400 font-mono" dir="ltr">{order.phone}</span>
                       {copiedPhone === order.phone ? <Check size={10} className="text-emerald-400" /> : <Copy size={10} className="text-gray-700" />}
+                      {phoneCounts[order.phone] > 1 && (
+                        <span className="text-[9px] font-bold text-red-400 bg-red-400/10 border border-red-400/20 px-1.5 py-0.5 rounded-full ml-1" title={`${phoneCounts[order.phone]} orders with this phone number`}>
+                          {phoneCounts[order.phone]}
+                        </span>
+                      )}
                     </button>
                     <div className="flex items-center gap-1">
                       <span className="text-[10px] text-gray-600">{order.wilaya} · {order.size}</span>
@@ -441,6 +456,11 @@ export default function OrdersPage() {
                         <button onClick={() => copyPhone(order.phone)} className="flex items-center gap-1.5 mt-1">
                           <span className="text-xs text-blue-400 font-mono" dir="ltr">{order.phone}</span>
                           {copiedPhone === order.phone ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} className="text-gray-600" />}
+                          {phoneCounts[order.phone] > 1 && (
+                            <span className="text-[10px] font-bold text-red-400 bg-red-400/10 border border-red-400/20 px-1.5 py-0.5 rounded-full ml-1" title={`${phoneCounts[order.phone]} orders with this phone number`}>
+                              {phoneCounts[order.phone]}
+                            </span>
+                          )}
                         </button>
                       </td>
                       <td className="px-4 py-3">
