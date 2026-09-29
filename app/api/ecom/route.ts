@@ -52,7 +52,7 @@ export async function POST(request: Request) {
     if (overrides?.price !== undefined) {
       priceNumber = overrides.price;
     } else {
-      priceNumber = typeof order.total === "number" ? order.total : parseInt(String(order.total).replace(/[^\d]/g, ""), 10) || 0;
+      priceNumber = typeof order.price === "number" ? order.price : parseInt(String(order.price).replace(/[^\d]/g, ""), 10) || 0;
     }
 
     // Extract Wilaya ID (Assuming string format "16" or "16 - Alger")

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { Search, Filter, ChevronLeft, ChevronRight, Trash2, Copy, Check, X, Truck, Package, RefreshCw } from "lucide-react";
+import { Search, Filter, ChevronLeft, ChevronRight, Trash2, Copy, Check, X, Truck, Package, RefreshCw, Calendar } from "lucide-react";
 import { fetchOrders, updateOrderStatus, createHistory } from "@/lib/api";
 import { products } from "@/data/products";
 import algeriaData from "@/data/algeria.json";
@@ -40,8 +40,11 @@ export default function OrdersPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [productFilter, setProductFilter] = useState("all");
+  const [dateFilter, setDateFilter] = useState<"today" | "yesterday" | "week" | "month" | "all">("today");
   const [currentPage, setCurrentPage] = useState(1);
   const [copiedPhone, setCopiedPhone] = useState<string | null>(null);
+  const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set());
+  const [isBulking, setIsBulking] = useState(false);
   const rowsPerPage = 10;
 
   // Dispatch (Yalidine & Ecom Delivery)
@@ -64,7 +67,7 @@ export default function OrdersPage() {
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, statusFilter, productFilter]);
+  }, [searchQuery, statusFilter, productFilter, dateFilter]);
 
   const copyPhone = (phone: string) => {
     navigator.clipboard.writeText(phone).then(() => {
@@ -105,7 +108,29 @@ export default function OrdersPage() {
     return counts;
   }, [orders]);
 
+  const { startOfToday, startOfYesterday, startOfWeek, startOfMonth } = useMemo(() => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
+    const week = new Date(today.getTime() - today.getDay() * 24 * 60 * 60 * 1000);
+    const month = new Date(now.getFullYear(), now.getMonth(), 1);
+    return { startOfToday: today, startOfYesterday: yesterday, startOfWeek: week, startOfMonth: month };
+  }, []);
+
+  const todayCount = useMemo(() => orders.filter(o => new Date(o.created_at) >= startOfToday).length, [orders, startOfToday]);
+  const yesterdayCount = useMemo(() => orders.filter(o => {
+    const d = new Date(o.created_at);
+    return d >= startOfYesterday && d < startOfToday;
+  }).length, [orders, startOfYesterday, startOfToday]);
+
   const filteredOrders = orders.filter((o) => {
+    const d = new Date(o.created_at);
+    let matchesDate = true;
+    if (dateFilter === "today") matchesDate = d >= startOfToday;
+    else if (dateFilter === "yesterday") matchesDate = d >= startOfYesterday && d < startOfToday;
+    else if (dateFilter === "week") matchesDate = d >= startOfWeek;
+    else if (dateFilter === "month") matchesDate = d >= startOfMonth;
+
     const q = searchQuery.toLowerCase().trim();
     const matchesSearch =
       !q ||
@@ -125,7 +150,7 @@ export default function OrdersPage() {
       o.item === productFilter ||
       o.item?.toLowerCase().includes(productFilter.toLowerCase());
 
-    return matchesSearch && matchesStatus && matchesProduct;
+    return matchesSearch && matchesStatus && matchesProduct && matchesDate;
   });
 
   const totalPages = Math.ceil(filteredOrders.length / rowsPerPage);
@@ -166,13 +191,169 @@ export default function OrdersPage() {
     }
   };
 
+  const toggleSelection = (id: string) => {
+    const next = new Set(selectedOrderIds);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setSelectedOrderIds(next);
+  };
+
+  const toggleAll = () => {
+    if (selectedOrderIds.size === paginatedOrders.length && paginatedOrders.length > 0) {
+      setSelectedOrderIds(new Set());
+    } else {
+      setSelectedOrderIds(new Set(paginatedOrders.map(o => o.id)));
+    }
+  };
+
+  const handleBulkStatus = async (status: string) => {
+    setIsBulking(true);
+    let updated = 0;
+    const newOrders = [...orders];
+    for (const id of Array.from(selectedOrderIds)) {
+      try {
+        await updateOrderStatus(id, status);
+        const orderIndex = newOrders.findIndex(o => o.id === id);
+        if (orderIndex > -1) {
+          newOrders[orderIndex].status = status;
+          const order = newOrders[orderIndex];
+          await createHistory({ action: `order_${status}`, description: `Order #${order.order_number} marked as ${status} (Bulk)`, details: order.item });
+        }
+        updated++;
+      } catch (err) {
+        console.error("Bulk status error", err);
+      }
+    }
+    setOrders(newOrders);
+    setSelectedOrderIds(new Set());
+    setIsBulking(false);
+    alert(`Updated ${updated} orders to ${status}.`);
+  };
+
+  const handleBulkDispatch = async (provider: "ecom" | "yalidine") => {
+    setIsBulking(true);
+    let success = 0;
+    let failed = 0;
+    const newOrders = [...orders];
+    const endpoint = provider === "ecom" ? "/api/ecom" : "/api/yalidine";
+
+    for (const id of Array.from(selectedOrderIds)) {
+      const orderIndex = newOrders.findIndex(o => o.id === id);
+      if (orderIndex === -1) continue;
+      const order = newOrders[orderIndex];
+      if (order.tracking_id) continue; // Skip if already dispatched
+
+      const wilayaMatch = order.wilaya.match(/^(\d+)/);
+      const defaultWilayaId = wilayaMatch ? wilayaMatch[1] : "";
+      const priceNumber = typeof order.price === "number" ? order.price : parseInt(String(order.price).replace(/[^\d]/g, ""), 10) || 0;
+      const deliveryNumber = typeof order.delivery === "number" ? order.delivery : parseInt(String(order.delivery).replace(/[^\d]/g, ""), 10) || 0;
+      const defaultIncludeDelivery = provider === "ecom";
+      let initialPrice = priceNumber > 200 ? priceNumber - 200 : priceNumber;
+      if (defaultIncludeDelivery) initialPrice += deliveryNumber;
+
+      const isStopdeskOrder = Boolean(order.commune?.includes("[Stopdesk]") || (order as { delivery_type?: string }).delivery_type === "stopdesk");
+      const cleanCommune = (order.commune || "").replace(/\s*\[Stopdesk\]/i, "").trim();
+
+      const dispatchData = {
+        name: order.name,
+        phone: order.phone,
+        wilaya: defaultWilayaId || order.wilaya,
+        commune: cleanCommune,
+        address: cleanCommune || "",
+        product_list: `${order.item} - ${order.color} - ${order.size}`,
+        originalPrice: priceNumber,
+        deliveryFee: deliveryNumber,
+        include_delivery: defaultIncludeDelivery,
+        discount: 200,
+        price: initialPrice,
+        do_insurance: true,
+        declared_value: initialPrice,
+        is_stopdesk: isStopdeskOrder,
+        stopdesk_id: "",
+        autorisation_ouverture: false,
+        forceRetry: true
+      };
+
+      try {
+        const res = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ orderId: order.id, overrides: dispatchData })
+        });
+        const data = await res.json();
+        if (!res.ok || data.error) {
+          failed++;
+        } else {
+          newOrders[orderIndex].tracking_id = data.tracking_id;
+          newOrders[orderIndex].status = "confirmed";
+          await updateOrderStatus(order.id, "confirmed");
+          await createHistory({ 
+            action: "order_confirmed", 
+            description: `Order #${order.order_number} auto-confirmed on dispatch to ${provider} (Bulk)`, 
+            details: order.item 
+          });
+          success++;
+        }
+      } catch (err) {
+        console.error(err);
+        failed++;
+      }
+    }
+    setOrders(newOrders);
+    setSelectedOrderIds(new Set());
+    setIsBulking(false);
+    alert(`Bulk Dispatch to ${provider} complete! ${success} succeeded, ${failed} failed.`);
+  };
+
+  const handleBulkDelete = async () => {
+    if (!window.confirm(`Are you sure you want to delete ${selectedOrderIds.size} orders? This cannot be undone.`)) return;
+    setIsBulking(true);
+    let success = 0;
+    let failed = 0;
+    const idsToDelete = Array.from(selectedOrderIds);
+    let currentOrders = [...orders];
+
+    for (const id of idsToDelete) {
+      const order = currentOrders.find(o => o.id === id);
+      if (!order) continue;
+      try {
+        const res = await fetch("/api/yalidine", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ orderId: id, trackingId: order.tracking_id })
+        });
+        const data = await res.json();
+        if (!res.ok || data.error) {
+          failed++;
+        } else {
+          currentOrders = currentOrders.filter(o => o.id !== id);
+          success++;
+        }
+      } catch (err) {
+        console.error(err);
+        failed++;
+      }
+    }
+    setOrders(currentOrders);
+    setSelectedOrderIds(new Set());
+    setIsBulking(false);
+    alert(`Bulk Delete complete! ${success} deleted, ${failed} failed.`);
+  };
+
   // Dispatch Modal
   const openDispatchModal = (order: Order, provider: "ecom" | "yalidine" = "ecom") => {
     setEditingDispatchOrder(order);
     setDispatchProvider(provider);
     const wilayaMatch = order.wilaya.match(/^(\d+)/);
     const defaultWilayaId = wilayaMatch ? wilayaMatch[1] : "";
-    const priceNumber = typeof order.total === "number" ? order.total : parseInt(String(order.total).replace(/[^\d]/g, ""), 10) || 0;
+    const priceNumber = typeof order.price === "number" ? order.price : parseInt(String(order.price).replace(/[^\d]/g, ""), 10) || 0;
+    const deliveryNumber = typeof order.delivery === "number" ? order.delivery : parseInt(String(order.delivery).replace(/[^\d]/g, ""), 10) || 0;
+    const defaultDiscount = 200;
+    const defaultIncludeDelivery = provider === "ecom";
+    
+    let initialPrice = priceNumber > defaultDiscount ? priceNumber - defaultDiscount : priceNumber;
+    if (defaultIncludeDelivery) initialPrice += deliveryNumber;
+
     const isStopdeskOrder = Boolean(order.commune?.includes("[Stopdesk]") || (order as { delivery_type?: string }).delivery_type === "stopdesk");
     const cleanCommune = (order.commune || "").replace(/\s*\[Stopdesk\]/i, "").trim();
 
@@ -183,9 +364,13 @@ export default function OrdersPage() {
       commune: cleanCommune,
       address: cleanCommune || "",
       product_list: `${order.item} - ${order.color} - ${order.size}`,
-      price: priceNumber,
+      originalPrice: priceNumber,
+      deliveryFee: deliveryNumber,
+      include_delivery: defaultIncludeDelivery,
+      discount: defaultDiscount,
+      price: initialPrice,
       do_insurance: true,
-      declared_value: priceNumber,
+      declared_value: initialPrice,
       is_stopdesk: isStopdeskOrder,
       stopdesk_id: "",
       autorisation_ouverture: false,
@@ -227,7 +412,18 @@ export default function OrdersPage() {
         alert(data.error || `Failed to push to ${dispatchProvider === "ecom" ? "Ecom Delivery" : "Yalidine"}.`);
       } else {
         alert(`Successfully dispatched to ${dispatchProvider === "ecom" ? "Ecom Delivery" : "Yalidine"}! Tracking ID: ${data.tracking_id}`);
-        setOrders(orders.map(o => o.id === editingDispatchOrder.id ? { ...o, tracking_id: data.tracking_id } : o));
+        
+        // Update local state for tracking ID and status
+        setOrders(orders.map(o => o.id === editingDispatchOrder.id ? { ...o, tracking_id: data.tracking_id, status: "confirmed" } : o));
+        
+        // Auto-confirm in the background
+        updateOrderStatus(editingDispatchOrder.id, "confirmed").catch(console.error);
+        createHistory({ 
+          action: "order_confirmed", 
+          description: `Order #${editingDispatchOrder.order_number} auto-confirmed on dispatch to ${dispatchProvider}`, 
+          details: editingDispatchOrder.item 
+        }).catch(console.error);
+
         setEditingDispatchOrder(null);
       }
     } catch (err) {
@@ -255,6 +451,18 @@ export default function OrdersPage() {
         </div>
       </div>
 
+      {/* Top Cards */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="bg-surface border border-white/5 rounded-2xl p-4 flex flex-col justify-center">
+          <p className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-1">Today's Orders</p>
+          <p className="text-2xl font-black text-white">{todayCount}</p>
+        </div>
+        <div className="bg-surface border border-white/5 rounded-2xl p-4 flex flex-col justify-center">
+          <p className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-1">Yesterday's Orders</p>
+          <p className="text-2xl font-black text-white">{yesterdayCount}</p>
+        </div>
+      </div>
+
       {/* Search + Filters */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
         <div className="relative flex-1">
@@ -274,6 +482,23 @@ export default function OrdersPage() {
               <X size={14} />
             </button>
           )}
+        </div>
+
+        {/* Date Filter Dropdown */}
+        <div className="relative">
+          <select
+            value={dateFilter}
+            onChange={(e) => setDateFilter(e.target.value as any)}
+            className="w-full sm:w-auto bg-surface border border-white/5 rounded-xl pl-8 pr-8 py-2.5 text-xs font-semibold text-gray-300 focus:outline-none focus:ring-2 focus:ring-accent/50 appearance-none cursor-pointer hover:border-white/10 transition-colors"
+          >
+            <option value="today" className="bg-[#141720] text-gray-200">This Day</option>
+            <option value="yesterday" className="bg-[#141720] text-gray-200">Yesterday</option>
+            <option value="week" className="bg-[#141720] text-gray-200">This Week</option>
+            <option value="month" className="bg-[#141720] text-gray-200">This Month</option>
+            <option value="all" className="bg-[#141720] text-gray-200">All Time</option>
+          </select>
+          <Calendar size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
+          <ChevronRight size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 rotate-90 text-gray-500 pointer-events-none" />
         </div>
 
         {/* Product Filter Dropdown */}
@@ -355,6 +580,41 @@ export default function OrdersPage() {
         )}
       </div>
 
+      {/* Bulk Actions Bar */}
+      {selectedOrderIds.size > 0 && (
+        <div className="bg-accent/10 border border-accent/20 rounded-xl p-3 flex flex-wrap items-center justify-between gap-3 animate-in fade-in slide-in-from-top-4">
+          <div className="flex items-center gap-2">
+            <button onClick={toggleAll} className="w-5 h-5 rounded border border-accent flex items-center justify-center bg-accent text-black">
+              <Check size={12} />
+            </button>
+            <span className="text-sm font-bold text-accent">{selectedOrderIds.size} orders selected</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              onChange={(e) => {
+                if (e.target.value) {
+                  handleBulkStatus(e.target.value);
+                  e.target.value = "";
+                }
+              }}
+              className="bg-surface border border-white/10 rounded-lg px-3 py-1.5 text-xs font-bold text-gray-300 focus:outline-none appearance-none cursor-pointer"
+            >
+              <option value="">Set Status...</option>
+              {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+            <button onClick={() => handleBulkDispatch("ecom")} disabled={isBulking} className="px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold rounded-lg hover:bg-emerald-500/20 transition-colors disabled:opacity-50">
+              {isBulking ? "Pushing..." : "Push Ecom"}
+            </button>
+            <button onClick={() => handleBulkDispatch("yalidine")} disabled={isBulking} className="px-3 py-1.5 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-bold rounded-lg hover:bg-rose-500/20 transition-colors disabled:opacity-50">
+              {isBulking ? "Pushing..." : "Push Yalidine"}
+            </button>
+            <button onClick={handleBulkDelete} disabled={isBulking} className="px-3 py-1.5 bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-bold rounded-lg hover:bg-red-500/20 transition-colors disabled:opacity-50 flex items-center gap-1">
+              <Trash2 size={12} /> Delete
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Orders Table */}
       <div className="bg-surface rounded-2xl border border-white/5 overflow-hidden">
         {paginatedOrders.length === 0 ? (
@@ -370,6 +630,9 @@ export default function OrdersPage() {
                 <div key={order.id} className="rounded-xl border border-white/[0.03] p-3">
                   <div className="flex items-center justify-between mb-1.5">
                     <div className="flex items-center gap-2">
+                      <button onClick={() => toggleSelection(order.id)} className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${selectedOrderIds.has(order.id) ? "bg-accent border-accent text-black" : "border-white/20 hover:border-white/40"}`}>
+                        {selectedOrderIds.has(order.id) && <Check size={10} />}
+                      </button>
                       <span className="text-sm font-semibold text-white">{order.name}</span>
                       <span className="text-[9px] font-bold text-accent bg-accent/10 px-1.5 py-0.5 rounded">#{order.order_number}</span>
                     </div>
@@ -434,6 +697,11 @@ export default function OrdersPage() {
               <table className="w-full text-left min-w-[900px]">
                 <thead>
                   <tr className="border-b border-white/5 text-gray-500 text-xs uppercase tracking-wider">
+                    <th className="px-4 py-3 w-10">
+                      <button onClick={toggleAll} className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${selectedOrderIds.size === paginatedOrders.length && paginatedOrders.length > 0 ? "bg-accent border-accent text-black" : "border-white/20 hover:border-white/40"}`}>
+                        {selectedOrderIds.size === paginatedOrders.length && paginatedOrders.length > 0 && <Check size={10} />}
+                      </button>
+                    </th>
                     <th className="px-4 py-3">Date</th>
                     <th className="px-4 py-3">Customer</th>
                     <th className="px-4 py-3">Location</th>
@@ -446,7 +714,12 @@ export default function OrdersPage() {
                 </thead>
                 <tbody>
                   {paginatedOrders.map((order) => (
-                    <tr key={order.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
+                    <tr key={order.id} className={`border-b border-white/5 hover:bg-white/[0.02] transition-colors ${selectedOrderIds.has(order.id) ? "bg-accent/5" : ""}`}>
+                      <td className="px-4 py-3">
+                        <button onClick={() => toggleSelection(order.id)} className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${selectedOrderIds.has(order.id) ? "bg-accent border-accent text-black" : "border-white/20 hover:border-white/40"}`}>
+                          {selectedOrderIds.has(order.id) && <Check size={10} />}
+                        </button>
+                      </td>
                       <td className="px-4 py-3 text-xs text-gray-500">{new Date(order.created_at).toLocaleDateString()}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-baseline gap-2">
@@ -557,11 +830,23 @@ export default function OrdersPage() {
               <div>
                 <h3 className="text-lg md:text-xl font-bold text-white font-heading">Confirm Dispatch</h3>
                 <div className="flex items-center gap-2 mt-2">
-                  <button type="button" onClick={() => setDispatchProvider("ecom")}
+                  <button type="button" onClick={() => {
+                      setDispatchProvider("ecom");
+                      if (!dispatchData.include_delivery) {
+                        const newPrice = dispatchData.price + (dispatchData.deliveryFee || 0);
+                        setDispatchData({ ...dispatchData, include_delivery: true, price: newPrice, declared_value: newPrice });
+                      }
+                    }}
                     className={`px-3 py-1 rounded-lg text-xs font-bold transition-colors ${dispatchProvider === "ecom" ? "bg-emerald-500 text-black" : "bg-white/5 text-gray-400 hover:text-white"}`}>
                     🚚 Ecom Delivery
                   </button>
-                  <button type="button" onClick={() => setDispatchProvider("yalidine")}
+                  <button type="button" onClick={() => {
+                      setDispatchProvider("yalidine");
+                      if (dispatchData.include_delivery) {
+                        const newPrice = dispatchData.price - (dispatchData.deliveryFee || 0);
+                        setDispatchData({ ...dispatchData, include_delivery: false, price: newPrice, declared_value: newPrice });
+                      }
+                    }}
                     className={`px-3 py-1 rounded-lg text-xs font-bold transition-colors ${dispatchProvider === "yalidine" ? "bg-rose-500 text-white" : "bg-white/5 text-gray-400 hover:text-white"}`}>
                     📦 Yalidine Express
                   </button>
@@ -630,7 +915,28 @@ export default function OrdersPage() {
                 <p className="text-[10px] text-gray-500 mt-1">Ce nom sera envoyé comme description du contenu à Yalidine.</p>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Discount</label>
+                  <select value={dispatchData.discount ?? 200} onChange={e => {
+                    const newDiscount = parseInt(e.target.value) || 0;
+                    let newPrice = Math.max(0, (dispatchData.originalPrice || 0) - newDiscount);
+                    if (dispatchData.include_delivery) newPrice += (dispatchData.deliveryFee || 0);
+                    setDispatchData({
+                      ...dispatchData, 
+                      discount: newDiscount,
+                      price: newPrice,
+                      declared_value: newPrice
+                    });
+                  }}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-white appearance-none cursor-pointer">
+                    <option value="0" className="bg-[#141720]">0 DA</option>
+                    <option value="100" className="bg-[#141720]">-100 DA</option>
+                    <option value="150" className="bg-[#141720]">-150 DA</option>
+                    <option value="200" className="bg-[#141720]">-200 DA</option>
+                    <option value="250" className="bg-[#141720]">-250 DA</option>
+                  </select>
+                </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Product Price</label>
                   <div className="relative">
@@ -641,6 +947,15 @@ export default function OrdersPage() {
                       className="w-full bg-white/5 border border-white/10 rounded-xl pl-4 pr-10 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-white font-mono font-bold" />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 text-xs font-bold">DA</span>
                   </div>
+                  <label className="flex items-center gap-2 mt-2 cursor-pointer">
+                    <input type="checkbox" checked={dispatchData.include_delivery || false} onChange={e => {
+                      const isIncluded = e.target.checked;
+                      let newPrice = Math.max(0, (dispatchData.originalPrice || 0) - (dispatchData.discount || 0));
+                      if (isIncluded) newPrice += (dispatchData.deliveryFee || 0);
+                      setDispatchData({...dispatchData, include_delivery: isIncluded, price: newPrice, declared_value: newPrice});
+                    }} className="rounded border-white/10 bg-white/5 text-blue-500 focus:ring-blue-500" />
+                    <span className="text-[10px] text-gray-400 font-bold">Inclure Livraison (+{dispatchData.deliveryFee || 0} DA)</span>
+                  </label>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Dépasse 5kg?</label>

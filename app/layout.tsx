@@ -31,85 +31,30 @@ export const metadata: Metadata = {
   },
 };
 
+import { Suspense } from "react";
+import PixelScripts from "@/components/PixelScripts";
+
 export const revalidate = 60; // Revalidate layout data every 60 seconds
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // Fetch Meta Pixel ID & TikTok Pixel ID from Supabase store_settings
-  let pixelId = "000000000000";
-  let tiktokPixelId = "";
-  try {
-    const { data } = await supabase
-      .from("store_settings")
-      .select("meta_pixel_id, tiktok_pixel_id")
-      .eq("id", 1)
-      .single();
-    if (data?.meta_pixel_id) pixelId = data.meta_pixel_id;
-    if (data?.tiktok_pixel_id) tiktokPixelId = data.tiktok_pixel_id;
-  } catch (err) {
-    console.error("Error fetching Pixel IDs from DB", err);
-  }
-
   return (
     <html lang="fr" className={`${montserrat.variable} ${dmSans.variable}`}>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
         <meta name="theme-color" content="#0a0a0a" />
         <link rel="manifest" href="/manifest.json" />
-        <Script
-          id="fb-pixel"
-          strategy="afterInteractive"
-          dangerouslySetInnerHTML={{
-            __html: `
-              !function(f,b,e,v,n,t,s)
-              {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-              n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-              if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-              n.queue=[];t=b.createElement(e);t.async=!0;
-              t.src=v;s=b.getElementsByTagName(e)[0];
-              s.parentNode.insertBefore(t,s)}(window, document,'script',
-              'https://connect.facebook.net/en_US/fbevents.js');
-              fbq('init', '${pixelId}');
-              fbq('track', 'PageView');
-            `,
-          }}
-        />
-        {tiktokPixelId && (
-          <Script
-            id="tt-pixel"
-            strategy="afterInteractive"
-            dangerouslySetInnerHTML={{
-              __html: `
-                !function (w, d, t) {
-                  w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];ttq.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie","holdConsent","revokeConsent","grantConsent"],ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);ttq.instance=function(t){for(
-                  var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n]);return e},ttq.load=function(e,n){var r="https://analytics.tiktok.com/i18n/pixel/events.js",o=n&&n.partner;ttq._i=ttq._i||{},ttq._i[e]=[],ttq._i[e]._u=r,ttq._t=ttq._t||{},ttq._t[e]=+new Date,ttq._o=ttq._o||{},ttq._o[e]=n||{};n=document.createElement("script")
-                  ;n.type="text/javascript",n.async=!0,n.src=r+"?sdkid="+e+"&lib="+t;e=document.getElementsByTagName("script")[0];e.parentNode.insertBefore(n,e)};
-                  ttq.load('${tiktokPixelId}');
-                  ttq.page();
-                }(window, document, 'ttq');
-              `,
-            }}
-          />
-        )}
       </head>
       <body className="antialiased">
         <I18nProvider>
           {children}
         </I18nProvider>
-        <noscript>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            height="1"
-            width="1"
-            style={{ display: "none" }}
-            alt=""
-            src={`https://www.facebook.com/tr?id=${pixelId}&ev=PageView&noscript=1`}
-            fetchPriority="low"
-          />
-        </noscript>
+        <Suspense fallback={null}>
+          <PixelScripts />
+        </Suspense>
       </body>
     </html>
   );
