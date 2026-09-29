@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
-import Script from "next/script";
 import { Montserrat, DM_Sans } from "next/font/google";
 import { I18nProvider } from "@/hooks/useI18n";
-import { supabase } from "@/lib/supabase";
 import "./globals.css";
 
 const montserrat = Montserrat({

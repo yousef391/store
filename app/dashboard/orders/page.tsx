@@ -454,11 +454,11 @@ export default function OrdersPage() {
       {/* Top Cards */}
       <div className="grid grid-cols-2 gap-4">
         <div className="bg-surface border border-white/5 rounded-2xl p-4 flex flex-col justify-center">
-          <p className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-1">Today's Orders</p>
+          <p className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-1">Today&apos;s Orders</p>
           <p className="text-2xl font-black text-white">{todayCount}</p>
         </div>
         <div className="bg-surface border border-white/5 rounded-2xl p-4 flex flex-col justify-center">
-          <p className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-1">Yesterday's Orders</p>
+          <p className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-1">Yesterday&apos;s Orders</p>
           <p className="text-2xl font-black text-white">{yesterdayCount}</p>
         </div>
       </div>
@@ -488,7 +488,7 @@ export default function OrdersPage() {
         <div className="relative">
           <select
             value={dateFilter}
-            onChange={(e) => setDateFilter(e.target.value as any)}
+            onChange={(e) => setDateFilter(e.target.value as typeof dateFilter)}
             className="w-full sm:w-auto bg-surface border border-white/5 rounded-xl pl-8 pr-8 py-2.5 text-xs font-semibold text-gray-300 focus:outline-none focus:ring-2 focus:ring-accent/50 appearance-none cursor-pointer hover:border-white/10 transition-colors"
           >
             <option value="today" className="bg-[#141720] text-gray-200">This Day</option>
