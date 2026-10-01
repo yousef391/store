@@ -14,6 +14,7 @@ export interface Order {
   total: string;
   delivery_type?: "domicile" | "stopdesk";
   status: "confirmed" | "cancelled" | "recall";
+  source?: string;
   createdAt: string;
 }
 

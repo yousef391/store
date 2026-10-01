@@ -14,6 +14,21 @@ import { ShieldCheck, PackageOpen, Truck, Banknote, Ruler, Globe2, CheckCircle2,
 import Reviews from "@/components/home/Reviews";
 import SizeGuide from "@/components/home/SizeGuide";
 
+const getOrderSource = () => {
+  if (typeof window === 'undefined') return 'organic';
+  const searchParams = new URLSearchParams(window.location.search);
+  const fbclid = searchParams.get('fbclid');
+  const ttclid = searchParams.get('ttclid');
+  const utm_source = searchParams.get('utm_source');
+  
+  if (fbclid || utm_source === 'meta' || utm_source === 'facebook' || utm_source === 'ig') {
+    return 'meta';
+  } else if (ttclid || utm_source === 'tiktok') {
+    return 'tiktok';
+  }
+  return 'organic';
+};
+
 interface ProductShowcaseProps {
   variants: ShowcaseProduct[];
   singlePrice: number;
@@ -298,6 +313,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
           price: productPrice,
           delivery: deliveryPrice,
           total: totalPrice,
+          source: getOrderSource(),
         }),
       });
 
@@ -364,6 +380,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
             delivery: 0,
             total: effectiveUpsellPrice,
             isUpsell: true,
+            source: getOrderSource(),
           }),
         });
 

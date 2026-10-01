@@ -10,7 +10,7 @@ export async function POST(request: Request) {
     const clientIp = forwarded ? forwarded.split(",")[0].trim() : (headersList.get("x-real-ip") ?? "unknown");
 
     const body = await request.json();
-    const { name, phone, wilaya, commune, deliveryType, item, color, size, quantity, price, delivery, total, isUpsell } = body;
+    const { name, phone, wilaya, commune, deliveryType, item, color, size, quantity, price, delivery, total, isUpsell, source } = body;
 
     // Check if this IP already ordered in the last 48h (bypassed for companion upsell orders)
     if (!isUpsell) {
@@ -52,7 +52,8 @@ export async function POST(request: Request) {
         price,
         delivery: finalDelivery,
         total,
-        status: "new"
+        status: "new",
+        source
       }])
       .select()
       .single();
@@ -104,7 +105,8 @@ export async function POST(request: Request) {
       return val;
     };
 
-    const headerTitle = isUpsell ? "🎁 NEW UPSELL ORDER" : "🚨 NEW CHECKOUT ORDER";
+    const sourceBadge = source === 'meta' ? ' [🔵 Facebook/Insta]' : source === 'tiktok' ? ' [🎵 TikTok]' : '';
+    const headerTitle = isUpsell ? `🎁 NEW UPSELL ORDER${sourceBadge}` : `🚨 NEW CHECKOUT ORDER${sourceBadge}`;
     const deliveryDetail = isUpsell
       ? "0 DA (Livré avec la commande principale)"
       : `${formatPrice(delivery)} DA (${isStopdesk ? "Stopdesk" : "Domicile"})`;

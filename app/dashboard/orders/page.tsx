@@ -31,6 +31,7 @@ interface Order {
   total: number;
   status: string;
   tracking_id?: string;
+  source?: string;
   created_at: string;
 }
 
@@ -650,6 +651,8 @@ export default function OrdersPage() {
                     </button>
                     <div className="flex items-center gap-1">
                       <span className="text-[10px] text-gray-600">{order.wilaya} · {order.size}</span>
+                      {order.source === 'meta' && <span className="text-[9px] font-bold text-blue-400 bg-blue-400/10 border border-blue-400/20 px-1 py-0.5 rounded">Meta</span>}
+                      {order.source === 'tiktok' && <span className="text-[9px] font-bold text-pink-400 bg-pink-400/10 border border-pink-400/20 px-1 py-0.5 rounded">TikTok</span>}
                       {order.commune?.includes("[Stopdesk]") ? (
                         <span className="text-[9px] font-bold text-amber-400 bg-amber-400/10 border border-amber-400/20 px-1 py-0.2 rounded">🏢 Stopdesk</span>
                       ) : (
@@ -725,6 +728,8 @@ export default function OrdersPage() {
                         <div className="flex items-baseline gap-2">
                           <span className="text-sm font-bold text-white">{order.name}</span>
                           <span className="text-[10px] font-bold text-accent bg-accent/10 px-1.5 py-0.5 rounded">#{order.order_number}</span>
+                          {order.source === 'meta' && <span className="text-[9px] font-bold text-blue-400 bg-blue-400/10 px-1.5 py-0.5 rounded">Meta</span>}
+                          {order.source === 'tiktok' && <span className="text-[9px] font-bold text-pink-400 bg-pink-400/10 px-1.5 py-0.5 rounded">TikTok</span>}
                         </div>
                         <button onClick={() => copyPhone(order.phone)} className="flex items-center gap-1.5 mt-1">
                           <span className="text-xs text-blue-400 font-mono" dir="ltr">{order.phone}</span>
