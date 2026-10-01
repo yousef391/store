@@ -203,7 +203,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
         productData.showcaseType !== "chinese_jacket"
       }
       sizes={productData.sizes}
-      hasColorSelector={true}
+      hasColorSelector={productData.slug !== "nike-nocta-zip-hoodie-ensemble"}
       hasSizeSelector={true}
       zonePrices={zonePrices}
       stopdeskZonePrices={stopdeskZonePrices}

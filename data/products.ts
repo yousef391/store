@@ -102,7 +102,7 @@ export const noctaHoodieProducts: ShowcaseProduct[] = [
     desc: "طقم رياضي فخم Veste Zippée à Capuche & Pantalon Nike NOCTA. قماش 3 iplik ملتون سميك ودافئ عالي الجودة مع خطوط بيضاء جانبية مميزة ولوغو Nike & NOCTA مطرز بإتقان. قصة استثنائية توفر لك الأناقة والراحة المطلقة.",
     review: '"طقم النوكتا الزيب هودي روعة بزاف، القماش سميك ودافئ والفينيسيون عالمية" — سليم خ.',
     productType: "set",
-    image: "/products/nocta_hoodie_1.jpg",
+    image: "/products/nocta_hoodie_new.jpg",
     colorName: "Noir",
   },
   {
@@ -464,7 +464,7 @@ export const products: Product[] = [
     description: "طقم رياضي فخم Veste Zippée à Capuche & Pantalon Nike NOCTA. قماش 3 iplik ملتون سميك ودافئ عالي الجودة مع خطوط بيضاء جانبية مميزة ولوغو Nike & NOCTA مطرز بإتقان. قصة استثنائية توفر لك الأناقة والراحة المطلقة.",
     price: 5900,
     bundlePrice: 9900,
-    images: ["/products/nocta_hoodie_1.jpg", "/products/nocta_hoodie_grey.jpg"],
+    images: ["/products/nocta_hoodie_new.jpg", "/products/nocta_hoodie_grey.jpg"],
     category: "ensembles",
     sizes: ["S", "M", "L", "XL"],
     colors: [

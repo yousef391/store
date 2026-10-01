@@ -42,7 +42,7 @@ function recommend(height: number | null, weight: number | null): string | null 
   return best;
 }
 
-export default function SizeGuide() {
+export default function SizeGuide({ productName = "Ensemble Nike Nocta" }: { productName?: string }) {
   const [height, setHeight] = useState<number | null>(null);
   const [weight, setWeight] = useState<number | null>(null);
 
@@ -72,7 +72,7 @@ export default function SizeGuide() {
             Trouvez votre taille
           </h2>
           <p className="text-white/40 text-sm sm:text-base mt-3 max-w-md mx-auto leading-relaxed">
-            Ensemble Nike Airmax — Qualité Turquie. Sélectionnez votre taille et poids pour une recommandation personnalisée.
+            {productName} — Qualité Turquie. Sélectionnez votre taille et poids pour une recommandation personnalisée.
           </p>
         </div>
 

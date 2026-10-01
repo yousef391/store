@@ -1007,7 +1007,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
       {showReviews && (
         <div className="hidden lg:block w-full bg-black/20 backdrop-blur-3xl shrink-0 border-t border-white/5">
           <Reviews />
-          {productSlug === "nike-air-max-ensemble" && <SizeGuide />}
+          <SizeGuide productName={item.name || productName} />
         </div>
       )}
 
@@ -1306,7 +1306,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
           {showReviews && (
             <div className="-mx-4 pb-12 mt-4">
               <Reviews />
-              {productSlug === "nike-air-max-ensemble" && <SizeGuide />}
+              <SizeGuide productName={item.name || productName} />
             </div>
           )}
         </div>
