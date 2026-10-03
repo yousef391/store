@@ -11,13 +11,13 @@ async function main() {
   const productPayload = {
     id: 23,
     slug: "nike-nocta-zip-hoodie-ensemble",
-    name: "Ensemble Nike Nocta Zip Hoodie & Pantalon",
+    name: "Nike Nocta",
     description: "طقم رياضي فخم Veste Zippée à Capuche & Pantalon Nike NOCTA. قماش 3 iplik ملتون سميك ودافئ عالي الجودة مع خطوط بيضاء جانبية مميزة ولوغو Nike & NOCTA مطرز بإتقان. قصة استثنائية توفر لك الأناقة والراحة المطلقة 🔥",
     price: 5900,
     bundle_price: 9900,
     images: ["/products/nocta_hoodie_1.jpg", "/products/nocta_hoodie_grey.jpg"],
     category: "ensembles",
-    sizes: ["S", "M", "L", "XL"],
+    sizes: ["S", "M", "L", "XL", "XXL"],
     colors: [
       { name: "Noir", hex: "#111111" },
       { name: "Gris", hex: "#9ca3af" }
@@ -49,7 +49,7 @@ async function main() {
   const variantsPayload = [
     {
       product_id: 23,
-      name: "Ensemble Nike Nocta Zip Hoodie & Pantalon",
+      name: "Nike Nocta",
       bg: "#050505",
       tag: "Noir",
       swatch: "#111111",
@@ -62,7 +62,7 @@ async function main() {
     },
     {
       product_id: 23,
-      name: "Ensemble Nike Nocta Zip Hoodie & Pantalon",
+      name: "Nike Nocta",
       bg: "#050505",
       tag: "Gris",
       swatch: "#9ca3af",

@@ -30,13 +30,13 @@ async function main() {
   const productPayload = {
     id: 21,
     slug: "nike-nocta-tshirt-pantalon-ensemble",
-    name: "Ensemble Nike Nocta T-Shirt & Pantalon",
+    name: "Nike Nocta",
     description: "Ensemble T-shirt & Pantalon Nike Nocta. T-shirt col rond à manches courtes et pantalon assortis en coton 100% premium avec piping blanc contrasté signature et logos Nike & NOCTA. Coupe moderne et finition streetwear d'exception.",
     price: 5300,
     bundle_price: 8300,
     images: images,
     category: "ensembles",
-    sizes: ["S", "M", "L", "XL"],
+    sizes: ["S", "M", "L", "XL", "XXL"],
     colors: [{ name: "Full Black", hex: "#111111" }],
     tag: "Full Black",
     status: "active",
@@ -56,7 +56,8 @@ async function main() {
         price: 5300,
         bundle_price: 8300,
         images: images,
-        name: "Ensemble Nike Nocta T-Shirt & Pantalon",
+        sizes: ["S", "M", "L", "XL", "XXL"],
+    name: "Nike Nocta",
         showcase_type: "nocta"
       })
       .eq('slug', 'nike-nocta-tshirt-pantalon-ensemble')
@@ -98,7 +99,7 @@ async function main() {
   const variantsToInsert = [
     {
       product_id: 21,
-      name: "Ensemble Nike Nocta T-Shirt & Pantalon",
+      name: "Nike Nocta",
       bg: "#050505",
       tag: "Full Black",
       swatch: "#111111",
@@ -111,7 +112,7 @@ async function main() {
     },
     {
       product_id: 21,
-      name: "Ensemble Nike Nocta T-Shirt & Pantalon",
+      name: "Nike Nocta",
       bg: "#050505",
       tag: "Full Black",
       swatch: "#111111",
@@ -124,7 +125,7 @@ async function main() {
     },
     {
       product_id: 21,
-      name: "Ensemble Nike Nocta T-Shirt & Pantalon",
+      name: "Nike Nocta",
       bg: "#050505",
       tag: "Full Black",
       swatch: "#111111",

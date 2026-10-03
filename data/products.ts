@@ -14,7 +14,7 @@ export interface ShowcaseProduct {
 export const noctaProducts: ShowcaseProduct[] = [
   {
     id: 1,
-    name: "Nike Nocta Ensemble",
+    name: "Nike Nocta",
     bg: "#050505",
     tag: "Full Black",
     swatch: "#111111",
@@ -29,7 +29,7 @@ export const noctaProducts: ShowcaseProduct[] = [
 export const noctaTeeEnsembleProducts: ShowcaseProduct[] = [
   {
     id: 1600,
-    name: "Ensemble Nike Nocta T-Shirt & Pantalon",
+    name: "Nike Nocta",
     bg: "#050505",
     tag: "Full Black",
     swatch: "#111111",
@@ -41,7 +41,7 @@ export const noctaTeeEnsembleProducts: ShowcaseProduct[] = [
   },
   {
     id: 1601,
-    name: "Ensemble Nike Nocta T-Shirt & Pantalon",
+    name: "Nike Nocta",
     bg: "#050505",
     tag: "Full Black",
     swatch: "#111111",
@@ -53,7 +53,7 @@ export const noctaTeeEnsembleProducts: ShowcaseProduct[] = [
   },
   {
     id: 1602,
-    name: "Ensemble Nike Nocta T-Shirt & Pantalon",
+    name: "Nike Nocta",
     bg: "#050505",
     tag: "Full Black",
     swatch: "#111111",
@@ -68,7 +68,7 @@ export const noctaTeeEnsembleProducts: ShowcaseProduct[] = [
 export const noctaSweatProducts: ShowcaseProduct[] = [
   {
     id: 150,
-    name: "Nike Nocta Sweatshirt Ensemble",
+    name: "Nike Nocta",
     bg: "#050505",
     tag: "Full Black",
     swatch: "#111111",
@@ -80,7 +80,7 @@ export const noctaSweatProducts: ShowcaseProduct[] = [
   },
   {
     id: 151,
-    name: "Nike Nocta Sweatshirt Ensemble",
+    name: "Nike Nocta",
     bg: "#050505",
     tag: "Full Black",
     swatch: "#111111",
@@ -95,7 +95,7 @@ export const noctaSweatProducts: ShowcaseProduct[] = [
 export const noctaHoodieProducts: ShowcaseProduct[] = [
   {
     id: 2300,
-    name: "Ensemble Nike Nocta",
+    name: "Nike Nocta",
     bg: "#050505",
     tag: "Noir",
     swatch: "#111111",
@@ -107,7 +107,7 @@ export const noctaHoodieProducts: ShowcaseProduct[] = [
   },
   {
     id: 2301,
-    name: "Ensemble Nike Nocta",
+    name: "Nike Nocta",
     bg: "#050505",
     tag: "Gris",
     swatch: "#9ca3af",
@@ -460,13 +460,13 @@ export const products: Product[] = [
   {
     id: 23,
     slug: "nike-nocta-zip-hoodie-ensemble",
-    name: "Ensemble Nike Nocta",
+    name: "Nike Nocta",
     description: "طقم رياضي فخم Veste Zippée à Capuche & Pantalon Nike NOCTA. قماش 3 iplik ملتون سميك ودافئ عالي الجودة مع خطوط بيضاء جانبية مميزة ولوغو Nike & NOCTA مطرز بإتقان. قصة استثنائية توفر لك الأناقة والراحة المطلقة.",
     price: 5900,
     bundlePrice: 9900,
     images: ["/products/nocta_hoodie_new.jpg", "/products/nocta_hoodie_grey.jpg"],
     category: "ensembles",
-    sizes: ["S", "M", "L", "XL"],
+    sizes: ["S", "M", "L", "XL", "XXL"],
     colors: [
       { name: "Noir", hex: "#111111" },
       { name: "Gris", hex: "#9ca3af" },
@@ -504,13 +504,13 @@ export const products: Product[] = [
   {
     id: 21,
     slug: "nike-nocta-tshirt-pantalon-ensemble",
-    name: "Ensemble Nike Nocta T-Shirt & Pantalon",
+    name: "Nike Nocta",
     description: "Ensemble T-shirt & Pantalon Nike Nocta. T-shirt col rond à manches courtes et pantalon assortis en coton 100% premium avec piping blanc contrasté signature et logos Nike & NOCTA. Coupe moderne et finition streetwear d'exception.",
     price: 5300,
     bundlePrice: 8300,
     images: ["/products/nocta_ensemble_tee.jpg", "/products/nocta_ensemble_tee_2.jpg", "/products/nocta_ensemble_tee_3.jpg"],
     category: "ensembles",
-    sizes: ["S", "M", "L", "XL"],
+    sizes: ["S", "M", "L", "XL", "XXL"],
     colors: [{ name: "Full Black", hex: "#111111" }],
     tag: "Full Black",
     status: "active",
@@ -641,13 +641,13 @@ export const products: Product[] = [
   {
     id: 15,
     slug: "nike-nocta-sweatshirt-ensemble",
-    name: "Nike Nocta Sweatshirt Ensemble",
+    name: "Nike Nocta",
     description: "Ensemble Sweatshirt Nike Nocta. Sweatshirt col rond et pantalon assortis en coton 100% épais avec piping blanc contrasté signature et logos Nike & NOCTA. Coupe moderne et finition streetwear premium.",
     price: 5800,
     bundlePrice: 9200,
     images: ["/products/nocta_sweat_1.jpg", "/products/nocta_sweat_2.jpg"],
     category: "ensembles",
-    sizes: ["S", "M", "L", "XL"],
+    sizes: ["S", "M", "L", "XL", "XXL"],
     colors: [{ name: "Full Black", hex: "#111111" }],
     tag: "Full Black",
     status: "active",
@@ -661,13 +661,13 @@ export const products: Product[] = [
   {
     id: 1,
     slug: "nike-nocta-ensemble",
-    name: "Nike Nocta Ensemble",
+    name: "Nike Nocta",
     description: "Premium Nike Nocta ensemble featuring a lightweight tech tee and athletic shorts. Perfect for summer and training.",
     price: 5400,
     bundlePrice: 8200,
     images: ["/products/nocta_2.png", "/products/nocta_1.png", "/products/nocta_3.png"],
     category: "ensembles",
-    sizes: ["S", "M", "L", "XL"],
+    sizes: ["S", "M", "L", "XL", "XXL"],
     colors: [{ name: "Full Black", hex: "#111111" }],
     tag: "Full Black",
     status: "active",
