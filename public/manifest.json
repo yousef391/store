@@ -2,7 +2,7 @@
   "name": "ROVA — Premium Streetwear",
   "short_name": "ROVA",
   "description": "ROVA Premium Streetwear — Elevate Your Everyday",
-  "start_url": "/",
+  "start_url": "/dashboard",
   "scope": "/",
   "display": "standalone",
   "background_color": "#0a0a0a",
