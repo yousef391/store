@@ -249,7 +249,7 @@ export default function SettingsPage() {
             <div className="mt-6 flex items-center justify-between bg-white/5 border border-white/10 p-4 rounded-xl">
               <div>
                 <h4 className="font-bold text-white text-sm">Abandoned Orders Notifications</h4>
-                <p className="text-xs text-gray-400 mt-1">Receive alerts when customers fill their info but don't confirm.</p>
+                <p className="text-xs text-gray-400 mt-1">Receive alerts when customers fill their info but don&apos;t confirm.</p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input type="checkbox" className="sr-only peer" checked={telegramAbandonedAlerts} onChange={(e) => setTelegramAbandonedAlerts(e.target.checked)} />
