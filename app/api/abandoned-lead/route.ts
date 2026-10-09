@@ -88,7 +88,7 @@ export async function POST(request: Request) {
     const botToken = settings?.telegram_bot_token;
     const chatId = settings?.telegram_chat_id;
 
-    if (botToken && chatId) {
+    if (botToken && chatId && settings?.abandoned_telegram_alerts !== false) {
       // Resolve wilaya name from ID
       let wilayaDisplay = wilaya || 'Not selected';
       try {

@@ -21,6 +21,7 @@ export default function SettingsPage() {
   // Telegram
   const [telegramToken, setTelegramToken] = useState("");
   const [telegramChatId, setTelegramChatId] = useState("");
+  const [telegramAbandonedAlerts, setTelegramAbandonedAlerts] = useState(true);
 
   // Meta CAPI
   const [metaPixelId, setMetaPixelId] = useState("");
@@ -62,6 +63,7 @@ export default function SettingsPage() {
 
         setTelegramToken(data.telegram_bot_token || "");
         setTelegramChatId(data.telegram_chat_id || "");
+        setTelegramAbandonedAlerts(data.abandoned_telegram_alerts ?? true);
         setMetaPixelId(data.meta_pixel_id || "");
         setMetaAccessToken(data.meta_access_token || "");
         setYalidineApiId(data.yalidine_api_id || "");
@@ -88,6 +90,7 @@ export default function SettingsPage() {
         zone_prices: mergedZonePrices,
         telegram_bot_token: telegramToken,
         telegram_chat_id: telegramChatId,
+        abandoned_telegram_alerts: telegramAbandonedAlerts,
         meta_pixel_id: metaPixelId,
         meta_access_token: metaAccessToken,
         yalidine_api_id: yalidineApiId,
@@ -241,6 +244,17 @@ export default function SettingsPage() {
                 <input type="text" value={telegramChatId} onChange={(e) => setTelegramChatId(e.target.value)} placeholder="5543481055"
                   className="w-full bg-white/5 border border-white/10 rounded-xl pl-4 pr-4 py-3 text-white text-sm font-mono focus:ring-2 focus:ring-sky-500 outline-none placeholder:text-gray-600" />
               </div>
+            </div>
+            
+            <div className="mt-6 flex items-center justify-between bg-white/5 border border-white/10 p-4 rounded-xl">
+              <div>
+                <h4 className="font-bold text-white text-sm">Abandoned Orders Notifications</h4>
+                <p className="text-xs text-gray-400 mt-1">Receive alerts when customers fill their info but don't confirm.</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" className="sr-only peer" checked={telegramAbandonedAlerts} onChange={(e) => setTelegramAbandonedAlerts(e.target.checked)} />
+                <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-sky-500"></div>
+              </label>
             </div>
           </div>
         </div>
