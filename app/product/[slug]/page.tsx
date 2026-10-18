@@ -18,25 +18,28 @@ import {
   jordanParisProducts,
   chineseJacketProducts,
   nikeAirMaxProducts,
+  stussyHoodieProducts,
   ShowcaseProduct,
 } from "@/data/products";
 import { supabase } from "@/lib/supabase";
 import { notFound } from "next/navigation";
 
 export default function ProductPage({ params }: { params: { slug: string } }) {
-  const staticProduct = defaultProducts.find((p) => p.slug === params.slug);
+  const decodedSlug = decodeURIComponent(params.slug);
+  const staticProduct = defaultProducts.find((p) => p.slug === params.slug || p.slug === decodedSlug);
   const [productData, setProductData] = useState(staticProduct);
   const [dynamicVariants, setDynamicVariants] = useState<ShowcaseProduct[] | null>(null);
   const [zonePrices, setZonePrices] = useState<Record<number, number> | undefined>(undefined);
   const [stopdeskZonePrices, setStopdeskZonePrices] = useState<Record<number, number> | undefined>(undefined);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!staticProduct);
 
   useEffect(() => {
+    console.log("[ProductPage] decodedSlug:", decodedSlug, "staticProduct:", staticProduct?.name);
     // Fetch product data + store settings (zone prices) in parallel
     const fetchProduct = supabase
       .from("products")
       .select("*")
-      .eq("slug", params.slug)
+      .eq("slug", decodedSlug)
       .single();
 
     const fetchSettings = supabase
@@ -47,6 +50,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
 
     Promise.all([fetchProduct, fetchSettings])
       .then(async ([productRes, settingsRes]) => {
+        console.log("[ProductPage] fetched:", productRes.data?.id, "err:", productRes.error);
         const data = productRes.data;
         if (data) {
           const currentProduct = {
@@ -111,6 +115,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
               if (type === "debardeur" || params.slug === "debardeur-nike-dri-fit") return debardeurProducts;
               if (type === "bmw" || params.slug === "bmw-motorsport-ensemble") return bmwProducts;
               if (type === "nike_air_max" || params.slug === "nike-air-max-ensemble") return nikeAirMaxProducts;
+              if (type === "stussy_hoodie" || params.slug === "ensemble-stussy-hoodie" || params.slug === "ensemble-stussy-hoodie-marron") return stussyHoodieProducts;
               return noctaProducts;
             };
             const baseVariants = getBaseVariants(currentProduct.showcaseType);
@@ -133,6 +138,8 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
               setDynamicVariants(built);
             }
           }
+        } else if (staticProduct) {
+          setProductData(staticProduct);
         }
 
         // Load zone prices from store_settings
@@ -147,7 +154,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
       })
       .catch(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [params.slug]);
+  }, [decodedSlug]);
 
   // Show loading until Supabase data arrives
   if (loading) {
@@ -187,6 +194,8 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
       ? bmwProducts
       : productData.showcaseType === "nike_air_max" || params.slug === "nike-air-max-ensemble"
       ? nikeAirMaxProducts
+      : productData.showcaseType === "stussy_hoodie" || params.slug === "ensemble-stussy-hoodie" || params.slug === "ensemble-stussy-hoodie-marron"
+      ? stussyHoodieProducts
       : noctaProducts;
   const variants = dynamicVariants || fallbackVariants;
 
@@ -203,7 +212,12 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
         productData.showcaseType !== "chinese_jacket"
       }
       sizes={productData.sizes}
-      hasColorSelector={productData.slug !== "nike-nocta-zip-hoodie-ensemble"}
+      hasColorSelector={
+        productData.slug !== "nike-nocta-zip-hoodie-ensemble" &&
+        productData.slug !== "ensemble-stussy-hoodie" &&
+        productData.slug !== "ensemble-stussy-hoodie-marron" &&
+        productData.showcaseType !== "stussy_hoodie"
+      }
       hasSizeSelector={true}
       zonePrices={zonePrices}
       stopdeskZonePrices={stopdeskZonePrices}

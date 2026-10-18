@@ -412,6 +412,46 @@ export const nikeAirMaxProducts: ShowcaseProduct[] = [
     colorName: "Gris",
   },
 ];
+
+export const stussyHoodieProducts: ShowcaseProduct[] = [
+  {
+    id: 2600,
+    name: "Ensemble Stüssy",
+    bg: "#16110e",
+    tag: "Marron Chocolat",
+    swatch: "#4a2e1b",
+    desc: "طقم ستوسي فخم هودي وبنطلون (Ensemble Stüssy Hoodie & Pantalon) بقماش كوتون ملتون 3 iplik سميك ودافئ عالي الجودة مع تطريز رسمي لشعار Stüssy وأربطة بيضاء كونتراست. قصة أوفر سايز عصرية توفر لك الأناقة والراحة المطلقة.",
+    review: '"طقم ستوسي روعة بزاف، القماش سميك ودافي والفينيسيون عالمية، والقصة طوب" — وليد ب.',
+    productType: "set",
+    image: "/products/stussy_brown_2.jpg",
+    colorName: "Marron Chocolat",
+  },
+  {
+    id: 2601,
+    name: "Ensemble Stüssy",
+    bg: "#16110e",
+    tag: "Vue Détails",
+    swatch: "#4a2e1b",
+    desc: "تفاصيل متقونة وقماش ملتون ممتاز يوفر الدفء والأناقة في نفس الوقت. هودي مع جيب كانغورو واسع وأربطة بيضاء متباينة، وبنطلون بأساور مرنة مريحة.",
+    review: '"اللبسة تخرج خيالية والجودة فور بزااف، كوتون 100% نقي وسيرفيت متقونة" — سليم خ.',
+    productType: "set",
+    image: "/products/stussy_brown_1.png",
+    colorName: "Marron Chocolat",
+  },
+  {
+    id: 2602,
+    name: "Ensemble Stüssy",
+    bg: "#16110e",
+    tag: "Vue Complète",
+    swatch: "#4a2e1b",
+    desc: "إطلالة كاملة متناسقة تناسب جميع الخرجات اليومية والأوقات الباردة. مظهر ستريتوير فخم يتماشى تماماً مع السنيكرز الأبيض.",
+    review: '"وصلني في 48 ساعة، القيس مضبوط والسلعة كيما في التصاور تماماً" — ياسين م.',
+    productType: "set",
+    image: "/products/stussy_brown_3.png",
+    colorName: "Marron Chocolat",
+  },
+];
+
 // Simple product list for shop page and other components
 export interface Product {
   id: number;
@@ -432,11 +472,36 @@ export interface Product {
   reviewCount: number;
   stock: number;
   dateAdded: string;
-  showcaseType: "nocta" | "nocta_sweat" | "nocta_tee" | "nocta_hoodie" | "polo" | "bmw" | "jordan" | "jordan_paris" | "debardeur" | "ny" | "nike_jogger" | "adidas_snap" | "chinese_jacket" | "nike_air_max";
+  showcaseType: "nocta" | "nocta_sweat" | "nocta_tee" | "nocta_hoodie" | "polo" | "bmw" | "jordan" | "jordan_paris" | "debardeur" | "ny" | "nike_jogger" | "adidas_snap" | "chinese_jacket" | "nike_air_max" | "stussy_hoodie";
   upsellPrice?: number;
 }
 
 export const products: Product[] = [
+  {
+    id: 25,
+    slug: "ensemble-stussy-hoodie",
+    name: "Ensemble Stüssy",
+    description: "Ensemble Hoodie & Pantalon Stüssy d'exception en coton molletonné 3 iplik premium. Sweat à capuche avec cordon de serrage blanc contrasté, poche kangourou et logo signature Stüssy brodé avec précision. Pantalon jogger assorti avec taille élastique et chevilles resserrées. Style streetwear tendance et confort absolu.",
+    price: 5900,
+    bundlePrice: 9900,
+    images: [
+      "/products/stussy_brown_2.jpg",
+      "/products/stussy_brown_1.png",
+      "/products/stussy_brown_3.png",
+    ],
+    category: "ensembles",
+    sizes: ["S", "M", "L", "XL", "XXL"],
+    colors: [{ name: "Marron Chocolat", hex: "#4a2e1b" }],
+    tag: "Heavy Fleece",
+    status: "active",
+    isFeatured: true,
+    rating: 4.9,
+    reviewCount: 78,
+    stock: 50,
+    dateAdded: "2026-10-18",
+    showcaseType: "stussy_hoodie",
+    upsellPrice: 2700,
+  },
   {
     id: 24,
     slug: "nike-air-max-ensemble",

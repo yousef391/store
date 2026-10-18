@@ -34,18 +34,32 @@ export default function BestSellers() {
     fetchProducts()
       .then((data) => {
         if (data && data.length > 0) {
-          const mapped: DisplayProduct[] = data.map((p: Record<string, unknown>) => {
-            const staticMatch = staticProducts.find((sp) => sp.id === p.id);
+          const dbMap = new Map(data.map((p: Record<string, unknown>) => [p.id as number, p]));
+          const mapped: DisplayProduct[] = staticProducts.map((sp) => {
+            const dbP = dbMap.get(sp.id);
+            if (dbP) {
+              return {
+                id: sp.id,
+                slug: (dbP.slug as string) || sp.slug,
+                name: (dbP.name as string) || sp.name,
+                images: (dbP.images as string[]) || sp.images,
+                tag: (dbP.tag as string) || sp.tag || null,
+                price: (dbP.price as number) || sp.price,
+                rating: (dbP.rating as number) ?? sp.rating ?? 4.8,
+                reviewCount: (dbP.review_count as number) ?? sp.reviewCount ?? 0,
+                isFeatured: dbP.is_featured != null ? (dbP.is_featured as boolean) : sp.isFeatured,
+              };
+            }
             return {
-              id: p.id as number,
-              slug: p.slug as string,
-              name: p.name as string,
-              images: (p.images as string[]) || [],
-              tag: staticMatch?.tag || null,
-              price: p.price as number,
-              rating: staticMatch?.rating ?? 4.8,
-              reviewCount: staticMatch?.reviewCount ?? 0,
-              isFeatured: staticMatch?.isFeatured ?? true,
+              id: sp.id,
+              slug: sp.slug,
+              name: sp.name,
+              images: sp.images,
+              tag: sp.tag || null,
+              price: sp.price,
+              rating: sp.rating ?? 4.8,
+              reviewCount: sp.reviewCount ?? 0,
+              isFeatured: sp.isFeatured,
             };
           });
           setFeatured(mapped.filter((p) => p.isFeatured));

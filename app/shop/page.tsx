@@ -84,9 +84,10 @@ export default function ShopPage() {
     let result = productList.filter((p) => p.status !== "draft");
 
     if (search) {
-      const q = search.toLowerCase();
+      const clean = (s: string) => (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+      const q = clean(search);
       result = result.filter(
-        (p) => p.name.toLowerCase().includes(q) || p.description.toLowerCase().includes(q)
+        (p) => clean(p.name).includes(q) || clean(p.description).includes(q) || clean(p.slug).includes(q)
       );
     }
 
