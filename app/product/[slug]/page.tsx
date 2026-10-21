@@ -216,7 +216,9 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
         productData.slug !== "nike-nocta-zip-hoodie-ensemble" &&
         productData.slug !== "ensemble-stussy-hoodie" &&
         productData.slug !== "ensemble-stussy-hoodie-marron" &&
-        productData.showcaseType !== "stussy_hoodie"
+        productData.showcaseType !== "stussy_hoodie" &&
+        productData.slug !== "ensemble-ny-yankees-heavy-fleece" &&
+        productData.showcaseType !== "ny"
       }
       hasSizeSelector={true}
       zonePrices={zonePrices}
