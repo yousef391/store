@@ -183,6 +183,18 @@ export const nyProducts: ShowcaseProduct[] = [
     image: "/products/ny_brown_3.jpg",
     colorName: "Marron Chocolat",
   },
+  {
+    id: 183,
+    name: "Ensemble NY Yankees",
+    bg: "#16110e",
+    tag: "Coupe Unisexe",
+    swatch: "#4a2e1b",
+    desc: "قصة أوفر سايز عصرية ومريحة تناسب الرجال والنساء (Unisex Fit). طقم متناسق وراقي للإرتداء الفردي أو الكوبل بأعلى جودة قماش وفينيسيون وتوصيل سريع لـ 58 ولاية.",
+    review: '"لبسة شابة بزاف وكوبل طوب، القماش ثقيل والخدمة نقية ما شاء الله" — حسام وريمة',
+    productType: "set",
+    image: "/products/ny_brown_4.jpg",
+    colorName: "Marron Chocolat",
+  },
 ];
 
 export const nikeJoggerProducts: ShowcaseProduct[] = [
@@ -512,6 +524,7 @@ export const products: Product[] = [
       "/products/ny_brown_1.jpg",
       "/products/ny_brown_2.jpg",
       "/products/ny_brown_3.jpg",
+      "/products/ny_brown_4.jpg",
     ],
     category: "ensembles",
     sizes: ["S", "M", "L", "XL", "XXL"],

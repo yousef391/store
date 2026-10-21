@@ -18,7 +18,8 @@ async function main() {
     images: [
       "/products/ny_brown_1.jpg",
       "/products/ny_brown_2.jpg",
-      "/products/ny_brown_3.jpg"
+      "/products/ny_brown_3.jpg",
+      "/products/ny_brown_4.jpg"
     ],
     category: "ensembles",
     sizes: ["S", "M", "L", "XL", "XXL"],
@@ -86,6 +87,19 @@ async function main() {
       image: "/products/ny_brown_3.jpg",
       color_name: "Marron Chocolat",
       sort_order: 3
+    },
+    {
+      product_id: 18,
+      name: "Ensemble NY Yankees",
+      bg: "#16110e",
+      tag: "Coupe Unisexe",
+      swatch: "#4a2e1b",
+      description: "قصة أوفر سايز عصرية ومريحة تناسب الرجال والنساء (Unisex Fit). طقم متناسق وراقي للإرتداء الفردي أو الكوبل بأعلى جودة قماش وفينيسيون وتوصيل سريع لـ 58 ولاية.",
+      review: '"لبسة شابة بزاف وكوبل طوب، القماش ثقيل والخدمة نقية ما شاء الله" — حسام وريمة',
+      product_type: "set",
+      image: "/products/ny_brown_4.jpg",
+      color_name: "Marron Chocolat",
+      sort_order: 4
     }
   ];
 
