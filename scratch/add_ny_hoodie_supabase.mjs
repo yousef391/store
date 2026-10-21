@@ -16,9 +16,7 @@ async function main() {
     price: 6400,
     bundle_price: 10500,
     images: [
-      "/products/ny_brown_1.jpg",
       "/products/ny_brown_2.jpg",
-      "/products/ny_brown_3.jpg",
       "/products/ny_brown_4.jpg"
     ],
     category: "ensembles",
@@ -55,38 +53,12 @@ async function main() {
       bg: "#16110e",
       tag: "Marron Chocolat",
       swatch: "#4a2e1b",
-      description: "طقم نيويورك يانكيز فخم هودي زيب وبنطلون (Ensemble NY Yankees Hoodie Zip & Jogger) بقماش كوتون ملتون 3 iplik سميك ودافئ عالي الجودة مع تطريز رسمي بارز لشعار NY. قصة أوفر سايز عصرية توفر لك الأناقة والراحة المطلقة 🔥",
+      description: "طقم نيويورك يانكيز فخم هودي زيب وبنطلون (Ensemble NY Yankees Hoodie Zip & Pantalon) بقماش كوتون ملتون 3 iplik سميك ودافئ عالي الجودة مع تطريز رسمي بارز لشعار NY وأربطة بيضاء كونتراست وسحاب متين. قصة أوفر سايز عصرية توفر لك الأناقة والراحة المطلقة 🔥",
       review: '"طقم NY روعة بزاف، القماش سميك ودافي والفينيسيون عالمية، والقصة طوب 🔥" — وليد ب.',
-      product_type: "set",
-      image: "/products/ny_brown_1.jpg",
-      color_name: "Marron Chocolat",
-      sort_order: 1
-    },
-    {
-      product_id: 18,
-      name: "Ensemble NY Yankees",
-      bg: "#16110e",
-      tag: "Vue Complète",
-      swatch: "#4a2e1b",
-      description: "إطلالة كاملة متناسقة لجميع الزوايا (Full Lookbook). هودي زيب بسحاب معدني متين وبنطلون وايد ليغ مع تفاصيل تطريز NY متقونة وفينيسيون ممتازة.",
-      review: '"وصلني في 48 ساعة، القيس مضبوط والسلعة كيما في التصاور تماماً 🔥" — أمين ب.',
       product_type: "set",
       image: "/products/ny_brown_2.jpg",
       color_name: "Marron Chocolat",
-      sort_order: 2
-    },
-    {
-      product_id: 18,
-      name: "Ensemble NY Yankees",
-      bg: "#16110e",
-      tag: "Vue Détails",
-      swatch: "#4a2e1b",
-      description: "تفاصيل متقونة وتطريز بارز عالي الجودة لشعار NY على الصدر والذراع والبنطلون، مع قماش 3 iplik ثقيل وفرو ناعم من الداخل يمنحك الدفء في أبرد الأيام.",
-      review: '"التفاصيل والتطريز بزاف هايلين، القماش كوتون 100% نقي وسيرفيت متقونة 🔥" — سليم خ.',
-      product_type: "set",
-      image: "/products/ny_brown_3.jpg",
-      color_name: "Marron Chocolat",
-      sort_order: 3
+      sort_order: 1
     },
     {
       product_id: 18,
@@ -99,7 +71,7 @@ async function main() {
       product_type: "set",
       image: "/products/ny_brown_4.jpg",
       color_name: "Marron Chocolat",
-      sort_order: 4
+      sort_order: 2
     }
   ];
 
