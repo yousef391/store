@@ -153,7 +153,7 @@ export const nyProducts: ShowcaseProduct[] = [
     bg: "#16110e",
     tag: "Marron Chocolat",
     swatch: "#4a2e1b",
-    desc: "طقم نيويورك يانكيز فخم هودي زيب وبنطلون (Ensemble NY Yankees Hoodie Zip & Pantalon) بقماش كوتون ملتون 3 iplik سميك ودافئ عالي الجودة مع تطريز رسمي بارز لشعار NY وأربطة بيضاء كونتراست وسحاب متين. قصة أوفر سايز عصرية توفر لك الأناقة والراحة المطلقة 🔥",
+    desc: "",
     review: '"طقم NY روعة بزاف، القماش سميك ودافي والفينيسيون عالمية، والقصة طوب 🔥" — وليد ب.',
     productType: "set",
     image: "/products/ny_brown_2.jpg",
@@ -165,7 +165,7 @@ export const nyProducts: ShowcaseProduct[] = [
     bg: "#16110e",
     tag: "Coupe Unisexe",
     swatch: "#4a2e1b",
-    desc: "قصة أوفر سايز عصرية ومريحة تناسب الرجال والنساء (Unisex Fit). طقم متناسق وراقي للإرتداء الفردي أو الكوبل بأعلى جودة قماش وفينيسيون وتوصيل سريع لـ 58 ولاية.",
+    desc: "",
     review: '"لبسة شابة بزاف وكوبل طوب، القماش ثقيل والخدمة نقية ما شاء الله" — حسام وريمة',
     productType: "set",
     image: "/products/ny_brown_4.jpg",
@@ -471,6 +471,7 @@ export interface Product {
   name: string;
   description: string;
   price: number;
+  originalPrice?: number;
   bundlePrice: number;
   triplePrice?: number;
   images: string[];
@@ -493,8 +494,9 @@ export const products: Product[] = [
     id: 18,
     slug: "ensemble-ny-yankees-heavy-fleece",
     name: "Ensemble NY Yankees",
-    description: "طقم نيويورك يانكيز فخم هودي زيب وبنطلون (Ensemble NY Yankees Hoodie Zip & Pantalon) بقماش كوتون ملتون 3 iplik سميك ودافئ عالي الجودة مع تطريز رسمي بارز لشعار NY وأربطة بيضاء كونتراست وسحاب متين. قصة أوفر سايز عصرية توفر لك الأناقة والراحة المطلقة 🔥",
+    description: "",
     price: 6400,
+    originalPrice: 8400,
     bundlePrice: 10500,
     images: [
       "/products/ny_brown_2.jpg",

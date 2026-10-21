@@ -17,6 +17,7 @@ interface DisplayProduct {
   images: string[];
   tag: string | null;
   price: number;
+  originalPrice?: number;
   rating: number;
   reviewCount: number;
   isFeatured: boolean;
@@ -45,6 +46,7 @@ export default function BestSellers() {
                 images: (dbP.images as string[]) || sp.images,
                 tag: (dbP.tag as string) || sp.tag || null,
                 price: (dbP.price as number) || sp.price,
+                originalPrice: (dbP.original_price as number) || sp.originalPrice,
                 rating: (dbP.rating as number) ?? sp.rating ?? 4.8,
                 reviewCount: (dbP.review_count as number) ?? sp.reviewCount ?? 0,
                 isFeatured: dbP.is_featured != null ? (dbP.is_featured as boolean) : sp.isFeatured,
@@ -57,6 +59,7 @@ export default function BestSellers() {
               images: sp.images,
               tag: sp.tag || null,
               price: sp.price,
+              originalPrice: sp.originalPrice,
               rating: sp.rating ?? 4.8,
               reviewCount: sp.reviewCount ?? 0,
               isFeatured: sp.isFeatured,
@@ -126,6 +129,11 @@ export default function BestSellers() {
                   <span className="text-sm md:text-base font-bold text-white tabular-nums">
                     {product.price.toLocaleString()} DA
                   </span>
+                  {product.originalPrice && (
+                    <span className="text-xs text-white/40 line-through tabular-nums font-medium">
+                      {product.originalPrice.toLocaleString()} DA
+                    </span>
+                  )}
                 </div>
               </div>
             </Link>

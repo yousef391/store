@@ -59,6 +59,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
             name: data.name,
             description: data.description,
             price: data.price,
+            originalPrice: data.original_price || staticProduct?.originalPrice,
             bundlePrice: data.slug === "debardeur-nike-dri-fit" && data.bundle_price === 4500 ? 3100 : (data.bundle_price || staticProduct?.bundlePrice || 3100),
             triplePrice: data.triple_price || staticProduct?.triplePrice || (data.slug === "debardeur-nike-dri-fit" ? 4500 : undefined),
             sizes: data.sizes || staticProduct?.sizes || ["S", "M", "L", "XL", "XXL"],
@@ -203,6 +204,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
     <ProductShowcase
       variants={variants}
       singlePrice={productData.price}
+      originalPrice={productData.originalPrice || (productData.slug === "ensemble-ny-yankees-heavy-fleece" ? productData.price + 2000 : undefined)}
       bundlePrice={productData.bundlePrice}
       triplePrice={productData.triplePrice}
       upsellPrice={productData.upsellPrice}

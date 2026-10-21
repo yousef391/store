@@ -32,6 +32,7 @@ const getOrderSource = () => {
 interface ProductShowcaseProps {
   variants: ShowcaseProduct[];
   singlePrice: number;
+  originalPrice?: number;
   bundlePrice: number;
   triplePrice?: number;
   upsellPrice?: number;
@@ -71,6 +72,7 @@ const trustBadges = [
 const ProductShowcase: React.FC<ProductShowcaseProps> = ({
   variants,
   singlePrice,
+  originalPrice,
   bundlePrice,
   triplePrice,
   upsellPrice: upsellPriceProp,
@@ -489,9 +491,11 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
             </span>
           </div>
         )}
-        <p className="text-white font-medium text-xs leading-relaxed mb-1.5" style={{ fontFamily: "var(--font-dm)" }}>
-          {item.desc || (isImportedProduct ? "سلعة مستوردة ذات جودة عالية جداً (Importation High Quality - مشي كما السلعة اللوكال). خامة ممتازة وأناقة استثنائية." : "سلعة ذات جودة عالية وخامة ممتازة في منتهى الأناقة والراحة.")}
-        </p>
+        {item.desc ? (
+          <p className="text-white font-medium text-xs leading-relaxed mb-1.5" style={{ fontFamily: "var(--font-dm)" }}>
+            {item.desc}
+          </p>
+        ) : null}
         {isImportedProduct && (
           <div className="flex items-center justify-start gap-1.5 text-[10px] text-amber-300 font-bold bg-amber-500/10 px-2.5 py-1 rounded-xl w-fit border border-amber-500/20">
             <CheckCircle2 className="w-3.5 h-3.5 text-amber-400" />
@@ -761,17 +765,19 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
               ))}
             </motion.h1>
           </AnimatePresence>
-          <AnimatePresence mode="wait">
-            <motion.p
-              key={`d-desc-${item.id}`}
-              initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -14 }}
-              transition={{ duration: 0.3, delay: 0.1 }}
-              className="text-white/40 text-sm leading-relaxed mb-6"
-              style={{ fontFamily: "var(--font-dm)" }}
-            >
-              {item.desc}
-            </motion.p>
-          </AnimatePresence>
+          {item.desc ? (
+            <AnimatePresence mode="wait">
+              <motion.p
+                key={`d-desc-${item.id}`}
+                initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -14 }}
+                transition={{ duration: 0.3, delay: 0.1 }}
+                className="text-white/40 text-sm leading-relaxed mb-6"
+                style={{ fontFamily: "var(--font-dm)" }}
+              >
+                {item.desc}
+              </motion.p>
+            </AnimatePresence>
+          ) : null}
 
           <div className="grid grid-cols-2 gap-2">
             {trustBadges.map((b, i) => (
@@ -847,6 +853,9 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
             </span>
             <button onClick={() => setSelectedQuantity(1)} className={`h-auto px-3 py-2 rounded-xl flex flex-col items-center justify-center transition-all ${selectedQuantity === 1 ? "bg-white text-black" : "bg-white/10 text-white hover:bg-white/20"}`} style={{ fontFamily: "var(--font-dm)" }}>
               <span className="text-xs font-bold">1 pc</span>
+              {originalPrice && (
+                <span className="text-[9px] line-through opacity-40">{originalPrice.toLocaleString("en")}</span>
+              )}
               <span className="text-[10px] font-bold opacity-70">{singlePrice.toLocaleString("en")}</span>
             </button>
             <button onClick={() => setSelectedQuantity(2)} className={`h-auto px-3 py-2 rounded-xl flex flex-col items-center justify-center transition-all relative ${selectedQuantity === 2 ? "bg-gradient-to-r from-amber-400 to-orange-500 text-black shadow-[0_0_15px_rgba(251,191,36,0.4)]" : "bg-white/10 text-white hover:bg-white/20"}`} style={{ fontFamily: "var(--font-dm)" }}>
@@ -883,6 +892,9 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
           <div className="flex flex-col items-center gap-3">
             <AnimatePresence mode="wait">
               <motion.div key={`d-price-${item.id}-${selectedQuantity}`} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} transition={{ duration: 0.3 }} className="flex flex-col items-center">
+                {selectedQuantity === 1 && originalPrice && (
+                  <span className="text-white/40 text-sm line-through" style={{ fontFamily: "var(--font-dm)" }}>{originalPrice.toLocaleString("en")} DA</span>
+                )}
                 {selectedQuantity === 2 && (
                   <span className="text-white/40 text-sm line-through" style={{ fontFamily: "var(--font-dm)" }}>{(singlePrice * 2).toLocaleString("en")} DA</span>
                 )}
@@ -892,6 +904,12 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                 <span className="text-white text-3xl font-bold tracking-tight" style={{ fontFamily: "var(--font-heading)" }}>
                   {productPrice.toLocaleString("en")} DA
                 </span>
+                {selectedQuantity === 1 && originalPrice && (
+                  <span className="text-emerald-400 text-xs font-bold mt-0.5 flex items-center gap-1" style={{ fontFamily: "var(--font-dm)" }}>
+                    <Tag className="w-3 h-3" />
+                    وفّر {(originalPrice - singlePrice).toLocaleString("en")} DA
+                  </span>
+                )}
                 {selectedQuantity === 2 && (
                   <span className="text-amber-400 text-xs font-bold mt-0.5 flex items-center gap-1" style={{ fontFamily: "var(--font-dm)" }}>
                     <Tag className="w-3 h-3" />
@@ -1118,6 +1136,9 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                 initial={{ opacity: 0, x: 5 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -5 }}
                 className="flex flex-col items-end pt-1"
               >
+                {selectedQuantity === 1 && originalPrice && (
+                  <span className="text-white/40 text-[0.85rem] line-through" style={{ fontFamily: "var(--font-dm)" }}>{originalPrice.toLocaleString("en")} DA</span>
+                )}
                 {selectedQuantity === 2 && (
                   <span className="text-white/40 text-[0.85rem] line-through" style={{ fontFamily: "var(--font-dm)" }}>{(singlePrice * 2).toLocaleString("en")} DA</span>
                 )}
@@ -1127,6 +1148,12 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                 <span className="text-white text-[1.6rem] font-bold tracking-tight whitespace-nowrap" style={{ fontFamily: "var(--font-heading)" }}>
                   {productPrice.toLocaleString("en")} DA
                 </span>
+                {selectedQuantity === 1 && originalPrice && (
+                  <span className="text-emerald-400 text-[10px] font-bold tracking-wide flex items-center gap-1" style={{ fontFamily: "var(--font-dm)" }}>
+                    <Tag className="w-2.5 h-2.5" />
+                    وفّر {(originalPrice - singlePrice).toLocaleString("en")} DA!
+                  </span>
+                )}
                 {selectedQuantity === 2 && (
                   <span className="text-amber-400 text-[10px] font-bold tracking-wide flex items-center gap-1" style={{ fontFamily: "var(--font-dm)" }}>
                     <Tag className="w-2.5 h-2.5" />
@@ -1196,9 +1223,25 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
             <div className="flex flex-col gap-2">
               <span className="text-white/60 text-[11px] uppercase tracking-widest font-bold font-dm px-1">الكمية</span>
               <div className="flex gap-2">
-                <button type="button" onClick={() => setSelectedQuantity(1)} className={`flex-1 flex flex-col items-center justify-center gap-0.5 rounded-[1.2rem] p-3 transition-all duration-300 border ${selectedQuantity === 1 ? "bg-white text-black border-white shadow-[0_0_20px_rgba(255,255,255,0.2)]" : "bg-white/5 text-white border-white/10"}`}>
+                <button type="button" onClick={() => setSelectedQuantity(1)} className={`flex-1 flex flex-col items-center justify-center gap-0.5 rounded-[1.2rem] p-3 transition-all duration-300 border relative overflow-hidden ${selectedQuantity === 1 ? "bg-white text-black border-white shadow-[0_0_20px_rgba(255,255,255,0.2)]" : "bg-white/5 text-white border-white/10"}`}>
+                  {originalPrice && (
+                    <span className="absolute -top-0 -right-0 bg-red-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-bl-lg rounded-tr-[1.1rem]">
+                      PROMO
+                    </span>
+                  )}
                   <span className="text-[13px] font-black" style={{ fontFamily: "var(--font-dm)" }}>1 قطعة</span>
+                  {originalPrice && (
+                    <span className={`text-[11px] line-through font-bold ${selectedQuantity === 1 ? "text-black/50" : "text-white/40"}`} style={{ fontFamily: "var(--font-dm)" }}>
+                      {originalPrice.toLocaleString("en")} DA
+                    </span>
+                  )}
                   <span className="text-[15px] font-black" style={{ fontFamily: "var(--font-heading)" }}>{singlePrice.toLocaleString("en")} DA</span>
+                  {originalPrice && (
+                    <span className={`text-[9px] font-bold flex items-center gap-0.5 ${selectedQuantity === 1 ? "text-black/70" : "text-emerald-400"}`} style={{ fontFamily: "var(--font-dm)" }}>
+                      <Tag className="w-2.5 h-2.5 inline" />
+                      وفّر {(originalPrice - singlePrice).toLocaleString("en")} دج!
+                    </span>
+                  )}
                 </button>
                 <button type="button" onClick={() => setSelectedQuantity(2)} className={`flex-1 flex flex-col items-center justify-center gap-0.5 rounded-[1.2rem] p-3 transition-all duration-300 border relative overflow-hidden ${selectedQuantity === 2 ? "bg-gradient-to-r from-amber-400 to-orange-500 text-black border-amber-400 shadow-[0_0_25px_rgba(251,191,36,0.4)]" : "bg-white/5 text-white border-white/10"}`}>
                   <span className="absolute -top-0 -right-0 bg-red-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-bl-lg rounded-tr-[1.1rem]">PROMO</span>

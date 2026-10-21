@@ -19,6 +19,7 @@ interface ShopProduct {
   name: string;
   description: string;
   price: number;
+  originalPrice?: number;
   bundlePrice: number;
   images: string[];
   category: string;
@@ -57,6 +58,7 @@ export default function ShopPage() {
                 name: p.name as string,
                 description: p.description as string,
                 price: p.price as number,
+                originalPrice: (p.original_price as number) || sp.originalPrice,
                 bundlePrice: (p.bundle_price as number) || 0,
                 images: (p.images as string[]) || [],
                 category: (p.category as string) || "",
@@ -220,6 +222,11 @@ export default function ShopPage() {
                         <span className="text-sm md:text-base font-bold text-white tabular-nums">
                           {product.price.toLocaleString()} DA
                         </span>
+                        {product.originalPrice && (
+                          <span className="text-xs text-white/40 line-through tabular-nums font-medium">
+                            {product.originalPrice.toLocaleString()} DA
+                          </span>
+                        )}
                       </div>
                     </div>
                   </Link>
