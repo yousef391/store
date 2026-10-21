@@ -207,11 +207,17 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
       originalPrice={productData.originalPrice || (productData.slug === "ensemble-ny-yankees-heavy-fleece" ? productData.price + 2000 : undefined)}
       bundlePrice={productData.bundlePrice}
       triplePrice={productData.triplePrice}
-      upsellPrice={productData.upsellPrice}
+      upsellPrice={
+        params.slug === "ensemble-ny-yankees-heavy-fleece" || productData.showcaseType === "ny"
+          ? undefined
+          : productData.upsellPrice
+      }
       hasBagUpsell={
         params.slug !== "chinese-jacket" &&
         params.slug !== "veste-chinese-style-importation" &&
-        productData.showcaseType !== "chinese_jacket"
+        productData.showcaseType !== "chinese_jacket" &&
+        params.slug !== "ensemble-ny-yankees-heavy-fleece" &&
+        productData.showcaseType !== "ny"
       }
       sizes={productData.sizes}
       hasColorSelector={

@@ -513,7 +513,6 @@ export const products: Product[] = [
     stock: 50,
     dateAdded: "2026-10-21",
     showcaseType: "ny",
-    upsellPrice: 2700,
   },
   {
     id: 25,

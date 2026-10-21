@@ -904,12 +904,6 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                 <span className="text-white text-3xl font-bold tracking-tight" style={{ fontFamily: "var(--font-heading)" }}>
                   {productPrice.toLocaleString("en")} DA
                 </span>
-                {selectedQuantity === 1 && originalPrice && (
-                  <span className="text-emerald-400 text-xs font-bold mt-0.5 flex items-center gap-1" style={{ fontFamily: "var(--font-dm)" }}>
-                    <Tag className="w-3 h-3" />
-                    وفّر {(originalPrice - singlePrice).toLocaleString("en")} DA
-                  </span>
-                )}
                 {selectedQuantity === 2 && (
                   <span className="text-amber-400 text-xs font-bold mt-0.5 flex items-center gap-1" style={{ fontFamily: "var(--font-dm)" }}>
                     <Tag className="w-3 h-3" />
@@ -1148,12 +1142,6 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                 <span className="text-white text-[1.6rem] font-bold tracking-tight whitespace-nowrap" style={{ fontFamily: "var(--font-heading)" }}>
                   {productPrice.toLocaleString("en")} DA
                 </span>
-                {selectedQuantity === 1 && originalPrice && (
-                  <span className="text-emerald-400 text-[10px] font-bold tracking-wide flex items-center gap-1" style={{ fontFamily: "var(--font-dm)" }}>
-                    <Tag className="w-2.5 h-2.5" />
-                    وفّر {(originalPrice - singlePrice).toLocaleString("en")} DA!
-                  </span>
-                )}
                 {selectedQuantity === 2 && (
                   <span className="text-amber-400 text-[10px] font-bold tracking-wide flex items-center gap-1" style={{ fontFamily: "var(--font-dm)" }}>
                     <Tag className="w-2.5 h-2.5" />
@@ -1168,7 +1156,6 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                 )}
                 
                 <div className="flex flex-col items-end gap-1 mt-1.5" dir="rtl">
-                  <span className="text-emerald-400 text-[9px] font-bold flex items-center gap-1 bg-emerald-500/10 px-1.5 py-0.5 rounded-md"><CheckCircle2 className="w-3 h-3" /> 0 دج تسبيق</span>
                   <span className="text-white/60 text-[9px] font-medium flex items-center gap-1"><Eye className="w-3 h-3" /> تأكد من طلبك قبل الدفع</span>
                 </div>
               </motion.div>
@@ -1236,12 +1223,6 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                     </span>
                   )}
                   <span className="text-[15px] font-black" style={{ fontFamily: "var(--font-heading)" }}>{singlePrice.toLocaleString("en")} DA</span>
-                  {originalPrice && (
-                    <span className={`text-[9px] font-bold flex items-center gap-0.5 ${selectedQuantity === 1 ? "text-black/70" : "text-emerald-400"}`} style={{ fontFamily: "var(--font-dm)" }}>
-                      <Tag className="w-2.5 h-2.5 inline" />
-                      وفّر {(originalPrice - singlePrice).toLocaleString("en")} دج!
-                    </span>
-                  )}
                 </button>
                 <button type="button" onClick={() => setSelectedQuantity(2)} className={`flex-1 flex flex-col items-center justify-center gap-0.5 rounded-[1.2rem] p-3 transition-all duration-300 border relative overflow-hidden ${selectedQuantity === 2 ? "bg-gradient-to-r from-amber-400 to-orange-500 text-black border-amber-400 shadow-[0_0_25px_rgba(251,191,36,0.4)]" : "bg-white/5 text-white border-white/10"}`}>
                   <span className="absolute -top-0 -right-0 bg-red-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-bl-lg rounded-tr-[1.1rem]">PROMO</span>
