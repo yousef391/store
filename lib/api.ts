@@ -31,6 +31,29 @@ export async function updateProduct(id: number, updates: Record<string, unknown>
   return data;
 }
 
+export async function deleteProduct(id: number) {
+  try {
+    const res = await fetch(`/api/products?id=${id}`, { method: "DELETE" });
+    if (res.ok) return;
+  } catch {
+    // fallback if fetch / API route isn't reachable
+  }
+
+  const { error: showcaseError } = await supabase
+    .from("showcase_variants")
+    .delete()
+    .eq("product_id", id);
+  if (showcaseError) {
+    console.warn("Could not delete showcase variants:", showcaseError);
+  }
+
+  const { error } = await supabase
+    .from("products")
+    .delete()
+    .eq("id", id);
+  if (error) throw error;
+}
+
 // ──── SHOWCASE VARIANTS ────
 export async function fetchShowcaseVariants(productId: number) {
   const { data, error } = await supabase

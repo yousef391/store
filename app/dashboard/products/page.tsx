@@ -3,9 +3,11 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Search, Pencil, Grid3X3, List, ExternalLink } from "lucide-react";
-import { fetchProducts } from "@/lib/api";
+import { Search, Pencil, Grid3X3, List, ExternalLink, Trash2 } from "lucide-react";
+import { fetchProducts, deleteProduct, createHistory } from "@/lib/api";
 import Badge from "@/components/ui/Badge";
+import Modal from "@/components/ui/Modal";
+import Button from "@/components/ui/Button";
 
 interface Product {
   id: number;
@@ -26,6 +28,9 @@ export default function ProductsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
+  const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchProducts().then((data) => {
@@ -33,6 +38,39 @@ export default function ProductsPage() {
       setLoading(false);
     }).catch(() => setLoading(false));
   }, []);
+
+  const handleConfirmDelete = async () => {
+    if (!productToDelete) return;
+    setIsDeleting(true);
+    setDeleteError(null);
+    try {
+      if (typeof deleteProduct === "function") {
+        await deleteProduct(productToDelete.id);
+      } else {
+        const res = await fetch(`/api/products?id=${productToDelete.id}`, { method: "DELETE" });
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({}));
+          throw new Error(errorData.error || "Failed to delete product");
+        }
+      }
+      try {
+        await createHistory({
+          action: "product_deleted",
+          description: `Product "${productToDelete.name}" deleted`,
+          details: `ID: ${productToDelete.id}, Slug: ${productToDelete.slug}, Price: ${productToDelete.price} DA`,
+        });
+      } catch (hErr) {
+        console.warn("Failed to create history entry:", hErr);
+      }
+      setProductList((prev) => prev.filter((p) => p.id !== productToDelete.id));
+      setProductToDelete(null);
+    } catch (err: unknown) {
+      console.error("Failed to delete product:", err);
+      setDeleteError(err instanceof Error ? err.message : "Failed to delete product. Please try again.");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   const filtered = productList.filter((p) =>
     p.name.toLowerCase().includes(search.toLowerCase()) || p.category.includes(search.toLowerCase())
@@ -109,6 +147,17 @@ export default function ProductsPage() {
                   <a href={`/product/${product.slug}`} target="_blank" rel="noopener noreferrer" className="flex-1 flex items-center justify-center gap-1.5 py-1.5 bg-white/5 hover:bg-accent/10 text-gray-400 hover:text-accent rounded-lg text-[11px] font-bold transition-colors">
                     <ExternalLink size={12} /> View
                   </a>
+                  <button
+                    onClick={() => {
+                      setProductToDelete(product);
+                      setDeleteError(null);
+                    }}
+                    className="p-1.5 bg-white/5 hover:bg-red-500/15 text-gray-400 hover:text-red-400 rounded-lg text-[11px] font-bold transition-colors"
+                    title="Delete product"
+                    aria-label={`Delete ${product.name}`}
+                  >
+                    <Trash2 size={13} />
+                  </button>
                 </div>
               </div>
             </div>
@@ -150,12 +199,23 @@ export default function ProductsPage() {
                     <td className="px-4 py-3"><Badge variant={product.status as "active" | "out_of_stock" | "draft"}>{product.status.replace("_", " ")}</Badge></td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <Link href={`/dashboard/products/${product.id}`} className="p-2 text-gray-500 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors">
+                        <Link href={`/dashboard/products/${product.id}`} className="p-2 text-gray-500 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors" title="Edit">
                           <Pencil size={14} />
                         </Link>
-                        <a href={`/product/${product.slug}`} target="_blank" rel="noopener noreferrer" className="p-2 text-gray-500 hover:text-accent hover:bg-accent/10 rounded-lg transition-colors">
+                        <a href={`/product/${product.slug}`} target="_blank" rel="noopener noreferrer" className="p-2 text-gray-500 hover:text-accent hover:bg-accent/10 rounded-lg transition-colors" title="View">
                           <ExternalLink size={14} />
                         </a>
+                        <button
+                          onClick={() => {
+                            setProductToDelete(product);
+                            setDeleteError(null);
+                          }}
+                          className="p-2 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                          title="Delete product"
+                          aria-label={`Delete ${product.name}`}
+                        >
+                          <Trash2 size={14} />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -165,6 +225,78 @@ export default function ProductsPage() {
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={!!productToDelete}
+        onClose={() => {
+          if (!isDeleting) {
+            setProductToDelete(null);
+            setDeleteError(null);
+          }
+        }}
+        title="Delete Product"
+        maxWidth="max-w-md"
+      >
+        {productToDelete && (
+          <div className="flex flex-col gap-5">
+            <div className="flex items-start gap-3.5 p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400">
+              <div className="w-9 h-9 rounded-lg bg-red-500/20 flex items-center justify-center shrink-0 mt-0.5">
+                <Trash2 size={18} className="text-red-400" />
+              </div>
+              <div className="text-xs leading-relaxed">
+                <p className="font-bold text-white text-sm mb-0.5">Are you sure?</p>
+                This action will permanently delete this product and remove it from the store catalog.
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 p-3 bg-white/5 rounded-xl border border-white/5">
+              <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-surface-light shrink-0">
+                <Image
+                  src={productToDelete.images[0] || "/placeholder.png"}
+                  alt={productToDelete.name}
+                  fill
+                  className="object-cover"
+                  sizes="48px"
+                />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h4 className="text-sm font-semibold text-white truncate">{productToDelete.name}</h4>
+                <p className="text-xs text-gray-500 capitalize">{productToDelete.category} • {productToDelete.price.toLocaleString()} DA</p>
+              </div>
+            </div>
+
+            {deleteError && (
+              <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg p-2.5">
+                {deleteError}
+              </p>
+            )}
+
+            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-white/5">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={isDeleting}
+                onClick={() => {
+                  setProductToDelete(null);
+                  setDeleteError(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                loading={isDeleting}
+                onClick={handleConfirmDelete}
+              >
+                <Trash2 size={14} />
+                Delete Product
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }

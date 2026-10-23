@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Clock, Package, Settings, DollarSign, XCircle, Truck, RotateCcw } from "lucide-react";
+import { Clock, Package, Settings, DollarSign, XCircle, Truck, RotateCcw, Trash2 } from "lucide-react";
 import { fetchHistories } from "@/lib/api";
 
 interface HistoryEntry {
@@ -22,6 +22,7 @@ const ACTION_ICONS: Record<string, { icon: React.ElementType; color: string }> =
   order_returned: { icon: RotateCcw, color: "text-orange-400" },
   product_added: { icon: Package, color: "text-blue-400" },
   product_updated: { icon: Settings, color: "text-gray-400" },
+  product_deleted: { icon: Trash2, color: "text-red-400" },
   settings_changed: { icon: Settings, color: "text-gray-400" },
   price_updated: { icon: DollarSign, color: "text-accent" },
 };

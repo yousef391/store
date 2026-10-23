@@ -4,7 +4,9 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { ArrowLeft, Save, ImagePlus, X, Trash2, Plus, Check } from "lucide-react";
-import { fetchProducts, updateProduct as apiUpdateProduct, createHistory } from "@/lib/api";
+import { fetchProducts, updateProduct as apiUpdateProduct, deleteProduct, createHistory } from "@/lib/api";
+import Modal from "@/components/ui/Modal";
+import Button from "@/components/ui/Button";
 
 interface Product {
   id: number;
@@ -39,6 +41,9 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
   const [newSize, setNewSize] = useState("");
   const [newImageUrl, setNewImageUrl] = useState("");
   const [saved, setSaved] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchProducts().then((data) => {
@@ -107,6 +112,36 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
     }
   };
 
+  const handleDeleteProduct = async () => {
+    setIsDeleting(true);
+    setDeleteError(null);
+    try {
+      if (typeof deleteProduct === "function") {
+        await deleteProduct(productId);
+      } else {
+        const res = await fetch(`/api/products?id=${productId}`, { method: "DELETE" });
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({}));
+          throw new Error(errorData.error || "Failed to delete product");
+        }
+      }
+      try {
+        await createHistory({
+          action: "product_deleted",
+          description: `Product "${name}" deleted`,
+          details: `ID: ${productId}, Slug: ${product.slug}, Price: ${price} DA`,
+        });
+      } catch (hErr) {
+        console.warn("Failed to create history entry:", hErr);
+      }
+      router.push("/dashboard/products");
+    } catch (err: unknown) {
+      console.error("Failed to delete product:", err);
+      setDeleteError(err instanceof Error ? err.message : "Failed to delete product. Please try again.");
+      setIsDeleting(false);
+    }
+  };
+
   const addSize = () => {
     const s = newSize.trim().toUpperCase();
     if (s && !sizes.includes(s)) {
@@ -147,10 +182,24 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
             <p className="text-sm text-gray-500 mt-0.5">{product.slug}</p>
           </div>
         </div>
-        <button onClick={handleSave} className={`flex items-center gap-2 px-5 py-2.5 text-sm font-bold rounded-xl transition-all active:scale-[0.97] ${saved ? "bg-emerald-500 text-white" : "bg-accent text-black hover:bg-accent-hover"}`}>
-          {saved ? <Check size={16} /> : <Save size={16} />}
-          {saved ? "Saved!" : "Save Changes"}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setDeleteError(null);
+              setShowDeleteModal(true);
+            }}
+            className="flex items-center gap-1.5 px-3.5 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-xl text-sm font-semibold transition-all active:scale-[0.97]"
+            title="Delete Product"
+          >
+            <Trash2 size={16} />
+            <span className="hidden sm:inline">Delete</span>
+          </button>
+          <button onClick={handleSave} className={`flex items-center gap-2 px-5 py-2.5 text-sm font-bold rounded-xl transition-all active:scale-[0.97] ${saved ? "bg-emerald-500 text-white" : "bg-accent text-black hover:bg-accent-hover"}`}>
+            {saved ? <Check size={16} /> : <Save size={16} />}
+            {saved ? "Saved!" : "Save Changes"}
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -296,9 +345,90 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
             <a href={`/product/${product.slug}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm text-gray-300 hover:text-white font-medium transition-all">
               View Live Page
             </a>
+            <button
+              type="button"
+              onClick={() => {
+                setDeleteError(null);
+                setShowDeleteModal(true);
+              }}
+              className="flex items-center justify-center gap-2 px-4 py-3 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 hover:text-red-300 rounded-xl text-sm font-semibold transition-all"
+            >
+              <Trash2 size={16} />
+              Delete Product
+            </button>
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={showDeleteModal}
+        onClose={() => {
+          if (!isDeleting) {
+            setShowDeleteModal(false);
+            setDeleteError(null);
+          }
+        }}
+        title="Delete Product"
+        maxWidth="max-w-md"
+      >
+        <div className="flex flex-col gap-5">
+          <div className="flex items-start gap-3.5 p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400">
+            <div className="w-9 h-9 rounded-lg bg-red-500/20 flex items-center justify-center shrink-0 mt-0.5">
+              <Trash2 size={18} className="text-red-400" />
+            </div>
+            <div className="text-xs leading-relaxed">
+              <p className="font-bold text-white text-sm mb-0.5">Are you sure?</p>
+              This action will permanently delete this product and remove it from the store catalog.
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 p-3 bg-white/5 rounded-xl border border-white/5">
+            <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-surface-light shrink-0">
+              <Image
+                src={images[0] || "/placeholder.png"}
+                alt={name}
+                fill
+                className="object-cover"
+                sizes="48px"
+              />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h4 className="text-sm font-semibold text-white truncate">{name}</h4>
+              <p className="text-xs text-gray-500 capitalize">{product.category} • {price.toLocaleString()} DA</p>
+            </div>
+          </div>
+
+          {deleteError && (
+            <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg p-2.5">
+              {deleteError}
+            </p>
+          )}
+
+          <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-white/5">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={isDeleting}
+              onClick={() => {
+                setShowDeleteModal(false);
+                setDeleteError(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              loading={isDeleting}
+              onClick={handleDeleteProduct}
+            >
+              <Trash2 size={14} />
+              Delete Product
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
