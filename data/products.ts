@@ -464,6 +464,45 @@ export const stussyHoodieProducts: ShowcaseProduct[] = [
   },
 ];
 
+export const bmwTracksuitProducts: ShowcaseProduct[] = [
+  {
+    id: 2700,
+    name: "Ensemble BMW M Motorsport",
+    bg: "#0a0a0a",
+    tag: "Bleu Nuit",
+    swatch: "#0f172a",
+    desc: "طقم رياضي فخم Veste Zippée à Capuche & Pantalon BMW M Motorsport. قماش كوتون ملتون 3 iplik سميك ودافئ عالي الجودة مع خطوط بيضاء جانبية مميزة وشعار BMW M الرسمي مطرز بإتقان على الصدر وشعار ///M بارز في الظهر. قصة مريحة وأنيقة توفر الدفء والأناقة.",
+    review: '"طقم BMW M روعة بزاف، القماش سميك ودافي والفينيسيون عالمية، واللوغو في الظهر طوب 🔥" — أمين ب.',
+    productType: "set",
+    image: "/products/bmw_tracksuit_1.jpg",
+    colorName: "Bleu Nuit",
+  },
+  {
+    id: 2701,
+    name: "Ensemble BMW M Motorsport",
+    bg: "#0a0a0a",
+    tag: "Bleu Nuit (Vue 2)",
+    swatch: "#0f172a",
+    desc: "تفاصيل متقونة وقماش ملتون ممتاز يوفر الدفء والأناقة. سحاب كامل، جيوب مريحة، وخطوط بيضاء تمتد على الأكمام والأرجل لمظهر رياضي كلاسيكي أنيق.",
+    review: '"اللبسة تخرج خيالية والجودة فور بزااف، قماش ملتون نقي وخدمة متقونة" — سليم خ.',
+    productType: "set",
+    image: "/products/bmw_tracksuit_2.jpg",
+    colorName: "Bleu Nuit (Vue 2)",
+  },
+  {
+    id: 2702,
+    name: "Ensemble BMW M Motorsport",
+    bg: "#0a0a0a",
+    tag: "Bleu Nuit (Vue Dos)",
+    swatch: "#0f172a",
+    desc: "إطلالة خلفية مميزة بشعار ///M Motorsport بألوانه الثلاثية الشهيرة. طقم متناسق رجالي / نسائي (Unisexe) يتماشى تماماً مع السنيكرز الأبيض.",
+    review: '"اللوغو في الظهر عاطي هيبة ما شاء الله، وتوصيل سريع في 48 ساعة" — وليد ب.',
+    productType: "set",
+    image: "/products/bmw_tracksuit_3.jpg",
+    colorName: "Bleu Nuit (Vue Dos)",
+  },
+];
+
 // Simple product list for shop page and other components
 export interface Product {
   id: number;
@@ -485,11 +524,37 @@ export interface Product {
   reviewCount: number;
   stock: number;
   dateAdded: string;
-  showcaseType: "nocta" | "nocta_sweat" | "nocta_tee" | "nocta_hoodie" | "polo" | "bmw" | "jordan" | "jordan_paris" | "debardeur" | "ny" | "nike_jogger" | "adidas_snap" | "chinese_jacket" | "nike_air_max" | "stussy_hoodie";
+  showcaseType: "nocta" | "nocta_sweat" | "nocta_tee" | "nocta_hoodie" | "polo" | "bmw" | "jordan" | "jordan_paris" | "debardeur" | "ny" | "nike_jogger" | "adidas_snap" | "chinese_jacket" | "nike_air_max" | "stussy_hoodie" | "bmw_tracksuit";
   upsellPrice?: number;
 }
 
 export const products: Product[] = [
+  {
+    id: 26,
+    slug: "ensemble-bmw-m-tracksuit",
+    name: "Ensemble BMW M Motorsport",
+    description: "Ensemble Veste Zippée à Capuche & Pantalon BMW M Motorsport d'exception en coton molletonné 3 iplik premium. Veste zippée avec capuche, piping blanc contrasté sur les manches et pantalon jogger assorti. Logo officiel BMW sur la poitrine et grand logo signature ///M Motorsport au dos. Style streetwear dynamique et confort absolu.",
+    price: 6200,
+    originalPrice: 8200,
+    bundlePrice: 10900,
+    images: [
+      "/products/bmw_tracksuit_1.jpg",
+      "/products/bmw_tracksuit_2.jpg",
+      "/products/bmw_tracksuit_3.jpg",
+    ],
+    category: "ensembles",
+    sizes: ["S", "M", "L", "XL", "XXL"],
+    colors: [{ name: "Bleu Nuit", hex: "#0f172a" }],
+    tag: "M Motorsport",
+    status: "active",
+    isFeatured: true,
+    rating: 4.9,
+    reviewCount: 78,
+    stock: 50,
+    dateAdded: "2026-10-27",
+    showcaseType: "bmw_tracksuit",
+    upsellPrice: 2700,
+  },
   {
     id: 18,
     slug: "ensemble-ny-yankees-heavy-fleece",
