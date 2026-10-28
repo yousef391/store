@@ -72,11 +72,46 @@ export async function POST(request: Request) {
     const { data: settings } = await supabase.from("store_settings").select("*").eq("id", 1).single();
 
     const botToken = settings?.telegram_bot_token;
-    const chatId = settings?.telegram_chat_id;
+    const defaultChatId = settings?.telegram_chat_id;
 
-    if (!botToken || !chatId) {
+    if (!botToken) {
       console.warn("Telegram credentials not set in Database.");
-      return NextResponse.json({ success: true, warning: "Telegram not configured" });
+      return NextResponse.json({ success: true, warning: "Telegram not configured", orderNumber: order?.order_number });
+    }
+
+    // Collect all recipient Telegram chats (main admin + any assigned sub-admins)
+    const targetChatIds = new Set<string>();
+    if (defaultChatId) {
+      targetChatIds.add(String(defaultChatId).trim());
+    }
+
+    if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      try {
+        const { createClient } = await import("@supabase/supabase-js");
+        const adminClient = createClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.SUPABASE_SERVICE_ROLE_KEY!,
+          { auth: { autoRefreshToken: false, persistSession: false } }
+        );
+        const { data: usersData } = await adminClient.auth.admin.listUsers();
+        if (usersData?.users) {
+          const itemNameToMatch = (finalItemTitle || "").toLowerCase();
+          for (const u of usersData.users) {
+            if (u.user_metadata?.role === "sub_admin" && u.user_metadata?.telegram_chat_id) {
+              const assigned = u.user_metadata?.assigned_products;
+              const isMatch = Array.isArray(assigned) && assigned.some((p: string) => {
+                const pLow = p.toLowerCase().trim();
+                return itemNameToMatch.includes(pLow) || pLow.includes(itemNameToMatch);
+              });
+              if (isMatch) {
+                targetChatIds.add(String(u.user_metadata.telegram_chat_id).trim());
+              }
+            }
+          }
+        }
+      } catch (subAdminErr) {
+        console.error("Failed to query sub-admin telegram chats:", subAdminErr);
+      }
     }
 
     // 3. Resolve wilaya name from ID
@@ -127,17 +162,23 @@ ${isUpsell ? "🎒" : "👕"} Item: ${itemDisplay}
 🚚 Delivery: ${deliveryDetail}
 🛒 Total: ${formatPrice(total)} DA`;
 
-    // 6. Send to Telegram
-    const telegramUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
-    await fetch(telegramUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chat_id: chatId,
-        text: message,
-        parse_mode: "Markdown",
-      }),
-    });
+    // 6. Send to Telegram for all targeted chat IDs
+    if (targetChatIds.size > 0) {
+      const telegramUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
+      await Promise.allSettled(
+        Array.from(targetChatIds).map((cid) =>
+          fetch(telegramUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              chat_id: cid,
+              text: message,
+              parse_mode: "Markdown",
+            }),
+          })
+        )
+      );
+    }
 
     return NextResponse.json({ success: true, orderNumber: order?.order_number });
   } catch (error: unknown) {

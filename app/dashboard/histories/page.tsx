@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Clock, Package, Settings, DollarSign, XCircle, Truck, RotateCcw, Trash2 } from "lucide-react";
 import { fetchHistories } from "@/lib/api";
+import RoleGuard from "@/components/dashboard/RoleGuard";
 
 interface HistoryEntry {
   id: string;
@@ -47,6 +48,7 @@ export default function HistoriesPage() {
   }
 
   return (
+    <RoleGuard allowedRoles={["admin"]}>
     <div className="flex flex-col gap-6 max-w-4xl">
       <div>
         <h1 className="text-xl md:text-2xl font-bold text-white font-heading">Activity History</h1>
@@ -85,5 +87,6 @@ export default function HistoriesPage() {
         )}
       </div>
     </div>
+    </RoleGuard>
   );
 }

@@ -8,6 +8,7 @@ import { fetchProducts, deleteProduct, createHistory } from "@/lib/api";
 import Badge from "@/components/ui/Badge";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
+import RoleGuard from "@/components/dashboard/RoleGuard";
 
 interface Product {
   id: number;
@@ -85,6 +86,7 @@ export default function ProductsPage() {
   }
 
   return (
+    <RoleGuard allowedRoles={["admin"]}>
     <div className="flex flex-col gap-6 max-w-7xl">
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -298,5 +300,6 @@ export default function ProductsPage() {
         )}
       </Modal>
     </div>
+    </RoleGuard>
   );
 }

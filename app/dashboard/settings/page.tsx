@@ -5,6 +5,7 @@ import { Save, DollarSign, Check, Lock, Building2, Home } from "lucide-react";
 import { defaultZonePrices, defaultStopdeskZonePrices, zoneLabels } from "@/data/wilayas";
 import { fetchStoreSettings, updateStoreSettings } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
+import RoleGuard from "@/components/dashboard/RoleGuard";
 
 export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
@@ -114,6 +115,7 @@ export default function SettingsPage() {
   }
 
   return (
+    <RoleGuard allowedRoles={["admin"]}>
     <div className="flex flex-col gap-6 max-w-4xl">
       <div>
         <h1 className="text-xl md:text-2xl font-bold text-white font-heading">Settings</h1>
@@ -380,5 +382,6 @@ export default function SettingsPage() {
         </div>
       </form>
     </div>
+    </RoleGuard>
   );
 }

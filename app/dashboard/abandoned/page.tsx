@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic';
 
 import { useEffect, useState } from 'react';
 import { Search, Phone, Copy, Check, X, UserX, RefreshCw, MessageCircle, Tag, ArrowRightLeft } from 'lucide-react';
+import RoleGuard from '@/components/dashboard/RoleGuard';
 
 type Lead = {
   id: string;
@@ -169,6 +170,7 @@ export default function AbandonedLeadsPage() {
   };
 
   return (
+    <RoleGuard allowedRoles={["admin"]}>
     <div className="flex flex-col gap-4 lg:gap-6 w-full max-w-7xl mx-auto pb-10">
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -395,5 +397,6 @@ export default function AbandonedLeadsPage() {
         </div>
       )}
     </div>
+    </RoleGuard>
   );
 }
