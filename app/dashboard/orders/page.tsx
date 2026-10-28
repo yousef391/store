@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { Search, Filter, ChevronLeft, ChevronRight, Trash2, Copy, Check, X, Truck, Package, RefreshCw, Calendar } from "lucide-react";
 import { fetchOrders, updateOrderStatus, createHistory } from "@/lib/api";
+import { useAuth } from "@/components/dashboard/AuthGuard";
+import { matchesAssignedProduct } from "@/lib/auth";
 import { products } from "@/data/products";
 import algeriaData from "@/data/algeria.json";
 
@@ -36,6 +38,7 @@ interface Order {
 }
 
 export default function OrdersPage() {
+  const { role, assignedProducts } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -60,10 +63,14 @@ export default function OrdersPage() {
 
   useEffect(() => {
     fetchOrders().then((data) => {
-      setOrders(data || []);
+      let list: Order[] = data || [];
+      if (role === "sub_admin") {
+        list = list.filter((o) => matchesAssignedProduct(o.item, assignedProducts));
+      }
+      setOrders(list);
       setLoading(false);
     }).catch(() => setLoading(false));
-  }, []);
+  }, [role, assignedProducts]);
 
   // Reset page when filters change
   useEffect(() => {
@@ -89,6 +96,9 @@ export default function OrdersPage() {
   }, [orders]);
 
   const productOptions = useMemo(() => {
+    if (role === "sub_admin") {
+      return (assignedProducts || []).slice().sort();
+    }
     const set = new Set<string>();
     products.forEach((p) => {
       if (p.name) set.add(p.name);
@@ -97,7 +107,7 @@ export default function OrdersPage() {
       if (o.item) set.add(o.item);
     });
     return Array.from(set).sort();
-  }, [orders]);
+  }, [orders, role, assignedProducts]);
 
   const phoneCounts = useMemo(() => {
     const counts: Record<string, number> = {};

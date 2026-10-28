@@ -4,6 +4,8 @@ import { useMemo, useState, useEffect } from "react";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from "recharts";
 import { DollarSign, ShoppingBag, TrendingUp, Package } from "lucide-react";
 import { fetchOrders } from "@/lib/api";
+import { useAuth } from "@/components/dashboard/AuthGuard";
+import { matchesAssignedProduct } from "@/lib/auth";
 
 interface Order {
   id: string;
@@ -13,6 +15,7 @@ interface Order {
   wilaya: string;
   total: number;
   status: string;
+  item?: string;
   created_at: string;
 }
 
@@ -24,15 +27,20 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function DashboardPage() {
+  const { role, assignedProducts } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchOrders().then((data) => {
-      setOrders(data || []);
+      let filtered: Order[] = data || [];
+      if (role === "sub_admin") {
+        filtered = filtered.filter((o) => matchesAssignedProduct(o.item, assignedProducts));
+      }
+      setOrders(filtered);
       setLoading(false);
     }).catch(() => setLoading(false));
-  }, []);
+  }, [role, assignedProducts]);
 
   const stats = useMemo(() => {
     const totalRevenue = orders
