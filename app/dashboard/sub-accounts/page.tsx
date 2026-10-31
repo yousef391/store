@@ -16,6 +16,8 @@ import {
   Send,
   Pencil,
   Check,
+  CheckCircle2,
+  RefreshCw,
 } from "lucide-react";
 import RoleGuard from "@/components/dashboard/RoleGuard";
 import { fetchProducts } from "@/lib/api";
@@ -60,6 +62,10 @@ function SubAccountsContent() {
   const [formError, setFormError] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
+  // Test Telegram states
+  const [testingChatId, setTestingChatId] = useState<string | null>(null);
+  const [testResult, setTestResult] = useState<{ id: string; success: boolean; message: string } | null>(null);
+
   // Load available products for selection
   useEffect(() => {
     fetchProducts()
@@ -71,7 +77,6 @@ function SubAccountsContent() {
           });
           setAvailableProducts(Array.from(unique.values()));
         } else {
-          // Fallback to static products list
           const unique = new Map<string, ProductItem>();
           fallbackProducts.forEach((p) => {
             if (p.name) unique.set(p.name, { id: p.id, name: p.name });
@@ -110,6 +115,7 @@ function SubAccountsContent() {
     setTelegramChatId("");
     setSelectedProducts([]);
     setFormError("");
+    setTestResult(null);
     setShowForm(true);
   };
 
@@ -120,6 +126,7 @@ function SubAccountsContent() {
     setTelegramChatId(subAdmin.telegram_chat_id || "");
     setSelectedProducts(subAdmin.assigned_products || []);
     setFormError("");
+    setTestResult(null);
     setShowForm(true);
   };
 
@@ -131,6 +138,7 @@ function SubAccountsContent() {
     setTelegramChatId("");
     setSelectedProducts([]);
     setFormError("");
+    setTestResult(null);
   };
 
   const toggleProduct = (prodName: string) => {
@@ -145,6 +153,47 @@ function SubAccountsContent() {
 
   const clearAllProducts = () => {
     setSelectedProducts([]);
+  };
+
+  const testTelegramConnection = async (targetId: string, chatIdToTest: string) => {
+    if (!chatIdToTest || !chatIdToTest.trim()) {
+      alert("Please enter a Telegram Chat ID first.");
+      return;
+    }
+
+    setTestingChatId(targetId);
+    setTestResult(null);
+
+    try {
+      const res = await fetch("/api/sub-admin/test-telegram", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_id: chatIdToTest.trim() }),
+      });
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        setTestResult({
+          id: targetId,
+          success: true,
+          message: "Notification sent! Check your Telegram app now.",
+        });
+      } else {
+        setTestResult({
+          id: targetId,
+          success: false,
+          message: data.error || "Failed to reach Telegram.",
+        });
+      }
+    } catch (err) {
+      setTestResult({
+        id: targetId,
+        success: false,
+        message: err instanceof Error ? err.message : "Network error testing Telegram.",
+      });
+    } finally {
+      setTestingChatId(null);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -308,6 +357,24 @@ function SubAccountsContent() {
                   <Send size={13} className="text-blue-400" />
                   Telegram Chat ID <span className="text-[10px] text-gray-500 font-normal lowercase">(optional)</span>
                 </label>
+                {telegramChatId && (
+                  <button
+                    type="button"
+                    disabled={testingChatId === "form"}
+                    onClick={() => testTelegramConnection("form", telegramChatId)}
+                    className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1 font-medium transition-colors"
+                  >
+                    {testingChatId === "form" ? (
+                      <>
+                        <RefreshCw size={11} className="animate-spin" /> Sending test...
+                      </>
+                    ) : (
+                      <>
+                        <Send size={11} /> Test Telegram Now
+                      </>
+                    )}
+                  </button>
+                )}
               </div>
               <input
                 type="text"
@@ -317,8 +384,26 @@ function SubAccountsContent() {
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-accent/40 transition-all"
               />
               <p className="text-[11px] text-gray-500 mt-1">
-                When an order for this sub-admin&apos;s assigned products arrives, the Telegram bot will instantly notify this chat ID too. (To get your Chat ID, send /start to @userinfobot on Telegram).
+                ⚠️ <strong>Important:</strong> The user MUST open your store&apos;s Telegram bot and click <strong>Start</strong> first. To get their ID, send <code>/start</code> to <code>@userinfobot</code>.
               </p>
+
+              {/* Form test result */}
+              {testResult && testResult.id === "form" && (
+                <div
+                  className={`mt-2 p-3 rounded-xl text-xs flex items-start gap-2 border ${
+                    testResult.success
+                      ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+                      : "bg-red-500/10 border-red-500/20 text-red-400"
+                  }`}
+                >
+                  {testResult.success ? (
+                    <CheckCircle2 size={15} className="shrink-0 mt-0.5" />
+                  ) : (
+                    <AlertCircle size={15} className="shrink-0 mt-0.5" />
+                  )}
+                  <span>{testResult.message}</span>
+                </div>
+              )}
             </div>
 
             {/* Assign Products */}
@@ -436,86 +521,124 @@ function SubAccountsContent() {
           <div className="divide-y divide-white/5">
             {subAdmins.map((user) => {
               const assigned = user.assigned_products || [];
+              const isTestingThis = testingChatId === user.id;
+              const hasTestResult = testResult && testResult.id === user.id;
+
               return (
                 <div
                   key={user.id}
-                  className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-white/[0.02] transition-colors"
+                  className="p-5 flex flex-col gap-3 hover:bg-white/[0.02] transition-colors"
                 >
-                  <div className="flex items-start gap-3.5 min-w-0">
-                    <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center shrink-0 mt-0.5">
-                      <ShieldCheck size={18} className="text-accent" />
-                    </div>
-                    <div className="min-w-0 space-y-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-sm font-bold text-white">{user.email}</p>
-                        <span className="px-2 py-0.5 rounded-full bg-accent/10 text-accent text-[10px] font-bold uppercase tracking-wider">
-                          Sub Admin
-                        </span>
-                        {user.telegram_chat_id ? (
-                          <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 text-[10px] font-medium flex items-center gap-1">
-                            <Send size={10} /> Telegram: {user.telegram_chat_id}
-                          </span>
-                        ) : (
-                          <span className="px-2 py-0.5 rounded-full bg-white/5 text-gray-500 text-[10px]">
-                            No Telegram
-                          </span>
-                        )}
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex items-start gap-3.5 min-w-0">
+                      <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center shrink-0 mt-0.5">
+                        <ShieldCheck size={18} className="text-accent" />
                       </div>
-
-                      {/* Assigned products */}
-                      <div className="flex items-center gap-1.5 flex-wrap pt-1">
-                        <span className="text-[11px] text-gray-400 font-medium">Products:</span>
-                        {assigned.length > 0 ? (
-                          assigned.map((prod) => (
-                            <span
-                              key={prod}
-                              className="px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-gray-300 text-[11px]"
-                            >
-                              {prod}
+                      <div className="min-w-0 space-y-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="text-sm font-bold text-white">{user.email}</p>
+                          <span className="px-2 py-0.5 rounded-full bg-accent/10 text-accent text-[10px] font-bold uppercase tracking-wider">
+                            Sub Admin
+                          </span>
+                          {user.telegram_chat_id ? (
+                            <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 text-[10px] font-medium flex items-center gap-1">
+                              <Send size={10} /> Telegram: {user.telegram_chat_id}
                             </span>
-                          ))
-                        ) : (
-                          <span className="text-[11px] text-amber-400/80 italic">
-                            No products assigned (cannot view orders)
-                          </span>
-                        )}
-                      </div>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded-full bg-white/5 text-gray-500 text-[10px]">
+                              No Telegram
+                            </span>
+                          )}
+                        </div>
 
-                      {/* Timestamps */}
-                      <div className="flex items-center gap-3 text-[10px] text-gray-600 pt-0.5">
-                        <span className="flex items-center gap-1">
-                          <Calendar size={10} />
-                          Created: {new Date(user.created_at).toLocaleDateString()}
-                        </span>
-                        <span>·</span>
-                        <span>
-                          {user.last_sign_in_at
-                            ? `Last login: ${new Date(user.last_sign_in_at).toLocaleDateString()}`
-                            : "Never logged in"}
-                        </span>
+                        {/* Assigned products */}
+                        <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                          <span className="text-[11px] text-gray-400 font-medium">Products:</span>
+                          {assigned.length > 0 ? (
+                            assigned.map((prod) => (
+                              <span
+                                key={prod}
+                                className="px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-gray-300 text-[11px]"
+                              >
+                                {prod}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="text-[11px] text-amber-400/80 italic">
+                              No products assigned (cannot view or receive orders)
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Timestamps */}
+                        <div className="flex items-center gap-3 text-[10px] text-gray-600 pt-0.5">
+                          <span className="flex items-center gap-1">
+                            <Calendar size={10} />
+                            Created: {new Date(user.created_at).toLocaleDateString()}
+                          </span>
+                          <span>·</span>
+                          <span>
+                            {user.last_sign_in_at
+                              ? `Last login: ${new Date(user.last_sign_in_at).toLocaleDateString()}`
+                              : "Never logged in"}
+                          </span>
+                        </div>
                       </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-2 self-end md:self-auto shrink-0">
+                      {user.telegram_chat_id && (
+                        <button
+                          onClick={() => testTelegramConnection(user.id, user.telegram_chat_id!)}
+                          disabled={isTestingThis}
+                          className="px-3 py-1.5 rounded-xl border border-blue-500/20 bg-blue-500/5 text-blue-400 hover:bg-blue-500/10 transition-all flex items-center gap-1.5 text-xs font-medium disabled:opacity-50"
+                          title="Send a test message to this user's Telegram"
+                        >
+                          {isTestingThis ? (
+                            <RefreshCw size={13} className="animate-spin" />
+                          ) : (
+                            <Send size={13} />
+                          )}
+                          <span>Test Telegram</span>
+                        </button>
+                      )}
+                      <button
+                        onClick={() => openEditModal(user)}
+                        className="p-2 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-all flex items-center gap-1 text-xs"
+                        title="Edit assigned products or settings"
+                      >
+                        <Pencil size={15} />
+                        <span className="hidden sm:inline">Edit</span>
+                      </button>
+                      <button
+                        onClick={() => handleDelete(user.id, user.email)}
+                        disabled={deletingId === user.id}
+                        className="p-2 rounded-xl text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-all disabled:opacity-40"
+                        title="Delete account"
+                      >
+                        <Trash2 size={15} />
+                      </button>
                     </div>
                   </div>
 
-                  {/* Actions */}
-                  <div className="flex items-center gap-2 self-end md:self-auto shrink-0">
-                    <button
-                      onClick={() => openEditModal(user)}
-                      className="p-2 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-all flex items-center gap-1 text-xs"
-                      title="Edit assigned products or settings"
+                  {/* Inline test result banner */}
+                  {hasTestResult && (
+                    <div
+                      className={`p-3 rounded-xl text-xs flex items-start gap-2 border ${
+                        testResult.success
+                          ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+                          : "bg-red-500/10 border-red-500/20 text-red-400"
+                      }`}
                     >
-                      <Pencil size={15} />
-                      <span className="hidden sm:inline">Edit</span>
-                    </button>
-                    <button
-                      onClick={() => handleDelete(user.id, user.email)}
-                      disabled={deletingId === user.id}
-                      className="p-2 rounded-xl text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-all disabled:opacity-40"
-                      title="Delete account"
-                    >
-                      <Trash2 size={15} />
-                    </button>
-                  </div>
+                      {testResult.success ? (
+                        <CheckCircle2 size={15} className="shrink-0 mt-0.5" />
+                      ) : (
+                        <AlertCircle size={15} className="shrink-0 mt-0.5" />
+                      )}
+                      <span>{testResult.message}</span>
+                    </div>
+                  )}
                 </div>
               );
             })}

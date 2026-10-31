@@ -193,11 +193,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: result?.message || "Failed to create parcel in Yalidine" }, { status: 400 });
     }
 
-    // 5. Save tracking_id
+    // 5. Save tracking_id and update status to expedie
     const trackingId = result.tracking;
-    await supabase.from("orders").update({ tracking_id: trackingId }).eq("id", order.id);
+    await supabase.from("orders").update({ tracking_id: trackingId, status: "expedie" }).eq("id", order.id);
 
-    return NextResponse.json({ success: true, tracking_id: trackingId, yalidine_label: result.label });
+    return NextResponse.json({ success: true, tracking_id: trackingId, status: "expedie", yalidine_label: result.label });
 
   } catch (err: unknown) {
     console.error("Yalidine Route Error:", err);

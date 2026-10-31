@@ -19,8 +19,10 @@ const client = createClient(
 );
 
 async function check() {
-  const { data: limits } = await client.from('order_rate_limits').select('*').order('created_at', { ascending: false }).limit(10);
-  console.log('Rate limits:', limits);
+  const { data, error } = await client.from('orders').select('*').limit(1);
+  if (error) console.error(error);
+  else if (data && data[0]) console.log('Order sample:', data[0]);
+  else console.log('No order found');
 }
 
 check();

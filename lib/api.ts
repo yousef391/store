@@ -10,6 +10,7 @@ export async function fetchProducts() {
   return data;
 }
 
+
 export async function fetchProductBySlug(slug: string) {
   const { data, error } = await supabase
     .from("products")
@@ -101,6 +102,42 @@ export async function updateOrderStatus(id: string, status: string) {
   const { data, error } = await supabase
     .from("orders")
     .update({ status })
+    .eq("id", id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function fetchOrderById(id: string) {
+  const { data, error } = await supabase
+    .from("orders")
+    .select("*")
+    .eq("id", id)
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function updateOrder(id: string, updates: Record<string, any>) {
+  try {
+    const res = await fetch("/api/order/update", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, updates }),
+    });
+    const result = await res.json();
+    if (res.ok && result.order) return result.order;
+    if (result.error) throw new Error(result.error);
+  } catch (apiErr) {
+    console.warn("API update failed, trying direct supabase:", apiErr);
+  }
+
+  // Fallback to direct supabase update
+  const { data, error } = await supabase
+    .from("orders")
+    .update(updates)
     .eq("id", id)
     .select()
     .single();

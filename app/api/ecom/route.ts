@@ -119,15 +119,15 @@ export async function POST(request: Request) {
        return NextResponse.json({ error: result.message || "Failed to create parcel in Ecom, no tracking returned" }, { status: 400 });
     }
 
-    // 6. Save tracking_id to Database
+    // 6. Save tracking_id to Database and mark as expedie
     const trackingId = result.Tracking;
     
     await supabase
       .from("orders")
-      .update({ tracking_id: trackingId })
+      .update({ tracking_id: trackingId, status: "expedie" })
       .eq("id", order.id);
 
-    return NextResponse.json({ success: true, tracking_id: trackingId, label: result.label });
+    return NextResponse.json({ success: true, tracking_id: trackingId, status: "expedie", label: result.label });
 
   } catch (err: unknown) {
     console.error("Ecom Route Error:", err);

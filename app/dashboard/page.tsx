@@ -22,8 +22,14 @@ interface Order {
 const STATUS_COLORS: Record<string, string> = {
   new: "#3b82f6",
   confirmed: "#10b981",
+  expedie: "#8b5cf6",
   cancelled: "#ef4444",
   recall: "#f59e0b",
+  recall_1: "#f59e0b",
+  recall_2: "#f97316",
+  recall_3: "#fb923c",
+  recall_4: "#ea580c",
+  recall_5: "#dc2626",
 };
 
 export default function DashboardPage() {
@@ -43,12 +49,13 @@ export default function DashboardPage() {
   }, [role, assignedProducts]);
 
   const stats = useMemo(() => {
+    const isCompleted = (s: string) => s === "confirmed" || s === "expedie";
     const totalRevenue = orders
-      .filter((o) => o.status === "confirmed")
+      .filter((o) => isCompleted(o.status))
       .reduce((sum, o) => sum + (o.total || 0), 0);
 
     const totalOrders = orders.length;
-    const confirmedCount = orders.filter((o) => o.status === "confirmed").length;
+    const confirmedCount = orders.filter((o) => isCompleted(o.status)).length;
     const confirmationRate = totalOrders ? Math.round((confirmedCount / totalOrders) * 100) : 0;
     const avgOrderValue = Math.round(totalRevenue / (confirmedCount || 1));
 
@@ -63,7 +70,7 @@ export default function DashboardPage() {
 
   const revenueData = useMemo(() => {
     const days: Record<string, number> = {};
-    orders.filter((o) => o.status === "confirmed").forEach((o) => {
+    orders.filter((o) => o.status === "confirmed" || o.status === "expedie").forEach((o) => {
       const day = new Date(o.created_at).toLocaleDateString("en", { month: "short", day: "numeric" });
       days[day] = (days[day] || 0) + (o.total || 0);
     });

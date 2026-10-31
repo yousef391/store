@@ -75,7 +75,7 @@ export async function POST(request: Request) {
     const defaultChatId = settings?.telegram_chat_id;
 
     if (!botToken) {
-      console.warn("Telegram credentials not set in Database.");
+      console.warn("Telegram bot token not configured in store_settings.");
       return NextResponse.json({ success: true, warning: "Telegram not configured", orderNumber: order?.order_number });
     }
 
@@ -93,16 +93,21 @@ export async function POST(request: Request) {
           process.env.SUPABASE_SERVICE_ROLE_KEY!,
           { auth: { autoRefreshToken: false, persistSession: false } }
         );
-        const { data: usersData } = await adminClient.auth.admin.listUsers();
-        if (usersData?.users) {
-          const itemNameToMatch = (finalItemTitle || "").toLowerCase();
+        const { data: usersData, error: uError } = await adminClient.auth.admin.listUsers();
+        if (uError) {
+          console.error("Error listing users from Supabase admin:", uError);
+        } else if (usersData?.users) {
+          const itemNameToMatch = (finalItemTitle || "").toLowerCase().trim();
           for (const u of usersData.users) {
             if (u.user_metadata?.role === "sub_admin" && u.user_metadata?.telegram_chat_id) {
-              const assigned = u.user_metadata?.assigned_products;
+              const assigned: string[] = u.user_metadata?.assigned_products || [];
               const isMatch = Array.isArray(assigned) && assigned.some((p: string) => {
                 const pLow = p.toLowerCase().trim();
                 return itemNameToMatch.includes(pLow) || pLow.includes(itemNameToMatch);
               });
+
+              console.log(`[Order #${order?.order_number}] Sub-Admin ${u.email}: assigned = [${assigned.join(", ")}], item = "${finalItemTitle}", matched = ${isMatch}`);
+
               if (isMatch) {
                 targetChatIds.add(String(u.user_metadata.telegram_chat_id).trim());
               }
@@ -112,6 +117,8 @@ export async function POST(request: Request) {
       } catch (subAdminErr) {
         console.error("Failed to query sub-admin telegram chats:", subAdminErr);
       }
+    } else {
+      console.warn("⚠️ SUPABASE_SERVICE_ROLE_KEY is not set in environment variables! Sub-admin Telegram notifications cannot be resolved.");
     }
 
     // 3. Resolve wilaya name from ID
@@ -162,21 +169,31 @@ ${isUpsell ? "🎒" : "👕"} Item: ${itemDisplay}
 🚚 Delivery: ${deliveryDetail}
 🛒 Total: ${formatPrice(total)} DA`;
 
-    // 6. Send to Telegram for all targeted chat IDs
+    // 6. Send to Telegram for all targeted chat IDs (safely without markdown parse failures)
     if (targetChatIds.size > 0) {
+      console.log(`[Order #${order?.order_number}] Dispatching Telegram alert to ${targetChatIds.size} chat(s):`, Array.from(targetChatIds));
       const telegramUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
       await Promise.allSettled(
-        Array.from(targetChatIds).map((cid) =>
-          fetch(telegramUrl, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              chat_id: cid,
-              text: message,
-              parse_mode: "Markdown",
-            }),
-          })
-        )
+        Array.from(targetChatIds).map(async (cid) => {
+          try {
+            const tRes = await fetch(telegramUrl, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                chat_id: cid,
+                text: message,
+              }),
+            });
+            const tData = await tRes.json();
+            if (!tData.ok) {
+              console.error(`❌ Telegram send failed for chat_id ${cid}:`, tData.description);
+            } else {
+              console.log(`✅ Telegram successfully sent to chat_id ${cid}`);
+            }
+          } catch (tErr) {
+            console.error(`❌ Telegram network error for chat_id ${cid}:`, tErr);
+          }
+        })
       );
     }
 

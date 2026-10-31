@@ -1,44 +1,64 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { Search, Filter, ChevronLeft, ChevronRight, Trash2, Copy, Check, X, Truck, Package, RefreshCw, Calendar } from "lucide-react";
-import { fetchOrders, updateOrderStatus, createHistory } from "@/lib/api";
+import {
+  Search,
+  Filter,
+  ChevronLeft,
+  ChevronRight,
+  Trash2,
+  Copy,
+  Check,
+  X,
+  Truck,
+  Package,
+  RefreshCw,
+  Calendar,
+  Clock,
+  PhoneCall,
+  StickyNote,
+  Pencil,
+  Eye,
+  RotateCcw,
+} from "lucide-react";
+import { fetchOrders, updateOrderStatus, updateOrder, createHistory } from "@/lib/api";
 import { useAuth } from "@/components/dashboard/AuthGuard";
 import { matchesAssignedProduct } from "@/lib/auth";
 import { products } from "@/data/products";
 import algeriaData from "@/data/algeria.json";
+import EditOrderModal, { type Order, type RecallRecord } from "@/components/dashboard/EditOrderModal";
+import OrderDetailModal from "@/components/dashboard/OrderDetailModal";
 
-const STATUS_OPTIONS = ["new", "confirmed", "cancelled", "recall"] as const;
+export const STATUS_OPTIONS = [
+  "new",
+  "confirmed",
+  "expedie",
+  "recall_1",
+  "recall_2",
+  "recall_3",
+  "recall_4",
+  "recall_5",
+  "cancelled",
+] as const;
 
-const statusColors: Record<string, { bg: string; text: string; border: string; dot: string }> = {
-  new: { bg: "bg-blue-500/10", text: "text-blue-400", border: "border-blue-500/20", dot: "bg-blue-400" },
-  confirmed: { bg: "bg-emerald-500/10", text: "text-emerald-400", border: "border-emerald-500/20", dot: "bg-emerald-400" },
-  cancelled: { bg: "bg-red-500/10", text: "text-red-400", border: "border-red-500/20", dot: "bg-red-400" },
-  recall: { bg: "bg-amber-500/10", text: "text-amber-400", border: "border-amber-500/20", dot: "bg-amber-400" },
+export const statusColors: Record<
+  string,
+  { bg: string; text: string; border: string; dot: string; label: string }
+> = {
+  new: { bg: "bg-blue-500/10", text: "text-blue-400", border: "border-blue-500/20", dot: "bg-blue-400", label: "New" },
+  confirmed: { bg: "bg-emerald-500/10", text: "text-emerald-400", border: "border-emerald-500/20", dot: "bg-emerald-400", label: "Confirmed" },
+  expedie: { bg: "bg-purple-500/10", text: "text-purple-400", border: "border-purple-500/20", dot: "bg-purple-400", label: "Expédié" },
+  recall_1: { bg: "bg-amber-500/10", text: "text-amber-400", border: "border-amber-500/20", dot: "bg-amber-400", label: "Recall 1" },
+  recall_2: { bg: "bg-amber-600/15", text: "text-amber-300", border: "border-amber-500/30", dot: "bg-amber-500", label: "Recall 2" },
+  recall_3: { bg: "bg-orange-500/15", text: "text-orange-400", border: "border-orange-500/30", dot: "bg-orange-400", label: "Recall 3" },
+  recall_4: { bg: "bg-orange-600/15", text: "text-orange-300", border: "border-orange-600/30", dot: "bg-orange-500", label: "Recall 4" },
+  recall_5: { bg: "bg-red-500/15", text: "text-red-400", border: "border-red-500/30", dot: "bg-red-400", label: "Recall 5" },
+  recall: { bg: "bg-amber-500/10", text: "text-amber-400", border: "border-amber-500/20", dot: "bg-amber-400", label: "Recall 1" },
+  cancelled: { bg: "bg-red-500/10", text: "text-red-400", border: "border-red-500/20", dot: "bg-red-400", label: "Cancelled" },
 };
 
-interface Order {
-  id: string;
-  order_number: number;
-  name: string;
-  phone: string;
-  wilaya: string;
-  commune: string;
-  item: string;
-  color: string;
-  size: string;
-  quantity: number;
-  price: number;
-  delivery: number;
-  total: number;
-  status: string;
-  tracking_id?: string;
-  source?: string;
-  created_at: string;
-}
-
 export default function OrdersPage() {
-  const { role, assignedProducts } = useAuth();
+  const { role, assignedProducts, userEmail } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -51,6 +71,10 @@ export default function OrdersPage() {
   const [isBulking, setIsBulking] = useState(false);
   const rowsPerPage = 10;
 
+  // Modals for editing & details view
+  const [editingOrder, setEditingOrder] = useState<Order | null>(null);
+  const [selectedDetailOrder, setSelectedDetailOrder] = useState<Order | null>(null);
+
   // Dispatch (Yalidine & Ecom Delivery)
   const [pushingId, setPushingId] = useState<string | null>(null);
   const [editingDispatchOrder, setEditingDispatchOrder] = useState<Order | null>(null);
@@ -58,7 +82,7 @@ export default function OrdersPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [dispatchData, setDispatchData] = useState<any>({});
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [yalidineCommunes, setYalidineCommunes] = useState<{id: number; name: string; is_deliverable: boolean; has_stop_desk: boolean}[]>([]);
+  const [yalidineCommunes, setYalidineCommunes] = useState<{ id: number; name: string; is_deliverable: boolean; has_stop_desk: boolean }[]>([]);
   const [loadingCommunes, setLoadingCommunes] = useState(false);
 
   useEffect(() => {
@@ -82,6 +106,22 @@ export default function OrdersPage() {
       setCopiedPhone(phone);
       setTimeout(() => setCopiedPhone(null), 1500);
     });
+  };
+
+  // Format exact date & time
+  const formatOrderDateTime = (iso: string) => {
+    if (!iso) return "---";
+    const d = new Date(iso);
+    const dateStr = d.toLocaleDateString("fr-FR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+    const timeStr = d.toLocaleTimeString("fr-FR", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    return `${dateStr} à ${timeStr}`;
   };
 
   // Product counts and distinct list
@@ -128,11 +168,15 @@ export default function OrdersPage() {
     return { startOfToday: today, startOfYesterday: yesterday, startOfWeek: week, startOfMonth: month };
   }, []);
 
-  const todayCount = useMemo(() => orders.filter(o => new Date(o.created_at) >= startOfToday).length, [orders, startOfToday]);
-  const yesterdayCount = useMemo(() => orders.filter(o => {
-    const d = new Date(o.created_at);
-    return d >= startOfYesterday && d < startOfToday;
-  }).length, [orders, startOfYesterday, startOfToday]);
+  const todayCount = useMemo(() => orders.filter((o) => new Date(o.created_at) >= startOfToday).length, [orders, startOfToday]);
+  const yesterdayCount = useMemo(
+    () =>
+      orders.filter((o) => {
+        const d = new Date(o.created_at);
+        return d >= startOfYesterday && d < startOfToday;
+      }).length,
+    [orders, startOfYesterday, startOfToday]
+  );
 
   const filteredOrders = orders.filter((o) => {
     const d = new Date(o.created_at);
@@ -153,9 +197,19 @@ export default function OrdersPage() {
       o.color?.toLowerCase().includes(q) ||
       o.size?.toLowerCase().includes(q) ||
       String(o.order_number).includes(q) ||
-      (o.tracking_id && o.tracking_id.toLowerCase().includes(q));
+      (o.tracking_id && o.tracking_id.toLowerCase().includes(q)) ||
+      (o.note && o.note.toLowerCase().includes(q));
 
-    const matchesStatus = statusFilter === "all" || o.status === statusFilter;
+    let matchesStatus = true;
+    if (statusFilter === "all") {
+      matchesStatus = true;
+    } else if (statusFilter === "recall") {
+      // Matches all 5 recalls
+      matchesStatus = o.status === "recall" || o.status.startsWith("recall_");
+    } else {
+      matchesStatus = o.status === statusFilter;
+    }
+
     const matchesProduct =
       productFilter === "all" ||
       o.item === productFilter ||
@@ -167,17 +221,75 @@ export default function OrdersPage() {
   const totalPages = Math.ceil(filteredOrders.length / rowsPerPage);
   const paginatedOrders = filteredOrders.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
 
+  // Status Update & Recall Tracking
   const handleUpdateStatus = async (id: string, status: string) => {
     try {
-      await updateOrderStatus(id, status);
-      setOrders((prev) => prev.map((o) => o.id === id ? { ...o, status } : o));
       const order = orders.find((o) => o.id === id);
+      let updatedRecalls = order?.recalls ? [...order.recalls] : [];
+
+      if (status.startsWith("recall_")) {
+        const recallNum = parseInt(status.replace("recall_", ""), 10) || 1;
+        const now = new Date();
+        const newRecord: RecallRecord = {
+          recall_number: recallNum,
+          timestamp: now.toISOString(),
+          date_formatted: now.toLocaleString("fr-FR", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+          }),
+          user: userEmail || (role === "sub_admin" ? "Sub-Admin" : "Admin"),
+        };
+        const idx = updatedRecalls.findIndex((r) => r.recall_number === recallNum);
+        if (idx >= 0) updatedRecalls[idx] = newRecord;
+        else updatedRecalls.push(newRecord);
+      }
+
+      await updateOrder(id, { status, recalls: updatedRecalls });
+
+      setOrders((prev) =>
+        prev.map((o) => (o.id === id ? { ...o, status, recalls: updatedRecalls } : o))
+      );
+
+      if (selectedDetailOrder?.id === id) {
+        setSelectedDetailOrder((prev) => (prev ? { ...prev, status, recalls: updatedRecalls } : null));
+      }
+
       if (order) {
-        await createHistory({ action: `order_${status}`, description: `Order #${order.order_number} marked as ${status} — ${order.name}`, details: order.item });
+        await createHistory({
+          action: `order_${status}`,
+          description: `Order #${order.order_number} marked as ${status} — ${order.name}`,
+          details: order.item,
+        });
       }
     } catch (err) {
       console.error("Failed to update status:", err);
     }
+  };
+
+  const handleSaveOrder = async (updatedOrder: Order) => {
+    try {
+      await updateOrder(updatedOrder.id, { ...updatedOrder });
+      setOrders((prev) => prev.map((o) => (o.id === updatedOrder.id ? updatedOrder : o)));
+      if (selectedDetailOrder?.id === updatedOrder.id) {
+        setSelectedDetailOrder(updatedOrder);
+      }
+      await createHistory({
+        action: "order_updated",
+        description: `Order #${updatedOrder.order_number} details updated manually`,
+        details: updatedOrder.item,
+      }).catch(console.error);
+    } catch (err) {
+      console.error("Failed to update order:", err);
+      throw err;
+    }
+  };
+
+  const handleTriggerRecall = async (orderId: string, recallNum: number) => {
+    await handleUpdateStatus(orderId, `recall_${recallNum}`);
   };
 
   const handleDelete = async (id: string, trackingId?: string | null) => {
@@ -187,13 +299,14 @@ export default function OrdersPage() {
       const res = await fetch("/api/yalidine", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderId: id, trackingId })
+        body: JSON.stringify({ orderId: id, trackingId }),
       });
       const data = await res.json();
       if (!res.ok || data.error) {
         throw new Error(data.error || "Failed to delete order");
       }
-      setOrders(prev => prev.filter(o => o.id !== id));
+      setOrders((prev) => prev.filter((o) => o.id !== id));
+      if (selectedDetailOrder?.id === id) setSelectedDetailOrder(null);
     } catch (err) {
       console.error(err);
       alert(`Failed to delete: ${err instanceof Error ? err.message : "Unknown error"}`);
@@ -213,7 +326,7 @@ export default function OrdersPage() {
     if (selectedOrderIds.size === paginatedOrders.length && paginatedOrders.length > 0) {
       setSelectedOrderIds(new Set());
     } else {
-      setSelectedOrderIds(new Set(paginatedOrders.map(o => o.id)));
+      setSelectedOrderIds(new Set(paginatedOrders.map((o) => o.id)));
     }
   };
 
@@ -223,19 +336,12 @@ export default function OrdersPage() {
     const newOrders = [...orders];
     for (const id of Array.from(selectedOrderIds)) {
       try {
-        await updateOrderStatus(id, status);
-        const orderIndex = newOrders.findIndex(o => o.id === id);
-        if (orderIndex > -1) {
-          newOrders[orderIndex].status = status;
-          const order = newOrders[orderIndex];
-          await createHistory({ action: `order_${status}`, description: `Order #${order.order_number} marked as ${status} (Bulk)`, details: order.item });
-        }
+        await handleUpdateStatus(id, status);
         updated++;
       } catch (err) {
         console.error("Bulk status error", err);
       }
     }
-    setOrders(newOrders);
     setSelectedOrderIds(new Set());
     setIsBulking(false);
     alert(`Updated ${updated} orders to ${status}.`);
@@ -249,10 +355,10 @@ export default function OrdersPage() {
     const endpoint = provider === "ecom" ? "/api/ecom" : "/api/yalidine";
 
     for (const id of Array.from(selectedOrderIds)) {
-      const orderIndex = newOrders.findIndex(o => o.id === id);
+      const orderIndex = newOrders.findIndex((o) => o.id === id);
       if (orderIndex === -1) continue;
       const order = newOrders[orderIndex];
-      if (order.tracking_id) continue; // Skip if already dispatched
+      if (order.tracking_id) continue;
 
       const wilayaMatch = order.wilaya.match(/^(\d+)/);
       const defaultWilayaId = wilayaMatch ? wilayaMatch[1] : "";
@@ -262,7 +368,7 @@ export default function OrdersPage() {
       let initialPrice = priceNumber > 200 ? priceNumber - 200 : priceNumber;
       if (defaultIncludeDelivery) initialPrice += deliveryNumber;
 
-      const isStopdeskOrder = Boolean(order.commune?.includes("[Stopdesk]") || (order as { delivery_type?: string }).delivery_type === "stopdesk");
+      const isStopdeskOrder = Boolean(order.commune?.includes("[Stopdesk]"));
       const cleanCommune = (order.commune || "").replace(/\s*\[Stopdesk\]/i, "").trim();
 
       const dispatchData = {
@@ -282,26 +388,27 @@ export default function OrdersPage() {
         is_stopdesk: isStopdeskOrder,
         stopdesk_id: "",
         autorisation_ouverture: false,
-        forceRetry: true
+        forceRetry: true,
       };
 
       try {
         const res = await fetch(endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ orderId: order.id, overrides: dispatchData })
+          body: JSON.stringify({ orderId: order.id, overrides: dispatchData }),
         });
         const data = await res.json();
         if (!res.ok || data.error) {
           failed++;
         } else {
+          // Auto-mark as expedie when pushed to Yalidine/Ecom!
           newOrders[orderIndex].tracking_id = data.tracking_id;
-          newOrders[orderIndex].status = "confirmed";
-          await updateOrderStatus(order.id, "confirmed");
-          await createHistory({ 
-            action: "order_confirmed", 
-            description: `Order #${order.order_number} auto-confirmed on dispatch to ${provider} (Bulk)`, 
-            details: order.item 
+          newOrders[orderIndex].status = "expedie";
+          await updateOrderStatus(order.id, "expedie");
+          await createHistory({
+            action: "order_expedie",
+            description: `Order #${order.order_number} auto-marked as Expédié on dispatch to ${provider} (Bulk)`,
+            details: order.item,
           });
           success++;
         }
@@ -325,19 +432,19 @@ export default function OrdersPage() {
     let currentOrders = [...orders];
 
     for (const id of idsToDelete) {
-      const order = currentOrders.find(o => o.id === id);
+      const order = currentOrders.find((o) => o.id === id);
       if (!order) continue;
       try {
         const res = await fetch("/api/yalidine", {
           method: "DELETE",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ orderId: id, trackingId: order.tracking_id })
+          body: JSON.stringify({ orderId: id, trackingId: order.tracking_id }),
         });
         const data = await res.json();
         if (!res.ok || data.error) {
           failed++;
         } else {
-          currentOrders = currentOrders.filter(o => o.id !== id);
+          currentOrders = currentOrders.filter((o) => o.id !== id);
           success++;
         }
       } catch (err) {
@@ -361,11 +468,11 @@ export default function OrdersPage() {
     const deliveryNumber = typeof order.delivery === "number" ? order.delivery : parseInt(String(order.delivery).replace(/[^\d]/g, ""), 10) || 0;
     const defaultDiscount = 200;
     const defaultIncludeDelivery = provider === "ecom";
-    
+
     let initialPrice = priceNumber > defaultDiscount ? priceNumber - defaultDiscount : priceNumber;
     if (defaultIncludeDelivery) initialPrice += deliveryNumber;
 
-    const isStopdeskOrder = Boolean(order.commune?.includes("[Stopdesk]") || (order as { delivery_type?: string }).delivery_type === "stopdesk");
+    const isStopdeskOrder = Boolean(order.commune?.includes("[Stopdesk]"));
     const cleanCommune = (order.commune || "").replace(/\s*\[Stopdesk\]/i, "").trim();
 
     setDispatchData({
@@ -385,10 +492,9 @@ export default function OrdersPage() {
       is_stopdesk: isStopdeskOrder,
       stopdesk_id: "",
       autorisation_ouverture: false,
-      forceRetry: true
+      forceRetry: true,
     });
 
-    // Fetch yalidine communes for this wilaya if using Yalidine
     fetchYalidineCommunes(defaultWilayaId || order.wilaya);
   };
 
@@ -406,7 +512,7 @@ export default function OrdersPage() {
     }
   }, []);
 
-  const deliverableCommunes = yalidineCommunes.filter(c => c.is_deliverable);
+  const deliverableCommunes = yalidineCommunes.filter((c) => c.is_deliverable);
 
   const handleDispatchPush = async () => {
     if (!editingDispatchOrder) return;
@@ -416,23 +522,29 @@ export default function OrdersPage() {
       const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderId: editingDispatchOrder.id, overrides: dispatchData })
+        body: JSON.stringify({ orderId: editingDispatchOrder.id, overrides: dispatchData }),
       });
       const data = await res.json();
       if (!res.ok || data.error) {
         alert(data.error || `Failed to push to ${dispatchProvider === "ecom" ? "Ecom Delivery" : "Yalidine"}.`);
       } else {
         alert(`Successfully dispatched to ${dispatchProvider === "ecom" ? "Ecom Delivery" : "Yalidine"}! Tracking ID: ${data.tracking_id}`);
-        
-        // Update local state for tracking ID and status
-        setOrders(orders.map(o => o.id === editingDispatchOrder.id ? { ...o, tracking_id: data.tracking_id, status: "confirmed" } : o));
-        
-        // Auto-confirm in the background
-        updateOrderStatus(editingDispatchOrder.id, "confirmed").catch(console.error);
-        createHistory({ 
-          action: "order_confirmed", 
-          description: `Order #${editingDispatchOrder.order_number} auto-confirmed on dispatch to ${dispatchProvider}`, 
-          details: editingDispatchOrder.item 
+
+        // Update local state: tracking ID and status automatically turn to "expedie"
+        setOrders(
+          orders.map((o) =>
+            o.id === editingDispatchOrder.id
+              ? { ...o, tracking_id: data.tracking_id, status: "expedie" }
+              : o
+          )
+        );
+
+        // Auto-mark as expedie in background
+        updateOrderStatus(editingDispatchOrder.id, "expedie").catch(console.error);
+        createHistory({
+          action: "order_expedie",
+          description: `Order #${editingDispatchOrder.order_number} auto-marked as Expédié on dispatch to ${dispatchProvider}`,
+          details: editingDispatchOrder.item,
         }).catch(console.error);
 
         setEditingDispatchOrder(null);
@@ -462,7 +574,7 @@ export default function OrdersPage() {
         </div>
       </div>
 
-      {/* Top Cards */}
+      {/* Top Stats Cards */}
       <div className="grid grid-cols-2 gap-4">
         <div className="bg-surface border border-white/5 rounded-2xl p-4 flex flex-col justify-center">
           <p className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-1">Today&apos;s Orders</p>
@@ -474,82 +586,56 @@ export default function OrdersPage() {
         </div>
       </div>
 
-      {/* Search + Filters */}
+      {/* Search + Product Filter */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
         <div className="relative flex-1">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600" />
           <input
             type="text"
-            placeholder="Search by customer, phone, wilaya, item..."
+            placeholder="Search orders by name, phone, wilaya, note..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-surface border border-white/5 rounded-xl pl-9 pr-8 py-2.5 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-accent/50"
+            className="w-full bg-surface border border-white/10 rounded-xl pl-9 pr-8 py-2 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-accent/50"
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-600 hover:text-white"
             >
               <X size={14} />
             </button>
           )}
         </div>
 
-        {/* Date Filter Dropdown */}
-        <div className="relative">
-          <select
-            value={dateFilter}
-            onChange={(e) => setDateFilter(e.target.value as typeof dateFilter)}
-            className="w-full sm:w-auto bg-surface border border-white/5 rounded-xl pl-8 pr-8 py-2.5 text-xs font-semibold text-gray-300 focus:outline-none focus:ring-2 focus:ring-accent/50 appearance-none cursor-pointer hover:border-white/10 transition-colors"
-          >
-            <option value="today" className="bg-[#141720] text-gray-200">This Day</option>
-            <option value="yesterday" className="bg-[#141720] text-gray-200">Yesterday</option>
-            <option value="week" className="bg-[#141720] text-gray-200">This Week</option>
-            <option value="month" className="bg-[#141720] text-gray-200">This Month</option>
-            <option value="all" className="bg-[#141720] text-gray-200">All Time</option>
-          </select>
-          <Calendar size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
-          <ChevronRight size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 rotate-90 text-gray-500 pointer-events-none" />
-        </div>
-
-        {/* Product Filter Dropdown */}
-        <div className="relative">
-          <select
-            value={productFilter}
-            onChange={(e) => setProductFilter(e.target.value)}
-            className="w-full sm:w-auto bg-surface border border-white/5 rounded-xl pl-8 pr-8 py-2.5 text-xs font-semibold text-gray-300 focus:outline-none focus:ring-2 focus:ring-accent/50 appearance-none cursor-pointer hover:border-white/10 transition-colors"
-          >
-            <option value="all" className="bg-[#141720] text-gray-200">
-              All Products ({orders.length})
+        <select
+          value={productFilter}
+          onChange={(e) => setProductFilter(e.target.value)}
+          className="bg-surface border border-white/10 rounded-xl px-3 py-2 text-xs font-bold text-gray-300 focus:outline-none appearance-none cursor-pointer"
+        >
+          <option value="all">All Products</option>
+          {productOptions.map((p) => (
+            <option key={p} value={p}>
+              {p} {productCounts[p] ? `(${productCounts[p]})` : ""}
             </option>
-            {productOptions.map((p) => (
-              <option key={p} value={p} className="bg-[#141720] text-gray-200">
-                {p} {productCounts[p] ? `(${productCounts[p]})` : "(0)"}
-              </option>
-            ))}
-          </select>
-          <Package size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
-          <ChevronRight size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 rotate-90 text-gray-500 pointer-events-none" />
-        </div>
+          ))}
+        </select>
 
-        {/* Status Dropdown (Mobile only) */}
-        <div className="relative md:hidden">
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="w-full bg-surface border border-white/5 rounded-xl px-3 py-2.5 text-xs font-bold text-gray-300 focus:outline-none appearance-none cursor-pointer uppercase"
-          >
-            <option value="all" className="bg-[#141720]">All Status</option>
-            {STATUS_OPTIONS.map((s) => (
-              <option key={s} value={s} className="bg-[#141720]">{s}</option>
-            ))}
-          </select>
-        </div>
+        <select
+          value={dateFilter}
+          onChange={(e) => setDateFilter(e.target.value as "today" | "yesterday" | "week" | "month" | "all")}
+          className="bg-surface border border-white/10 rounded-xl px-3 py-2 text-xs font-bold text-gray-300 focus:outline-none appearance-none cursor-pointer"
+        >
+          <option value="today">Today</option>
+          <option value="yesterday">Yesterday</option>
+          <option value="week">This Week</option>
+          <option value="month">This Month</option>
+          <option value="all">All Time</option>
+        </select>
       </div>
 
       {/* Status Pills & Active Filter Bar */}
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="hidden md:flex items-center gap-1 bg-white/5 p-1 rounded-xl w-fit">
+        <div className="flex flex-wrap items-center gap-1 bg-white/5 p-1 rounded-xl w-full sm:w-fit overflow-x-auto">
           <button
             onClick={() => setStatusFilter("all")}
             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
@@ -558,21 +644,51 @@ export default function OrdersPage() {
           >
             All
           </button>
-          {STATUS_OPTIONS.map((s) => {
-            const colors = statusColors[s];
-            return (
-              <button
-                key={s}
-                onClick={() => setStatusFilter(s)}
-                className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-colors capitalize flex items-center gap-1.5 ${
-                  statusFilter === s ? `${colors.bg} ${colors.text} border ${colors.border}` : "text-gray-500 hover:text-gray-300"
-                }`}
-              >
-                <span className={`w-1.5 h-1.5 rounded-full ${colors.dot}`} />
-                {s}
-              </button>
-            );
-          })}
+          <button
+            onClick={() => setStatusFilter("new")}
+            className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-colors capitalize flex items-center gap-1.5 ${
+              statusFilter === "new" ? "bg-blue-500/20 text-blue-400 border border-blue-500/30" : "text-gray-500 hover:text-gray-300"
+            }`}
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
+            New
+          </button>
+          <button
+            onClick={() => setStatusFilter("confirmed")}
+            className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-colors capitalize flex items-center gap-1.5 ${
+              statusFilter === "confirmed" ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "text-gray-500 hover:text-gray-300"
+            }`}
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+            Confirmed
+          </button>
+          <button
+            onClick={() => setStatusFilter("expedie")}
+            className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-colors capitalize flex items-center gap-1.5 ${
+              statusFilter === "expedie" ? "bg-purple-500/20 text-purple-400 border border-purple-500/30" : "text-gray-500 hover:text-gray-300"
+            }`}
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-purple-400" />
+            Expédié
+          </button>
+          <button
+            onClick={() => setStatusFilter("recall")}
+            className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-colors capitalize flex items-center gap-1.5 ${
+              statusFilter === "recall" ? "bg-amber-500/20 text-amber-400 border border-amber-500/30" : "text-gray-500 hover:text-gray-300"
+            }`}
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+            Recalls (1-5)
+          </button>
+          <button
+            onClick={() => setStatusFilter("cancelled")}
+            className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-colors capitalize flex items-center gap-1.5 ${
+              statusFilter === "cancelled" ? "bg-red-500/20 text-red-400 border border-red-500/30" : "text-gray-500 hover:text-gray-300"
+            }`}
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
+            Cancelled
+          </button>
         </div>
 
         {/* Reset Active Filters Button */}
@@ -611,22 +727,38 @@ export default function OrdersPage() {
               className="bg-surface border border-white/10 rounded-lg px-3 py-1.5 text-xs font-bold text-gray-300 focus:outline-none appearance-none cursor-pointer"
             >
               <option value="">Set Status...</option>
-              {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+              {STATUS_OPTIONS.map((s) => (
+                <option key={s} value={s}>
+                  {statusColors[s]?.label || s}
+                </option>
+              ))}
             </select>
-            <button onClick={() => handleBulkDispatch("ecom")} disabled={isBulking} className="px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold rounded-lg hover:bg-emerald-500/20 transition-colors disabled:opacity-50">
+            <button
+              onClick={() => handleBulkDispatch("ecom")}
+              disabled={isBulking}
+              className="px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold rounded-lg hover:bg-emerald-500/20 transition-colors disabled:opacity-50"
+            >
               {isBulking ? "Pushing..." : "Push Ecom"}
             </button>
-            <button onClick={() => handleBulkDispatch("yalidine")} disabled={isBulking} className="px-3 py-1.5 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-bold rounded-lg hover:bg-rose-500/20 transition-colors disabled:opacity-50">
-              {isBulking ? "Pushing..." : "Push Yalidine"}
+            <button
+              onClick={() => handleBulkDispatch("yalidine")}
+              disabled={isBulking}
+              className="px-3 py-1.5 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-bold rounded-lg hover:bg-rose-500/20 transition-colors disabled:opacity-50"
+            >
+              {isBulking ? "Pushing..." : "Push Yalidine (Expédié)"}
             </button>
-            <button onClick={handleBulkDelete} disabled={isBulking} className="px-3 py-1.5 bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-bold rounded-lg hover:bg-red-500/20 transition-colors disabled:opacity-50 flex items-center gap-1">
+            <button
+              onClick={handleBulkDelete}
+              disabled={isBulking}
+              className="px-3 py-1.5 bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-bold rounded-lg hover:bg-red-500/20 transition-colors disabled:opacity-50 flex items-center gap-1"
+            >
               <Trash2 size={12} /> Delete
             </button>
           </div>
         </div>
       )}
 
-      {/* Orders Table */}
+      {/* Orders Table & Mobile Cards */}
       <div className="bg-surface rounded-2xl border border-white/5 overflow-hidden">
         {paginatedOrders.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-48 text-gray-600 gap-2">
@@ -635,181 +767,487 @@ export default function OrdersPage() {
           </div>
         ) : (
           <>
-            {/* Mobile Cards */}
-            <div className="md:hidden flex flex-col gap-1.5 p-2">
-              {paginatedOrders.map((order) => (
-                <div key={order.id} className="rounded-xl border border-white/[0.03] p-3">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <div className="flex items-center gap-2">
-                      <button onClick={() => toggleSelection(order.id)} className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${selectedOrderIds.has(order.id) ? "bg-accent border-accent text-black" : "border-white/20 hover:border-white/40"}`}>
-                        {selectedOrderIds.has(order.id) && <Check size={10} />}
-                      </button>
-                      <span className="text-sm font-semibold text-white">{order.name}</span>
-                      <span className="text-[9px] font-bold text-accent bg-accent/10 px-1.5 py-0.5 rounded">#{order.order_number}</span>
-                    </div>
-                    <span className="text-sm font-bold text-white tabular-nums">{order.total.toLocaleString()} DA</span>
-                  </div>
-                  <div className="flex items-center justify-between mb-2">
-                    <button onClick={() => copyPhone(order.phone)} className="flex items-center gap-1">
-                      <span className="text-[11px] text-blue-400 font-mono" dir="ltr">{order.phone}</span>
-                      {copiedPhone === order.phone ? <Check size={10} className="text-emerald-400" /> : <Copy size={10} className="text-gray-700" />}
-                      {phoneCounts[order.phone] > 1 && (
-                        <span className="text-[9px] font-bold text-red-400 bg-red-400/10 border border-red-400/20 px-1.5 py-0.5 rounded-full ml-1" title={`${phoneCounts[order.phone]} orders with this phone number`}>
-                          {phoneCounts[order.phone]}
+            {/* ═══════════════════════════════════════════════════════════ */}
+            {/* MOBILE CARDS VIEW (ENHANCED FOR MOBILE DASHBOARD)           */}
+            {/* ═══════════════════════════════════════════════════════════ */}
+            <div className="md:hidden flex flex-col gap-2.5 p-2.5">
+              {paginatedOrders.map((order) => {
+                const currentStatus = statusColors[order.status] || statusColors.recall || {
+                  bg: "bg-gray-500/10",
+                  text: "text-gray-400",
+                  border: "border-white/10",
+                  dot: "bg-gray-400",
+                  label: order.status,
+                };
+
+                return (
+                  <div
+                    key={order.id}
+                    className={`rounded-2xl border transition-all p-3.5 flex flex-col gap-2.5 ${
+                      selectedOrderIds.has(order.id)
+                        ? "bg-accent/5 border-accent/30"
+                        : "bg-white/[0.02] border-white/5 hover:border-white/10"
+                    }`}
+                  >
+                    {/* Top Row: Checkbox, Name, Order #, Total */}
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <button
+                          onClick={() => toggleSelection(order.id)}
+                          className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors ${
+                            selectedOrderIds.has(order.id) ? "bg-accent border-accent text-black" : "border-white/20 hover:border-white/40"
+                          }`}
+                        >
+                          {selectedOrderIds.has(order.id) && <Check size={10} />}
+                        </button>
+                        <button
+                          onClick={() => setSelectedDetailOrder(order)}
+                          className="text-sm font-bold text-white hover:text-accent truncate text-left transition-colors"
+                        >
+                          {order.name}
+                        </button>
+                        <span className="text-[10px] font-bold text-accent bg-accent/10 px-1.5 py-0.5 rounded shrink-0">
+                          #{order.order_number}
                         </span>
-                      )}
-                    </button>
-                    <div className="flex items-center gap-1">
-                      <span className="text-[10px] text-gray-600">{order.wilaya} · {order.size}</span>
-                      {order.source === 'meta' && <span className="text-[9px] font-bold text-blue-400 bg-blue-400/10 border border-blue-400/20 px-1 py-0.5 rounded">Meta</span>}
-                      {order.source === 'tiktok' && <span className="text-[9px] font-bold text-pink-400 bg-pink-400/10 border border-pink-400/20 px-1 py-0.5 rounded">TikTok</span>}
-                      {order.commune?.includes("[Stopdesk]") ? (
-                        <span className="text-[9px] font-bold text-amber-400 bg-amber-400/10 border border-amber-400/20 px-1 py-0.2 rounded">🏢 Stopdesk</span>
+                      </div>
+                      <span className="text-sm font-black text-white tabular-nums shrink-0">
+                        {order.total.toLocaleString()} DA
+                      </span>
+                    </div>
+
+                    {/* Date & Exact Time Badge (Mobile) */}
+                    <div className="flex items-center justify-between text-[11px] text-gray-400">
+                      <div className="flex items-center gap-1.5 font-mono text-[11px] text-gray-300">
+                        <Clock size={12} className="text-accent shrink-0" />
+                        <span>{formatOrderDateTime(order.created_at)}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {order.source === "meta" && (
+                          <span className="text-[9px] font-bold text-blue-400 bg-blue-400/10 border border-blue-400/20 px-1.5 py-0.5 rounded">
+                            Meta
+                          </span>
+                        )}
+                        {order.source === "tiktok" && (
+                          <span className="text-[9px] font-bold text-pink-400 bg-pink-400/10 border border-pink-400/20 px-1.5 py-0.5 rounded">
+                            TikTok
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Phone + Direct Call Button */}
+                    <div className="flex items-center justify-between gap-2 bg-white/[0.02] p-2 rounded-xl border border-white/5">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <button
+                          onClick={() => copyPhone(order.phone)}
+                          className="flex items-center gap-1 text-xs text-blue-400 font-mono font-bold"
+                          dir="ltr"
+                        >
+                          <span>{order.phone}</span>
+                          {copiedPhone === order.phone ? (
+                            <Check size={11} className="text-emerald-400" />
+                          ) : (
+                            <Copy size={11} className="text-gray-500 hover:text-gray-300" />
+                          )}
+                        </button>
+                        {phoneCounts[order.phone] > 1 && (
+                          <span
+                            className="text-[9px] font-bold text-red-400 bg-red-400/10 border border-red-400/20 px-1.5 py-0.5 rounded-full"
+                            title={`${phoneCounts[order.phone]} orders with this phone number`}
+                          >
+                            {phoneCounts[order.phone]}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* 📞 Direct Call Button (Appel) */}
+                      <a
+                        href={`tel:${order.phone}`}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500 text-black hover:bg-emerald-400 active:scale-95 transition-all text-xs font-black shadow-md shadow-emerald-500/10"
+                      >
+                        <PhoneCall size={12} />
+                        <span>Appeler</span>
+                      </a>
+                    </div>
+
+                    {/* Item & Location details */}
+                    <div className="flex items-center justify-between text-xs text-gray-400">
+                      <span className="truncate max-w-[200px] text-gray-200 font-medium">
+                        {order.item} {order.size ? `(${order.size})` : ""}
+                      </span>
+                      <div className="flex items-center gap-1.5 text-[11px] text-gray-400">
+                        <span>{order.wilaya}</span>
+                        {order.commune?.includes("[Stopdesk]") ? (
+                          <span className="text-[9px] font-bold text-amber-400 bg-amber-400/10 border border-amber-400/20 px-1 py-0.2 rounded">
+                            🏢 Stopdesk
+                          </span>
+                        ) : (
+                          <span className="text-[9px] font-bold text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-1 py-0.2 rounded">
+                            🏠 Domicile
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Yellow Note Badge */}
+                    {order.note ? (
+                      <button
+                        type="button"
+                        onClick={() => setEditingOrder(order)}
+                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-amber-400/15 border border-amber-400/30 text-amber-200 text-xs font-medium hover:bg-amber-400/25 transition-all text-left"
+                        title="Cliquez pour modifier la note"
+                      >
+                        <StickyNote size={13} className="text-amber-400 shrink-0" />
+                        <span className="truncate">{order.note}</span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setEditingOrder(order)}
+                        className="text-[11px] text-gray-500 hover:text-amber-300 flex items-center gap-1 transition-colors self-start"
+                      >
+                        <StickyNote size={11} /> + Ajouter une note
+                      </button>
+                    )}
+
+                    {/* Bottom Row: Status Dropdown + Shipping + Actions */}
+                    <div className="flex items-center gap-1.5 pt-1 border-t border-white/5">
+                      {/* Status Dropdown */}
+                      <select
+                        value={order.status}
+                        onChange={(e) => handleUpdateStatus(order.id, e.target.value)}
+                        className={`flex-1 appearance-none bg-surface/80 outline-none cursor-pointer px-2 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-lg text-center border ${currentStatus.border} ${currentStatus.text}`}
+                      >
+                        {STATUS_OPTIONS.map((s) => (
+                          <option key={s} value={s} className="bg-[#141720] text-white">
+                            {statusColors[s]?.label || s}
+                          </option>
+                        ))}
+                      </select>
+
+                      {/* Shipping Dispatch */}
+                      {order.tracking_id ? (
+                        <div className="flex items-center gap-1">
+                          <span className="text-[9px] font-mono font-bold text-purple-300 bg-purple-500/10 border border-purple-500/20 px-2 py-1 rounded truncate max-w-[85px]">
+                            {order.tracking_id}
+                          </span>
+                          <button
+                            onClick={() => openDispatchModal(order, "yalidine")}
+                            disabled={pushingId === order.id}
+                            title="Yalidine"
+                            className="p-1.5 bg-white/5 hover:bg-rose-500/10 text-gray-400 hover:text-rose-400 rounded-lg transition-colors"
+                          >
+                            <RefreshCw size={11} />
+                          </button>
+                        </div>
                       ) : (
-                        <span className="text-[9px] font-bold text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-1 py-0.2 rounded">🏠 Domicile</span>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => openDispatchModal(order, "ecom")}
+                            disabled={pushingId === order.id}
+                            className="px-2 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold rounded-lg hover:bg-emerald-500/20 transition-colors"
+                          >
+                            Ecom
+                          </button>
+                          <button
+                            onClick={() => openDispatchModal(order, "yalidine")}
+                            disabled={pushingId === order.id}
+                            className="px-2 py-1 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[10px] font-bold rounded-lg hover:bg-rose-500/20 transition-colors"
+                          >
+                            Yalidine
+                          </button>
+                        </div>
                       )}
+
+                      {/* Edit Button */}
+                      <button
+                        onClick={() => setEditingOrder(order)}
+                        title="Modifier la commande"
+                        className="p-1.5 bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white rounded-lg transition-colors"
+                      >
+                        <Pencil size={13} />
+                      </button>
+
+                      {/* Details View Button */}
+                      <button
+                        onClick={() => setSelectedDetailOrder(order)}
+                        title="Voir détails & historique des relances"
+                        className="p-1.5 bg-accent/10 hover:bg-accent/20 text-accent rounded-lg transition-colors"
+                      >
+                        <Eye size={13} />
+                      </button>
+
+                      {/* Delete */}
+                      <button
+                        onClick={() => handleDelete(order.id, order.tracking_id)}
+                        disabled={deletingId === order.id}
+                        className="p-1.5 bg-white/5 hover:bg-red-500/10 text-gray-500 hover:text-red-400 rounded-lg transition-colors disabled:opacity-50"
+                      >
+                        <Trash2 size={13} />
+                      </button>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <select value={order.status} onChange={(e) => handleUpdateStatus(order.id, e.target.value)}
-                      className={`flex-1 appearance-none bg-transparent outline-none cursor-pointer px-2 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded text-center border ${(statusColors[order.status] || statusColors.recall).border} ${(statusColors[order.status] || statusColors.recall).text}`}>
-                      {STATUS_OPTIONS.map((s) => <option key={s} value={s} className="bg-surface text-white">{s}</option>)}
-                    </select>
-                    {order.tracking_id ? (
-                      <div className="flex items-center gap-1">
-                        <span className="text-[9px] font-mono font-bold text-gray-500 bg-white/5 px-1.5 py-1.5 rounded truncate max-w-[80px]">{order.tracking_id}</span>
-                        <button onClick={() => openDispatchModal(order, "ecom")} disabled={pushingId === order.id} title="Retry Ecom" className="p-1 bg-white/5 hover:bg-emerald-500/10 text-gray-500 hover:text-emerald-400 rounded transition-colors disabled:opacity-50">
-                          <RefreshCw size={10} />
-                        </button>
-                        <button onClick={() => openDispatchModal(order, "yalidine")} disabled={pushingId === order.id} title="Retry Yalidine" className="p-1 bg-white/5 hover:bg-rose-500/10 text-gray-500 hover:text-rose-400 rounded transition-colors disabled:opacity-50">
-                          <RefreshCw size={10} />
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-1">
-                        <button onClick={() => openDispatchModal(order, "ecom")} disabled={pushingId === order.id}
-                          className="px-2 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold rounded hover:bg-emerald-500/20 transition-colors disabled:opacity-50">
-                          Ecom
-                        </button>
-                        <button onClick={() => openDispatchModal(order, "yalidine")} disabled={pushingId === order.id}
-                          className="px-2 py-1 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[10px] font-bold rounded hover:bg-rose-500/20 transition-colors disabled:opacity-50">
-                          Yalidine
-                        </button>
-                      </div>
-                    )}
-                    <button onClick={() => handleDelete(order.id, order.tracking_id)} disabled={deletingId === order.id} className="p-1.5 bg-white/5 hover:bg-red-500/10 text-gray-600 hover:text-red-400 rounded transition-colors disabled:opacity-50">
-                      <Trash2 size={12} />
-                    </button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
-            {/* Desktop Table */}
+            {/* ═══════════════════════════════════════════════════════════ */}
+            {/* DESKTOP TABLE VIEW                                          */}
+            {/* ═══════════════════════════════════════════════════════════ */}
             <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-left min-w-[900px]">
+              <table className="w-full text-left min-w-[950px]">
                 <thead>
                   <tr className="border-b border-white/5 text-gray-500 text-xs uppercase tracking-wider">
                     <th className="px-4 py-3 w-10">
-                      <button onClick={toggleAll} className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${selectedOrderIds.size === paginatedOrders.length && paginatedOrders.length > 0 ? "bg-accent border-accent text-black" : "border-white/20 hover:border-white/40"}`}>
+                      <button
+                        onClick={toggleAll}
+                        className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${
+                          selectedOrderIds.size === paginatedOrders.length && paginatedOrders.length > 0
+                            ? "bg-accent border-accent text-black"
+                            : "border-white/20 hover:border-white/40"
+                        }`}
+                      >
                         {selectedOrderIds.size === paginatedOrders.length && paginatedOrders.length > 0 && <Check size={10} />}
                       </button>
                     </th>
-                    <th className="px-4 py-3">Date</th>
-                    <th className="px-4 py-3">Customer</th>
-                    <th className="px-4 py-3">Location</th>
-                    <th className="px-4 py-3">Item</th>
+                    <th className="px-4 py-3">Date & Heure</th>
+                    <th className="px-4 py-3">Client</th>
+                    <th className="px-4 py-3">Localisation</th>
+                    <th className="px-4 py-3">Article</th>
                     <th className="px-4 py-3 text-right">Total</th>
-                    <th className="px-4 py-3 text-center">Status</th>
-                    <th className="px-4 py-3 text-center">Shipping</th>
+                    <th className="px-4 py-3 text-center">Statut</th>
+                    <th className="px-4 py-3 text-center">Expédition</th>
                     <th className="px-4 py-3 text-center">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {paginatedOrders.map((order) => (
-                    <tr key={order.id} className={`border-b border-white/5 hover:bg-white/[0.02] transition-colors ${selectedOrderIds.has(order.id) ? "bg-accent/5" : ""}`}>
-                      <td className="px-4 py-3">
-                        <button onClick={() => toggleSelection(order.id)} className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${selectedOrderIds.has(order.id) ? "bg-accent border-accent text-black" : "border-white/20 hover:border-white/40"}`}>
-                          {selectedOrderIds.has(order.id) && <Check size={10} />}
-                        </button>
-                      </td>
-                      <td className="px-4 py-3 text-xs text-gray-500">{new Date(order.created_at).toLocaleDateString()}</td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-baseline gap-2">
-                          <span className="text-sm font-bold text-white">{order.name}</span>
-                          <span className="text-[10px] font-bold text-accent bg-accent/10 px-1.5 py-0.5 rounded">#{order.order_number}</span>
-                          {order.source === 'meta' && <span className="text-[9px] font-bold text-blue-400 bg-blue-400/10 px-1.5 py-0.5 rounded">Meta</span>}
-                          {order.source === 'tiktok' && <span className="text-[9px] font-bold text-pink-400 bg-pink-400/10 px-1.5 py-0.5 rounded">TikTok</span>}
-                        </div>
-                        <button onClick={() => copyPhone(order.phone)} className="flex items-center gap-1.5 mt-1">
-                          <span className="text-xs text-blue-400 font-mono" dir="ltr">{order.phone}</span>
-                          {copiedPhone === order.phone ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} className="text-gray-600" />}
-                          {phoneCounts[order.phone] > 1 && (
-                            <span className="text-[10px] font-bold text-red-400 bg-red-400/10 border border-red-400/20 px-1.5 py-0.5 rounded-full ml-1" title={`${phoneCounts[order.phone]} orders with this phone number`}>
-                              {phoneCounts[order.phone]}
+                  {paginatedOrders.map((order) => {
+                    const currentStatus = statusColors[order.status] || statusColors.recall || {
+                      bg: "bg-gray-500/10",
+                      text: "text-gray-400",
+                      border: "border-white/10",
+                      dot: "bg-gray-400",
+                      label: order.status,
+                    };
+
+                    return (
+                      <tr
+                        key={order.id}
+                        className={`border-b border-white/5 hover:bg-white/[0.02] transition-colors ${
+                          selectedOrderIds.has(order.id) ? "bg-accent/5" : ""
+                        }`}
+                      >
+                        <td className="px-4 py-3">
+                          <button
+                            onClick={() => toggleSelection(order.id)}
+                            className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${
+                              selectedOrderIds.has(order.id) ? "bg-accent border-accent text-black" : "border-white/20 hover:border-white/40"
+                            }`}
+                          >
+                            {selectedOrderIds.has(order.id) && <Check size={10} />}
+                          </button>
+                        </td>
+
+                        {/* Date & Exact Time */}
+                        <td className="px-4 py-3 text-xs">
+                          <div className="font-semibold text-white">
+                            {new Date(order.created_at).toLocaleDateString("fr-FR")}
+                          </div>
+                          <div className="text-[11px] text-gray-500 font-mono flex items-center gap-1 mt-0.5">
+                            <Clock size={10} className="text-gray-600" />
+                            <span>
+                              {new Date(order.created_at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
                             </span>
+                          </div>
+                        </td>
+
+                        {/* Customer + Call Button + Yellow Note Badge */}
+                        <td className="px-4 py-3">
+                          <div className="flex items-baseline gap-2">
+                            <button
+                              onClick={() => setSelectedDetailOrder(order)}
+                              className="text-sm font-bold text-white hover:text-accent text-left transition-colors"
+                            >
+                              {order.name}
+                            </button>
+                            <span className="text-[10px] font-bold text-accent bg-accent/10 px-1.5 py-0.5 rounded">
+                              #{order.order_number}
+                            </span>
+                            {order.source === "meta" && (
+                              <span className="text-[9px] font-bold text-blue-400 bg-blue-400/10 px-1.5 py-0.5 rounded">
+                                Meta
+                              </span>
+                            )}
+                            {order.source === "tiktok" && (
+                              <span className="text-[9px] font-bold text-pink-400 bg-pink-400/10 px-1.5 py-0.5 rounded">
+                                TikTok
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-2 mt-1">
+                            <button
+                              onClick={() => copyPhone(order.phone)}
+                              className="flex items-center gap-1 text-xs text-blue-400 font-mono"
+                              dir="ltr"
+                            >
+                              <span>{order.phone}</span>
+                              {copiedPhone === order.phone ? (
+                                <Check size={11} className="text-emerald-400" />
+                              ) : (
+                                <Copy size={11} className="text-gray-600" />
+                              )}
+                            </button>
+
+                            {/* Direct Call Button (Desktop) */}
+                            <a
+                              href={`tel:${order.phone}`}
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/25 text-[10px] font-bold transition-all"
+                              title="Appeler directement"
+                            >
+                              <PhoneCall size={10} />
+                              <span>Appel</span>
+                            </a>
+
+                            {phoneCounts[order.phone] > 1 && (
+                              <span
+                                className="text-[10px] font-bold text-red-400 bg-red-400/10 border border-red-400/20 px-1.5 py-0.5 rounded-full"
+                                title={`${phoneCounts[order.phone]} orders with this phone number`}
+                              >
+                                {phoneCounts[order.phone]}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Yellow Note Badge */}
+                          {order.note && (
+                            <button
+                              type="button"
+                              onClick={() => setEditingOrder(order)}
+                              className="mt-1.5 flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-amber-400/15 border border-amber-400/30 text-amber-200 text-[11px] font-medium hover:bg-amber-400/25 transition-all text-left max-w-[280px]"
+                              title="Modifier la note"
+                            >
+                              <StickyNote size={11} className="text-amber-400 shrink-0" />
+                              <span className="truncate">{order.note}</span>
+                            </button>
                           )}
-                        </button>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="text-sm text-gray-300">{order.wilaya}</div>
-                        <div className="text-xs text-gray-500 flex items-center gap-1.5 mt-0.5">
-                          <span>{order.commune?.replace(/\s*\[Stopdesk\]/i, "") || "---"}</span>
-                          {order.commune?.includes("[Stopdesk]") ? (
-                            <span className="text-[9px] font-bold text-amber-400 bg-amber-400/10 border border-amber-400/20 px-1.5 py-0.5 rounded">🏢 Bureau</span>
+                        </td>
+
+                        <td className="px-4 py-3">
+                          <div className="text-sm text-gray-300 font-medium">{order.wilaya}</div>
+                          <div className="text-xs text-gray-500 flex items-center gap-1.5 mt-0.5">
+                            <span>{order.commune?.replace(/\s*\[Stopdesk\]/i, "") || "---"}</span>
+                            {order.commune?.includes("[Stopdesk]") ? (
+                              <span className="text-[9px] font-bold text-amber-400 bg-amber-400/10 border border-amber-400/20 px-1.5 py-0.5 rounded">
+                                🏢 Bureau
+                              </span>
+                            ) : (
+                              <span className="text-[9px] font-bold text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-1.5 py-0.5 rounded">
+                                🏠 Domicile
+                              </span>
+                            )}
+                          </div>
+                        </td>
+
+                        <td className="px-4 py-3">
+                          <div className="text-sm font-semibold text-gray-200">{order.item}</div>
+                          <div className="text-xs text-gray-500">
+                            {order.color} · {order.size} · ×{order.quantity}
+                          </div>
+                        </td>
+
+                        <td className="px-4 py-3 text-sm font-bold text-white text-right tabular-nums">
+                          {order.total.toLocaleString()} DA
+                        </td>
+
+                        {/* Status Dropdown */}
+                        <td className="px-4 py-3 text-center">
+                          <select
+                            value={order.status}
+                            onChange={(e) => handleUpdateStatus(order.id, e.target.value)}
+                            className={`appearance-none bg-transparent outline-none cursor-pointer px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider rounded-lg text-center border ${currentStatus.bg} ${currentStatus.border} ${currentStatus.text}`}
+                          >
+                            {STATUS_OPTIONS.map((s) => (
+                              <option key={s} value={s} className="bg-[#141720] text-white">
+                                {statusColors[s]?.label || s}
+                              </option>
+                            ))}
+                          </select>
+                        </td>
+
+                        {/* Shipping */}
+                        <td className="px-4 py-3 text-center">
+                          {order.tracking_id ? (
+                            <div className="flex flex-col items-center gap-0.5">
+                              <span className="text-[10px] text-purple-400 uppercase font-bold tracking-wider">
+                                Expédié
+                              </span>
+                              <div className="flex items-center gap-1">
+                                <span className="text-xs font-mono font-bold text-gray-300 bg-white/5 px-2 py-1 rounded">
+                                  {order.tracking_id}
+                                </span>
+                                <button
+                                  onClick={() => openDispatchModal(order, "yalidine")}
+                                  disabled={pushingId === order.id}
+                                  title="Retry Yalidine"
+                                  className="p-1.5 text-gray-500 hover:text-rose-400 hover:bg-rose-500/10 rounded transition-colors disabled:opacity-50"
+                                >
+                                  <RefreshCw size={12} />
+                                </button>
+                              </div>
+                            </div>
                           ) : (
-                            <span className="text-[9px] font-bold text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-1.5 py-0.5 rounded">🏠 Domicile</span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="text-sm font-semibold text-gray-200">{order.item}</div>
-                        <div className="text-xs text-gray-500">{order.color} · {order.size} · ×{order.quantity}</div>
-                      </td>
-                      <td className="px-4 py-3 text-sm font-bold text-white text-right tabular-nums">{order.total.toLocaleString()} DA</td>
-                      <td className="px-4 py-3 text-center">
-                        <select value={order.status} onChange={(e) => handleUpdateStatus(order.id, e.target.value)}
-                          className={`appearance-none bg-transparent outline-none cursor-pointer px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider rounded-lg text-center border ${(statusColors[order.status] || statusColors.recall).bg} ${(statusColors[order.status] || statusColors.recall).border} ${(statusColors[order.status] || statusColors.recall).text}`}>
-                          {STATUS_OPTIONS.map((s) => <option key={s} value={s} className="bg-surface text-white">{s}</option>)}
-                        </select>
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        {order.tracking_id ? (
-                          <div className="flex flex-col items-center gap-0.5">
-                            <span className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Tracking</span>
-                            <div className="flex items-center gap-1">
-                              <span className="text-xs font-mono font-bold text-gray-300 bg-white/5 px-2 py-1 rounded">{order.tracking_id}</span>
-                              <button onClick={() => openDispatchModal(order, "ecom")} disabled={pushingId === order.id} title="Retry Ecom" className="p-1.5 text-gray-500 hover:text-emerald-400 hover:bg-emerald-500/10 rounded transition-colors disabled:opacity-50">
-                                <RefreshCw size={12} />
+                            <div className="flex items-center justify-center gap-1.5">
+                              <button
+                                onClick={() => openDispatchModal(order, "ecom")}
+                                disabled={pushingId === order.id}
+                                className="px-2.5 py-1.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] font-bold rounded-lg hover:bg-emerald-500/20 transition-colors flex items-center gap-1 disabled:opacity-50"
+                              >
+                                <Truck size={13} />
+                                {pushingId === order.id && dispatchProvider === "ecom" ? "Pushing..." : "Ecom"}
                               </button>
-                              <button onClick={() => openDispatchModal(order, "yalidine")} disabled={pushingId === order.id} title="Retry Yalidine" className="p-1.5 text-gray-500 hover:text-rose-400 hover:bg-rose-500/10 rounded transition-colors disabled:opacity-50">
-                                <RefreshCw size={12} />
+                              <button
+                                onClick={() => openDispatchModal(order, "yalidine")}
+                                disabled={pushingId === order.id}
+                                className="px-2.5 py-1.5 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[11px] font-bold rounded-lg hover:bg-rose-500/20 transition-colors flex items-center gap-1 disabled:opacity-50"
+                              >
+                                <Truck size={13} />
+                                {pushingId === order.id && dispatchProvider === "yalidine" ? "Pushing..." : "Yalidine"}
                               </button>
                             </div>
-                          </div>
-                        ) : (
-                          <div className="flex items-center justify-center gap-1.5">
-                            <button onClick={() => openDispatchModal(order, "ecom")} disabled={pushingId === order.id}
-                              className="px-2.5 py-1.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] font-bold rounded-lg hover:bg-emerald-500/20 transition-colors flex items-center gap-1 disabled:opacity-50">
-                              <Truck size={13} />
-                              {pushingId === order.id && dispatchProvider === "ecom" ? "Pushing..." : "Ecom"}
+                          )}
+                        </td>
+
+                        {/* Actions: Edit, Details, Delete */}
+                        <td className="px-4 py-3 text-center">
+                          <div className="flex items-center justify-center gap-1">
+                            <button
+                              onClick={() => setEditingOrder(order)}
+                              title="Modifier la commande"
+                              className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                            >
+                              <Pencil size={14} />
                             </button>
-                            <button onClick={() => openDispatchModal(order, "yalidine")} disabled={pushingId === order.id}
-                              className="px-2.5 py-1.5 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[11px] font-bold rounded-lg hover:bg-rose-500/20 transition-colors flex items-center gap-1 disabled:opacity-50">
-                              <Truck size={13} />
-                              {pushingId === order.id && dispatchProvider === "yalidine" ? "Pushing..." : "Yalidine"}
+                            <button
+                              onClick={() => setSelectedDetailOrder(order)}
+                              title="Détails & Relances"
+                              className="p-1.5 text-accent hover:text-accent-hover hover:bg-accent/10 rounded-lg transition-colors"
+                            >
+                              <Eye size={14} />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(order.id, order.tracking_id)}
+                              disabled={deletingId === order.id}
+                              className="p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors disabled:opacity-50"
+                              title="Supprimer"
+                            >
+                              <Trash2 size={14} />
                             </button>
                           </div>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <button onClick={() => handleDelete(order.id, order.tracking_id)} disabled={deletingId === order.id}
-                          className="p-2 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors disabled:opacity-50">
-                          <Trash2 size={14} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -819,17 +1257,34 @@ export default function OrdersPage() {
         {/* Pagination */}
         {filteredOrders.length > rowsPerPage && (
           <div className="flex items-center justify-between px-4 py-3 border-t border-white/5">
-            <span className="text-xs text-gray-600">{(currentPage - 1) * rowsPerPage + 1}-{Math.min(currentPage * rowsPerPage, filteredOrders.length)} / {filteredOrders.length}</span>
+            <span className="text-xs text-gray-600">
+              {(currentPage - 1) * rowsPerPage + 1}-
+              {Math.min(currentPage * rowsPerPage, filteredOrders.length)} / {filteredOrders.length}
+            </span>
             <div className="flex items-center gap-1">
-              <button onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1} className="p-1.5 rounded border border-white/10 text-gray-500 hover:bg-white/5 disabled:opacity-30">
+              <button
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="p-1.5 rounded border border-white/10 text-gray-500 hover:bg-white/5 disabled:opacity-30"
+              >
                 <ChevronLeft size={14} />
               </button>
               {Array.from({ length: totalPages }).map((_, i) => (
-                <button key={i} onClick={() => setCurrentPage(i + 1)} className={`w-7 h-7 rounded text-xs font-bold ${currentPage === i + 1 ? "bg-accent text-black" : "text-gray-600 hover:text-gray-400"}`}>
+                <button
+                  key={i}
+                  onClick={() => setCurrentPage(i + 1)}
+                  className={`w-7 h-7 rounded text-xs font-bold ${
+                    currentPage === i + 1 ? "bg-accent text-black" : "text-gray-600 hover:text-gray-400"
+                  }`}
+                >
                   {i + 1}
                 </button>
               ))}
-              <button onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="p-1.5 rounded border border-white/10 text-gray-500 hover:bg-white/5 disabled:opacity-30">
+              <button
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="p-1.5 rounded border border-white/10 text-gray-500 hover:bg-white/5 disabled:opacity-30"
+              >
                 <ChevronRight size={14} />
               </button>
             </div>
@@ -837,7 +1292,36 @@ export default function OrdersPage() {
         )}
       </div>
 
-      {/* Yalidine Dispatch Modal */}
+      {/* ═════════════════════════════════════════════════════════════════ */}
+      {/* MODAL: EDIT ORDER                                                 */}
+      {/* ═════════════════════════════════════════════════════════════════ */}
+      {editingOrder && (
+        <EditOrderModal
+          order={editingOrder}
+          onClose={() => setEditingOrder(null)}
+          onSave={handleSaveOrder}
+        />
+      )}
+
+      {/* ═════════════════════════════════════════════════════════════════ */}
+      {/* MODAL: ORDER DETAILS & 5 RECALLS TIMELINE                         */}
+      {/* ═════════════════════════════════════════════════════════════════ */}
+      {selectedDetailOrder && (
+        <OrderDetailModal
+          order={selectedDetailOrder}
+          onClose={() => setSelectedDetailOrder(null)}
+          onEdit={(ord) => {
+            setSelectedDetailOrder(null);
+            setEditingOrder(ord);
+          }}
+          onUpdateRecall={handleTriggerRecall}
+          statusColors={statusColors}
+        />
+      )}
+
+      {/* ═════════════════════════════════════════════════════════════════ */}
+      {/* MODAL: YALIDINE / ECOM DISPATCH                                   */}
+      {/* ═════════════════════════════════════════════════════════════════ */}
       {editingDispatchOrder && (
         <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center md:p-4 bg-black/60 backdrop-blur-sm">
           <div className="bg-[#141720] rounded-t-[1.5rem] md:rounded-2xl w-full md:max-w-xl max-h-[95vh] md:max-h-[90vh] overflow-y-auto shadow-2xl p-5 md:p-8 border border-white/5">
@@ -845,29 +1329,42 @@ export default function OrdersPage() {
               <div>
                 <h3 className="text-lg md:text-xl font-bold text-white font-heading">Confirm Dispatch</h3>
                 <div className="flex items-center gap-2 mt-2">
-                  <button type="button" onClick={() => {
+                  <button
+                    type="button"
+                    onClick={() => {
                       setDispatchProvider("ecom");
                       if (!dispatchData.include_delivery) {
                         const newPrice = dispatchData.price + (dispatchData.deliveryFee || 0);
                         setDispatchData({ ...dispatchData, include_delivery: true, price: newPrice, declared_value: newPrice });
                       }
                     }}
-                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-colors ${dispatchProvider === "ecom" ? "bg-emerald-500 text-black" : "bg-white/5 text-gray-400 hover:text-white"}`}>
+                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-colors ${
+                      dispatchProvider === "ecom" ? "bg-emerald-500 text-black" : "bg-white/5 text-gray-400 hover:text-white"
+                    }`}
+                  >
                     🚚 Ecom Delivery
                   </button>
-                  <button type="button" onClick={() => {
+                  <button
+                    type="button"
+                    onClick={() => {
                       setDispatchProvider("yalidine");
                       if (dispatchData.include_delivery) {
                         const newPrice = dispatchData.price - (dispatchData.deliveryFee || 0);
                         setDispatchData({ ...dispatchData, include_delivery: false, price: newPrice, declared_value: newPrice });
                       }
                     }}
-                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-colors ${dispatchProvider === "yalidine" ? "bg-rose-500 text-white" : "bg-white/5 text-gray-400 hover:text-white"}`}>
+                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-colors ${
+                      dispatchProvider === "yalidine" ? "bg-rose-500 text-white" : "bg-white/5 text-gray-400 hover:text-white"
+                    }`}
+                  >
                     📦 Yalidine Express
                   </button>
                 </div>
               </div>
-              <button onClick={() => setEditingDispatchOrder(null)} className="p-2 bg-white/5 hover:bg-white/10 rounded-full text-gray-400 transition-colors">
+              <button
+                onClick={() => setEditingDispatchOrder(null)}
+                className="p-2 bg-white/5 hover:bg-white/10 rounded-full text-gray-400 transition-colors"
+              >
                 <X size={20} />
               </button>
             </div>
@@ -876,75 +1373,112 @@ export default function OrdersPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Customer Name</label>
-                  <input type="text" value={dispatchData.name} onChange={e => setDispatchData({...dispatchData, name: e.target.value})}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-white" />
+                  <input
+                    type="text"
+                    value={dispatchData.name}
+                    onChange={(e) => setDispatchData({ ...dispatchData, name: e.target.value })}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+                  />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Phone</label>
-                  <input type="text" value={dispatchData.phone} onChange={e => setDispatchData({...dispatchData, phone: e.target.value})}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-white" dir="ltr" />
+                  <input
+                    type="text"
+                    value={dispatchData.phone}
+                    onChange={(e) => setDispatchData({ ...dispatchData, phone: e.target.value })}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+                    dir="ltr"
+                  />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Wilaya</label>
-                  <select value={dispatchData.wilaya} onChange={(e) => { setDispatchData({ ...dispatchData, wilaya: e.target.value, commune: "" }); fetchYalidineCommunes(e.target.value); }}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-white appearance-none cursor-pointer">
-                    <option value="" disabled>Sélectionner Wilaya</option>
+                  <select
+                    value={dispatchData.wilaya}
+                    onChange={(e) => {
+                      setDispatchData({ ...dispatchData, wilaya: e.target.value, commune: "" });
+                      fetchYalidineCommunes(e.target.value);
+                    }}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-white appearance-none cursor-pointer"
+                  >
+                    <option value="" disabled>
+                      Sélectionner Wilaya
+                    </option>
                     {algeriaData.wilayas.map((w: { wilaya_id: string; wilaya_name_latin: string }) => (
-                      <option key={w.wilaya_id} value={w.wilaya_id} className="bg-[#141720] text-gray-200">{w.wilaya_id} - {w.wilaya_name_latin}</option>
+                      <option key={w.wilaya_id} value={w.wilaya_id} className="bg-[#141720] text-gray-200">
+                        {w.wilaya_id} - {w.wilaya_name_latin}
+                      </option>
                     ))}
                   </select>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
                     Commune {loadingCommunes && <span className="text-blue-400 text-[10px] animate-pulse ml-1">Loading...</span>}
-                    {!loadingCommunes && deliverableCommunes.length > 0 && <span className="text-emerald-400 text-[10px] ml-1">({deliverableCommunes.length} livrables)</span>}
+                    {!loadingCommunes && deliverableCommunes.length > 0 && (
+                      <span className="text-emerald-400 text-[10px] ml-1">({deliverableCommunes.length} livrables)</span>
+                    )}
                   </label>
-                  <select value={dispatchData.commune} onChange={(e) => setDispatchData({ ...dispatchData, commune: e.target.value })}
+                  <select
+                    value={dispatchData.commune}
+                    onChange={(e) => setDispatchData({ ...dispatchData, commune: e.target.value })}
                     disabled={!dispatchData.wilaya || loadingCommunes}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-white appearance-none cursor-pointer disabled:opacity-50">
-                    <option value="" disabled>Sélectionner Commune</option>
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-white appearance-none cursor-pointer disabled:opacity-50"
+                  >
+                    <option value="" disabled>
+                      Sélectionner Commune
+                    </option>
                     {deliverableCommunes.map((c) => (
-                      <option key={c.id} value={c.name} className="bg-[#141720] text-gray-200">{c.name}{c.has_stop_desk ? " 📦" : ""}</option>
+                      <option key={c.id} value={c.name} className="bg-[#141720] text-gray-200">
+                        {c.name}
+                        {c.has_stop_desk ? " 📦" : ""}
+                      </option>
                     ))}
                   </select>
-                  {dispatchData.commune && yalidineCommunes.length > 0 && !yalidineCommunes.find(c => c.name === dispatchData.commune && c.is_deliverable) && (
-                    <p className="text-[10px] text-red-400 mt-1 font-bold">⚠️ Cette commune n&apos;est pas livrable par Yalidine. Choisissez une autre.</p>
-                  )}
                 </div>
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Detailed Address</label>
-                <input type="text" value={dispatchData.address} onChange={e => setDispatchData({...dispatchData, address: e.target.value})}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-white" />
+                <input
+                  type="text"
+                  value={dispatchData.address}
+                  onChange={(e) => setDispatchData({ ...dispatchData, address: e.target.value })}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+                />
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-blue-400 uppercase tracking-wider mb-1">Nom du Produit</label>
-                <input type="text" value={dispatchData.product_list || ""} onChange={e => setDispatchData({...dispatchData, product_list: e.target.value})}
+                <input
+                  type="text"
+                  value={dispatchData.product_list || ""}
+                  onChange={(e) => setDispatchData({ ...dispatchData, product_list: e.target.value })}
                   placeholder="Ex: Ensemble Nocta - Full Black - XL"
-                  className="w-full bg-blue-500/10 border border-blue-500/20 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder:text-gray-600" />
+                  className="w-full bg-blue-500/10 border border-blue-500/20 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder:text-gray-600"
+                />
                 <p className="text-[10px] text-gray-500 mt-1">Ce nom sera envoyé comme description du contenu à Yalidine.</p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Discount</label>
-                  <select value={dispatchData.discount ?? 200} onChange={e => {
-                    const newDiscount = parseInt(e.target.value) || 0;
-                    let newPrice = Math.max(0, (dispatchData.originalPrice || 0) - newDiscount);
-                    if (dispatchData.include_delivery) newPrice += (dispatchData.deliveryFee || 0);
-                    setDispatchData({
-                      ...dispatchData, 
-                      discount: newDiscount,
-                      price: newPrice,
-                      declared_value: newPrice
-                    });
-                  }}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-white appearance-none cursor-pointer">
+                  <select
+                    value={dispatchData.discount ?? 200}
+                    onChange={(e) => {
+                      const newDiscount = parseInt(e.target.value) || 0;
+                      let newPrice = Math.max(0, (dispatchData.originalPrice || 0) - newDiscount);
+                      if (dispatchData.include_delivery) newPrice += dispatchData.deliveryFee || 0;
+                      setDispatchData({
+                        ...dispatchData,
+                        discount: newDiscount,
+                        price: newPrice,
+                        declared_value: newPrice,
+                      });
+                    }}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-white appearance-none cursor-pointer"
+                  >
                     <option value="0" className="bg-[#141720]">0 DA</option>
                     <option value="100" className="bg-[#141720]">-100 DA</option>
                     <option value="150" className="bg-[#141720]">-150 DA</option>
@@ -955,56 +1489,45 @@ export default function OrdersPage() {
                 <div>
                   <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Product Price</label>
                   <div className="relative">
-                    <input type="number" value={dispatchData.price} onChange={e => {
-                      const newPrice = parseInt(e.target.value) || 0;
-                      setDispatchData({...dispatchData, price: newPrice, declared_value: newPrice});
-                    }}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl pl-4 pr-10 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-white font-mono font-bold" />
+                    <input
+                      type="number"
+                      value={dispatchData.price}
+                      onChange={(e) => {
+                        const newPrice = parseInt(e.target.value) || 0;
+                        setDispatchData({ ...dispatchData, price: newPrice, declared_value: newPrice });
+                      }}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl pl-4 pr-10 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-white font-mono font-bold"
+                    />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 text-xs font-bold">DA</span>
                   </div>
                   <label className="flex items-center gap-2 mt-2 cursor-pointer">
-                    <input type="checkbox" checked={dispatchData.include_delivery || false} onChange={e => {
-                      const isIncluded = e.target.checked;
-                      let newPrice = Math.max(0, (dispatchData.originalPrice || 0) - (dispatchData.discount || 0));
-                      if (isIncluded) newPrice += (dispatchData.deliveryFee || 0);
-                      setDispatchData({...dispatchData, include_delivery: isIncluded, price: newPrice, declared_value: newPrice});
-                    }} className="rounded border-white/10 bg-white/5 text-blue-500 focus:ring-blue-500" />
-                    <span className="text-[10px] text-gray-400 font-bold">Inclure Livraison (+{dispatchData.deliveryFee || 0} DA)</span>
+                    <input
+                      type="checkbox"
+                      checked={dispatchData.include_delivery || false}
+                      onChange={(e) => {
+                        const isIncluded = e.target.checked;
+                        let newPrice = Math.max(0, (dispatchData.originalPrice || 0) - (dispatchData.discount || 0));
+                        if (isIncluded) newPrice += dispatchData.deliveryFee || 0;
+                        setDispatchData({ ...dispatchData, include_delivery: isIncluded, price: newPrice, declared_value: newPrice });
+                      }}
+                      className="rounded border-white/10 bg-white/5 text-blue-500 focus:ring-blue-500"
+                    />
+                    <span className="text-[10px] text-gray-400 font-bold">
+                      Inclure Livraison (+{dispatchData.deliveryFee || 0} DA)
+                    </span>
                   </label>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Dépasse 5kg?</label>
-                  <div className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-gray-500 font-medium cursor-not-allowed">Non, 1 KG</div>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Insurance</label>
-                  <select value={dispatchData.do_insurance ? "yes" : "no"} onChange={e => setDispatchData({...dispatchData, do_insurance: e.target.value === "yes"})}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-white appearance-none cursor-pointer">
-                    <option value="yes" className="bg-[#141720]">Yes (0% fee)</option>
-                    <option value="no" className="bg-[#141720]">No</option>
-                  </select>
                 </div>
               </div>
 
-              {dispatchData.do_insurance && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-blue-400 uppercase tracking-wider mb-1">Declared Value</label>
-                    <div className="relative">
-                      <input type="number" value={dispatchData.declared_value} onChange={e => setDispatchData({...dispatchData, declared_value: parseInt(e.target.value) || 0})}
-                        className="w-full bg-blue-500/10 border border-blue-500/20 rounded-xl pl-4 pr-10 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-white font-mono font-bold" />
-                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-blue-400 text-xs font-bold">DA</span>
-                    </div>
-                    <p className="text-[10px] text-blue-400 mt-1">Full refund on this value if lost.</p>
-                  </div>
-                </div>
-              )}
-
+              {/* Shipping Method */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
                   <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Shipping Method</label>
-                  <select value={dispatchData.is_stopdesk ? "stopdesk" : "home"} onChange={e => setDispatchData({...dispatchData, is_stopdesk: e.target.value === "stopdesk"})}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-white appearance-none cursor-pointer">
+                  <select
+                    value={dispatchData.is_stopdesk ? "stopdesk" : "home"}
+                    onChange={(e) => setDispatchData({ ...dispatchData, is_stopdesk: e.target.value === "stopdesk" })}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-white appearance-none cursor-pointer"
+                  >
                     <option value="home" className="bg-[#141720]">Tarif à domicile</option>
                     <option value="stopdesk" className="bg-[#141720]">Tarif stop-desk</option>
                   </select>
@@ -1014,8 +1537,13 @@ export default function OrdersPage() {
               {dispatchData.is_stopdesk && (
                 <div className="p-4 bg-orange-500/10 border border-orange-500/20 rounded-xl mt-4">
                   <label className="block text-xs font-bold text-orange-400 uppercase tracking-wider mb-1">Stop Desk ID</label>
-                  <input type="text" placeholder="e.g. 160001" value={dispatchData.stopdesk_id} onChange={e => setDispatchData({...dispatchData, stopdesk_id: e.target.value})}
-                    className="w-full bg-white/5 border border-orange-500/20 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 text-white" />
+                  <input
+                    type="text"
+                    placeholder="e.g. 160001"
+                    value={dispatchData.stopdesk_id}
+                    onChange={(e) => setDispatchData({ ...dispatchData, stopdesk_id: e.target.value })}
+                    className="w-full bg-white/5 border border-orange-500/20 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 text-white"
+                  />
                   <p className="text-[10px] text-orange-400 mt-1">Check Yalidine Dashboard for exact Center IDs.</p>
                 </div>
               )}
@@ -1026,20 +1554,39 @@ export default function OrdersPage() {
                   <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider">Autorisation d&apos;ouverture</label>
                   <p className="text-[10px] text-gray-500 mt-0.5">Le client peut ouvrir le colis avant paiement.</p>
                 </div>
-                <button type="button" onClick={() => setDispatchData({...dispatchData, autorisation_ouverture: !dispatchData.autorisation_ouverture})}
-                  className={`relative w-12 h-7 rounded-full transition-colors duration-200 ${dispatchData.autorisation_ouverture ? "bg-emerald-500" : "bg-gray-600"}`}>
-                  <span className={`absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full shadow-md transition-transform duration-200 ${dispatchData.autorisation_ouverture ? "translate-x-5" : "translate-x-0"}`} />
+                <button
+                  type="button"
+                  onClick={() => setDispatchData({ ...dispatchData, autorisation_ouverture: !dispatchData.autorisation_ouverture })}
+                  className={`relative w-12 h-7 rounded-full transition-colors duration-200 ${
+                    dispatchData.autorisation_ouverture ? "bg-emerald-500" : "bg-gray-600"
+                  }`}
+                >
+                  <span
+                    className={`absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full shadow-md transition-transform duration-200 ${
+                      dispatchData.autorisation_ouverture ? "translate-x-5" : "translate-x-0"
+                    }`}
+                  />
                 </button>
               </div>
             </div>
 
             <div className="mt-6 flex justify-end gap-3">
-              <button onClick={() => setEditingDispatchOrder(null)} className="px-5 py-2.5 rounded-xl text-sm font-bold text-gray-400 bg-white/5 hover:bg-white/10 transition-colors">
+              <button
+                onClick={() => setEditingDispatchOrder(null)}
+                className="px-5 py-2.5 rounded-xl text-sm font-bold text-gray-400 bg-white/5 hover:bg-white/10 transition-colors"
+              >
                 Cancel
               </button>
-              <button onClick={handleDispatchPush} disabled={pushingId === editingDispatchOrder.id}
-                className={`px-5 py-2.5 rounded-xl text-sm font-bold text-white transition-colors flex items-center justify-center min-w-[140px] ${dispatchProvider === "ecom" ? "bg-emerald-600 hover:bg-emerald-700" : "bg-[#e11d48] hover:bg-[#be123c]"}`}>
-                {pushingId === editingDispatchOrder.id ? "Dispatching..." : `Confirm & Send (${dispatchProvider === "ecom" ? "Ecom" : "Yalidine"})`}
+              <button
+                onClick={handleDispatchPush}
+                disabled={pushingId === editingDispatchOrder.id}
+                className={`px-5 py-2.5 rounded-xl text-sm font-bold text-white transition-colors flex items-center justify-center min-w-[140px] ${
+                  dispatchProvider === "ecom" ? "bg-emerald-600 hover:bg-emerald-700" : "bg-[#e11d48] hover:bg-[#be123c]"
+                }`}
+              >
+                {pushingId === editingDispatchOrder.id
+                  ? "Dispatching..."
+                  : `Confirm & Send (${dispatchProvider === "ecom" ? "Ecom" : "Yalidine"})`}
               </button>
             </div>
           </div>
