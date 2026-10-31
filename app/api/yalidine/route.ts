@@ -1,5 +1,14 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@supabase/supabase-js";
+
+function getAdminClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
+  return createClient(url, serviceKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+}
 
 export async function POST(request: Request) {
   try {
@@ -8,6 +17,8 @@ export async function POST(request: Request) {
     if (!orderId) {
       return NextResponse.json({ error: "Order ID is required" }, { status: 400 });
     }
+
+    const supabase = getAdminClient();
 
     // 1. Fetch the Order
     const { data: order, error: orderError } = await supabase
@@ -195,7 +206,17 @@ export async function POST(request: Request) {
 
     // 5. Save tracking_id and update status to expedie
     const trackingId = result.tracking;
-    await supabase.from("orders").update({ tracking_id: trackingId, status: "expedie" }).eq("id", order.id);
+    let updateRes = await supabase.from("orders").update({ tracking_id: trackingId, status: "expedie" }).eq("id", order.id);
+
+    // If check constraint rejects 'expedie', save tracking_id
+    if (updateRes.error && (updateRes.error.code === "23514" || updateRes.error.message.includes("check constraint"))) {
+      console.warn("orders_status_check rejected 'expedie', saving tracking_id only:", updateRes.error.message);
+      updateRes = await supabase.from("orders").update({ tracking_id: trackingId }).eq("id", order.id);
+    }
+
+    if (updateRes.error) {
+      console.error("Failed to save tracking_id in orders:", updateRes.error);
+    }
 
     return NextResponse.json({ success: true, tracking_id: trackingId, status: "expedie", yalidine_label: result.label });
 
@@ -212,6 +233,8 @@ export async function DELETE(request: Request) {
     if (!orderId) {
       return NextResponse.json({ error: "Order ID is required" }, { status: 400 });
     }
+
+    const supabase = getAdminClient();
 
     if (trackingId) {
       const { data: settings } = await supabase

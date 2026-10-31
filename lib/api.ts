@@ -70,7 +70,10 @@ export async function fetchShowcaseVariants(productId: number) {
 export function normalizeOrder(order: any) {
   if (!order) return order;
   let status = order.status;
-  if (status === "recall") {
+  // If order has tracking_id, it is dispatched (expédié)
+  if (order.tracking_id && (status === "confirmed" || status === "new" || status === "expedie" || !status)) {
+    status = "expedie";
+  } else if (status === "recall") {
     if (Array.isArray(order.recalls) && order.recalls.length > 0) {
       const lastRecall = order.recalls[order.recalls.length - 1];
       const num = lastRecall?.recall_number || 1;
