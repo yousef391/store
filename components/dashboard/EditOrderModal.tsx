@@ -82,7 +82,8 @@ export default function EditOrderModal({ order, onClose, onSave, availableProduc
   const [total, setTotal] = useState(order.total || 0);
 
   // Status & Note
-  const [status, setStatus] = useState(order.status || "new");
+  const initialStatus = order.status === "recall" ? "recall_1" : order.status || "new";
+  const [status, setStatus] = useState(initialStatus);
   const [note, setNote] = useState(order.note || "");
 
   const [saving, setSaving] = useState(false);
@@ -115,8 +116,8 @@ export default function EditOrderModal({ order, onClose, onSave, availableProduc
 
       // If status changed to a recall status, append or update recall history
       const updatedRecalls = Array.isArray(order.recalls) ? [...order.recalls] : [];
-      if (status.startsWith("recall_")) {
-        const recallNum = parseInt(status.replace("recall_", ""), 10) || 1;
+      if (status.startsWith("recall_") || status === "recall") {
+        const recallNum = status === "recall" ? 1 : (parseInt(status.replace("recall_", ""), 10) || 1);
         const now = new Date();
         const existingIdx = updatedRecalls.findIndex((r) => r.recall_number === recallNum);
         const newRecord: RecallRecord = {
@@ -138,6 +139,7 @@ export default function EditOrderModal({ order, onClose, onSave, availableProduc
         }
       }
 
+      const targetStatus = status === "recall" ? "recall_1" : status;
       const updatedOrderData: Order = {
         ...order,
         name: name.trim(),
@@ -151,7 +153,7 @@ export default function EditOrderModal({ order, onClose, onSave, availableProduc
         price: Number(price) || 0,
         delivery: Number(delivery) || 0,
         total: Number(total) || 0,
-        status,
+        status: targetStatus,
         note: note.trim() || null,
         recalls: updatedRecalls,
       };

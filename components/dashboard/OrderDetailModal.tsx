@@ -84,7 +84,8 @@ export default function OrderDetailModal({
     return recallsList.find((r) => r.recall_number === num);
   };
 
-  const currentStatusInfo = statusColors[order.status] || statusColors.recall || {
+  const effectiveStatus = order.status === "recall" ? "recall_1" : order.status;
+  const currentStatusInfo = statusColors[effectiveStatus] || statusColors.recall_1 || statusColors.recall || {
     bg: "bg-gray-500/10",
     text: "text-gray-400",
     border: "border-white/10",

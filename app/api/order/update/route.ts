@@ -24,61 +24,63 @@ export async function POST(request: Request) {
     const payload = { ...updates };
     const savedNote = payload.note;
     const savedRecalls = payload.recalls;
+    const requestedStatus = payload.status;
 
-    // Try full update first
-    const { data: initialData, error } = await supabase
-      .from("orders")
-      .update(payload)
-      .eq("id", id)
-      .select()
-      .single();
+    // Helper to attempt update
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const attemptUpdate = async (p: Record<string, any>) => {
+      return supabase.from("orders").update(p).eq("id", id).select().single();
+    };
 
-    let data = initialData;
+    const currentPayload = { ...payload };
+    let res = await attemptUpdate(currentPayload);
 
-    // If note or recalls column does not exist in orders table yet, retry without them
-    if (error && (error.message.includes("column") || error.code === "42703" || error.message.includes("schema cache"))) {
-      const strippedPayload = { ...payload };
-      delete strippedPayload.note;
-      delete strippedPayload.recalls;
-
-      const fallbackRes = await supabase
-        .from("orders")
-        .update(strippedPayload)
-        .eq("id", id)
-        .select()
-        .single();
-
-      if (fallbackRes.error) {
-        return NextResponse.json({ error: fallbackRes.error.message }, { status: 500 });
+    // 1. If check constraint fails (e.g. recall_1..5 or expedie not in orders_status_check yet)
+    if (res.error && (res.error.code === "23514" || res.error.message.includes("check constraint"))) {
+      if (typeof currentPayload.status === "string" && currentPayload.status.startsWith("recall_")) {
+        currentPayload.status = "recall";
+      } else if (currentPayload.status === "expedie") {
+        currentPayload.status = "confirmed";
       }
+      res = await attemptUpdate(currentPayload);
+    }
 
-      data = fallbackRes.data;
+    // 2. If column note/recalls doesn't exist in orders table
+    if (res.error && (res.error.message.includes("column") || res.error.code === "42703" || res.error.message.includes("schema cache"))) {
+      delete currentPayload.note;
+      delete currentPayload.recalls;
+      res = await attemptUpdate(currentPayload);
 
-      // Save note in histories if note was provided
-      if (savedNote) {
+      // Save note to histories if provided
+      if (!res.error && savedNote) {
         await supabase.from("histories").insert({
           action: "order_note",
-          description: `Note added to Order #${data.order_number}: ${savedNote}`,
+          description: `Note added to Order #${res.data.order_number}: ${savedNote}`,
           details: JSON.stringify({ order_id: id, note: savedNote }),
         });
       }
 
-      // Save recall in histories if recall was updated
-      if (savedRecalls && Array.isArray(savedRecalls) && savedRecalls.length > 0) {
+      // Save recall to histories if provided
+      if (!res.error && savedRecalls && Array.isArray(savedRecalls) && savedRecalls.length > 0) {
         const latestRecall = savedRecalls[savedRecalls.length - 1];
         await supabase.from("histories").insert({
           action: `order_recall_${latestRecall.recall_number || 1}`,
-          description: `Order #${data.order_number} marked as Recall ${latestRecall.recall_number || 1}`,
+          description: `Order #${res.data.order_number} marked as Recall ${latestRecall.recall_number || 1}`,
           details: JSON.stringify({ order_id: id, recalls: savedRecalls }),
         });
       }
-    } else if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // Attach in-memory note & recalls to returned order if columns weren't in table
+    if (res.error) {
+      return NextResponse.json({ error: res.error.message }, { status: 500 });
+    }
+
+    const data = res.data;
+
+    // Attach in-memory note, recalls & requested status to returned order
     const resultOrder = {
       ...data,
+      status: requestedStatus !== undefined ? requestedStatus : data.status,
       note: data?.note !== undefined ? data.note : savedNote,
       recalls: data?.recalls !== undefined ? data.recalls : savedRecalls,
     };

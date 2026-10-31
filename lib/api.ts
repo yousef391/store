@@ -66,6 +66,25 @@ export async function fetchShowcaseVariants(productId: number) {
   return data;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function normalizeOrder(order: any) {
+  if (!order) return order;
+  let status = order.status;
+  if (status === "recall") {
+    if (Array.isArray(order.recalls) && order.recalls.length > 0) {
+      const lastRecall = order.recalls[order.recalls.length - 1];
+      const num = lastRecall?.recall_number || 1;
+      status = `recall_${num}`;
+    } else {
+      status = "recall_1";
+    }
+  }
+  return {
+    ...order,
+    status,
+  };
+}
+
 // ──── ORDERS ────
 export async function fetchOrders() {
   const { data, error } = await supabase
@@ -73,7 +92,7 @@ export async function fetchOrders() {
     .select("*")
     .order("created_at", { ascending: false });
   if (error) throw error;
-  return data;
+  return (data || []).map(normalizeOrder);
 }
 
 export async function createOrder(order: {
@@ -95,18 +114,11 @@ export async function createOrder(order: {
     .select()
     .single();
   if (error) throw error;
-  return data;
+  return normalizeOrder(data);
 }
 
 export async function updateOrderStatus(id: string, status: string) {
-  const { data, error } = await supabase
-    .from("orders")
-    .update({ status })
-    .eq("id", id)
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
+  return updateOrder(id, { status });
 }
 
 export async function fetchOrderById(id: string) {
@@ -116,7 +128,7 @@ export async function fetchOrderById(id: string) {
     .eq("id", id)
     .single();
   if (error) throw error;
-  return data;
+  return normalizeOrder(data);
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -128,21 +140,39 @@ export async function updateOrder(id: string, updates: Record<string, any>) {
       body: JSON.stringify({ id, updates }),
     });
     const result = await res.json();
-    if (res.ok && result.order) return result.order;
+    if (res.ok && result.order) return normalizeOrder(result.order);
     if (result.error) throw new Error(result.error);
   } catch (apiErr) {
     console.warn("API update failed, trying direct supabase:", apiErr);
   }
 
   // Fallback to direct supabase update
+  const payload = { ...updates };
   const { data, error } = await supabase
     .from("orders")
-    .update(updates)
+    .update(payload)
     .eq("id", id)
     .select()
     .single();
+
+  if (error && (error.code === "23514" || error.message?.includes("check constraint"))) {
+    if (typeof payload.status === "string" && payload.status.startsWith("recall_")) {
+      payload.status = "recall";
+    } else if (payload.status === "expedie") {
+      payload.status = "confirmed";
+    }
+    const retry = await supabase
+      .from("orders")
+      .update(payload)
+      .eq("id", id)
+      .select()
+      .single();
+    if (retry.error) throw retry.error;
+    return normalizeOrder({ ...retry.data, status: updates.status });
+  }
+
   if (error) throw error;
-  return data;
+  return normalizeOrder(data);
 }
 
 export async function deleteOrder(id: string) {

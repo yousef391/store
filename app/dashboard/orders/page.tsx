@@ -224,8 +224,8 @@ export default function OrdersPage() {
       const order = orders.find((o) => o.id === id);
       const updatedRecalls = order?.recalls ? [...order.recalls] : [];
 
-      if (status.startsWith("recall_")) {
-        const recallNum = parseInt(status.replace("recall_", ""), 10) || 1;
+      if (status.startsWith("recall_") || status === "recall") {
+        const recallNum = status === "recall" ? 1 : (parseInt(status.replace("recall_", ""), 10) || 1);
         const now = new Date();
         const newRecord: RecallRecord = {
           recall_number: recallNum,
@@ -245,20 +245,23 @@ export default function OrdersPage() {
         else updatedRecalls.push(newRecord);
       }
 
-      await updateOrder(id, { status, recalls: updatedRecalls });
+      const targetStatus = status === "recall" ? "recall_1" : status;
+      const updatedRes = await updateOrder(id, { status: targetStatus, recalls: updatedRecalls });
+      const finalStatus = updatedRes?.status || targetStatus;
+      const finalRecalls = updatedRes?.recalls || updatedRecalls;
 
       setOrders((prev) =>
-        prev.map((o) => (o.id === id ? { ...o, status, recalls: updatedRecalls } : o))
+        prev.map((o) => (o.id === id ? { ...o, status: finalStatus, recalls: finalRecalls } : o))
       );
 
       if (selectedDetailOrder?.id === id) {
-        setSelectedDetailOrder((prev) => (prev ? { ...prev, status, recalls: updatedRecalls } : null));
+        setSelectedDetailOrder((prev) => (prev ? { ...prev, status: finalStatus, recalls: finalRecalls } : null));
       }
 
       if (order) {
         await createHistory({
-          action: `order_${status}`,
-          description: `Order #${order.order_number} marked as ${status} — ${order.name}`,
+          action: `order_${finalStatus}`,
+          description: `Order #${order.order_number} marked as ${statusColors[finalStatus]?.label || finalStatus} — ${order.name}`,
           details: order.item,
         });
       }
