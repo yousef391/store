@@ -114,7 +114,7 @@ export default function EditOrderModal({ order, onClose, onSave, availableProduc
       const finalCommune = isStopdesk ? `${commune.trim()} [Stopdesk]` : commune.trim();
 
       // If status changed to a recall status, append or update recall history
-      let updatedRecalls = Array.isArray(order.recalls) ? [...order.recalls] : [];
+      const updatedRecalls = Array.isArray(order.recalls) ? [...order.recalls] : [];
       if (status.startsWith("recall_")) {
         const recallNum = parseInt(status.replace("recall_", ""), 10) || 1;
         const now = new Date();

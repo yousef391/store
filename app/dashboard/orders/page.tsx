@@ -11,15 +11,12 @@ import {
   Check,
   X,
   Truck,
-  Package,
   RefreshCw,
-  Calendar,
   Clock,
   PhoneCall,
   StickyNote,
   Pencil,
   Eye,
-  RotateCcw,
 } from "lucide-react";
 import { fetchOrders, updateOrderStatus, updateOrder, createHistory } from "@/lib/api";
 import { useAuth } from "@/components/dashboard/AuthGuard";
@@ -29,7 +26,7 @@ import algeriaData from "@/data/algeria.json";
 import EditOrderModal, { type Order, type RecallRecord } from "@/components/dashboard/EditOrderModal";
 import OrderDetailModal from "@/components/dashboard/OrderDetailModal";
 
-export const STATUS_OPTIONS = [
+const STATUS_OPTIONS = [
   "new",
   "confirmed",
   "expedie",
@@ -41,7 +38,7 @@ export const STATUS_OPTIONS = [
   "cancelled",
 ] as const;
 
-export const statusColors: Record<
+const statusColors: Record<
   string,
   { bg: string; text: string; border: string; dot: string; label: string }
 > = {
@@ -225,7 +222,7 @@ export default function OrdersPage() {
   const handleUpdateStatus = async (id: string, status: string) => {
     try {
       const order = orders.find((o) => o.id === id);
-      let updatedRecalls = order?.recalls ? [...order.recalls] : [];
+      const updatedRecalls = order?.recalls ? [...order.recalls] : [];
 
       if (status.startsWith("recall_")) {
         const recallNum = parseInt(status.replace("recall_", ""), 10) || 1;
@@ -333,7 +330,6 @@ export default function OrdersPage() {
   const handleBulkStatus = async (status: string) => {
     setIsBulking(true);
     let updated = 0;
-    const newOrders = [...orders];
     for (const id of Array.from(selectedOrderIds)) {
       try {
         await handleUpdateStatus(id, status);

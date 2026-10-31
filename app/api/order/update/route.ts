@@ -21,17 +21,19 @@ export async function POST(request: Request) {
     const supabase = getAdminClient();
 
     // Prepare payload
-    let payload = { ...updates };
-    let savedNote = payload.note;
-    let savedRecalls = payload.recalls;
+    const payload = { ...updates };
+    const savedNote = payload.note;
+    const savedRecalls = payload.recalls;
 
     // Try full update first
-    let { data, error } = await supabase
+    const { data: initialData, error } = await supabase
       .from("orders")
       .update(payload)
       .eq("id", id)
       .select()
       .single();
+
+    let data = initialData;
 
     // If note or recalls column does not exist in orders table yet, retry without them
     if (error && (error.message.includes("column") || error.code === "42703" || error.message.includes("schema cache"))) {

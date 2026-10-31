@@ -11,14 +11,11 @@ import {
   Clock,
   MapPin,
   Package,
-  DollarSign,
   StickyNote,
   Truck,
   RotateCcw,
   Pencil,
   CheckCircle2,
-  AlertCircle,
-  ExternalLink,
 } from "lucide-react";
 import type { Order, RecallRecord } from "./EditOrderModal";
 
