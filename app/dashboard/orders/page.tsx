@@ -58,11 +58,20 @@ export default function OrdersPage() {
   const { role, assignedProducts, userEmail } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filtersLoaded, setFiltersLoaded] = useState(false);
+
+  // Filters with internal cache
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [productFilter, setProductFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState<"today" | "yesterday" | "week" | "month" | "all">("today");
   const [currentPage, setCurrentPage] = useState(1);
+
+  // Mobile Pull-to-refresh
+  const [pullDistance, setPullDistance] = useState(0);
+  const [isPulling, setIsPulling] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
   const [copiedPhone, setCopiedPhone] = useState<string | null>(null);
   const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set());
   const [isBulking, setIsBulking] = useState(false);
@@ -82,21 +91,146 @@ export default function OrdersPage() {
   const [yalidineCommunes, setYalidineCommunes] = useState<{ id: number; name: string; is_deliverable: boolean; has_stop_desk: boolean }[]>([]);
   const [loadingCommunes, setLoadingCommunes] = useState(false);
 
-  useEffect(() => {
-    fetchOrders().then((data) => {
+  // Load orders from API
+  const loadOrders = useCallback(async () => {
+    try {
+      const data = await fetchOrders();
       let list: Order[] = data || [];
       if (role === "sub_admin") {
         list = list.filter((o) => matchesAssignedProduct(o.item, assignedProducts));
       }
       setOrders(list);
+    } catch (err) {
+      console.error("Failed to load orders:", err);
+    } finally {
       setLoading(false);
-    }).catch(() => setLoading(false));
+      setIsRefreshing(false);
+      setPullDistance(0);
+    }
   }, [role, assignedProducts]);
 
-  // Reset page when filters change
   useEffect(() => {
+    loadOrders();
+  }, [loadOrders]);
+
+  const reloadOrders = useCallback(async () => {
+    setIsRefreshing(true);
+    if (typeof window !== "undefined" && "vibrate" in navigator) {
+      try {
+        navigator.vibrate(35);
+      } catch {}
+    }
+    await loadOrders();
+  }, [loadOrders]);
+
+  // Load cached filters from localStorage on mount
+  useEffect(() => {
+    try {
+      const cached = localStorage.getItem("orders_filters_cache");
+      if (cached) {
+        const f = JSON.parse(cached);
+        if (typeof f.statusFilter === "string") setStatusFilter(f.statusFilter);
+        if (typeof f.productFilter === "string") setProductFilter(f.productFilter);
+        if (typeof f.dateFilter === "string") setDateFilter(f.dateFilter);
+        if (typeof f.searchQuery === "string") setSearchQuery(f.searchQuery);
+        if (typeof f.currentPage === "number" && f.currentPage > 0) setCurrentPage(f.currentPage);
+      }
+    } catch (e) {
+      console.warn("Failed to load cached filters:", e);
+    } finally {
+      setFiltersLoaded(true);
+    }
+  }, []);
+
+  // Save filters to localStorage whenever they change
+  useEffect(() => {
+    if (!filtersLoaded) return;
+    try {
+      localStorage.setItem(
+        "orders_filters_cache",
+        JSON.stringify({
+          statusFilter,
+          productFilter,
+          dateFilter,
+          searchQuery,
+          currentPage,
+        })
+      );
+    } catch (e) {
+      console.warn("Failed to cache filters:", e);
+    }
+  }, [statusFilter, productFilter, dateFilter, searchQuery, currentPage, filtersLoaded]);
+
+  // Reset page when user actively changes search, status, product, or date
+  useEffect(() => {
+    if (!filtersLoaded) return;
     setCurrentPage(1);
-  }, [searchQuery, statusFilter, productFilter, dateFilter]);
+  }, [searchQuery, statusFilter, productFilter, dateFilter, filtersLoaded]);
+
+  const handleResetFilters = () => {
+    setStatusFilter("all");
+    setProductFilter("all");
+    setDateFilter("today");
+    setSearchQuery("");
+    setCurrentPage(1);
+    try {
+      localStorage.removeItem("orders_filters_cache");
+    } catch {}
+  };
+
+  // Mobile Pull-to-Refresh Gesture (Swipe down to refresh)
+  useEffect(() => {
+    let startY = 0;
+    let isTracking = false;
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (window.scrollY <= 2 && !isRefreshing) {
+        startY = e.touches[0].clientY;
+        isTracking = true;
+      } else {
+        isTracking = false;
+      }
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (!isTracking || isRefreshing) return;
+      const currentY = e.touches[0].clientY;
+      const delta = currentY - startY;
+
+      if (delta > 0 && window.scrollY <= 2) {
+        const pull = Math.min(delta * 0.42, 85);
+        setPullDistance(pull);
+        setIsPulling(true);
+      } else {
+        setPullDistance(0);
+        setIsPulling(false);
+      }
+    };
+
+    const onTouchEnd = () => {
+      if (!isTracking || isRefreshing) return;
+      isTracking = false;
+      setIsPulling(false);
+
+      setPullDistance((prev) => {
+        if (prev >= 55) {
+          reloadOrders();
+          return 60;
+        }
+        return 0;
+      });
+    };
+
+    window.addEventListener("touchstart", onTouchStart, { passive: true });
+    window.addEventListener("touchmove", onTouchMove, { passive: true });
+    window.addEventListener("touchend", onTouchEnd);
+
+    return () => {
+      window.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchmove", onTouchMove);
+      window.removeEventListener("touchend", onTouchEnd);
+    };
+  }, [isRefreshing, reloadOrders]);
 
   const copyPhone = (phone: string) => {
     navigator.clipboard.writeText(phone).then(() => {
@@ -565,12 +699,55 @@ export default function OrdersPage() {
   }
 
   return (
-    <div className="flex flex-col gap-4 lg:gap-6 max-w-7xl">
+    <div
+      style={{
+        transform: isPulling || isRefreshing ? `translateY(${pullDistance * 0.35}px)` : undefined,
+        transition: isPulling ? "none" : "transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
+        overscrollBehaviorY: "contain",
+      }}
+      className="flex flex-col gap-4 lg:gap-6 max-w-7xl relative"
+    >
+      {/* Mobile Pull-to-Refresh Floating Pill */}
+      <div
+        style={{
+          transform: `translate(-50%, ${isRefreshing ? 60 : pullDistance}px)`,
+          transition: isPulling ? "none" : "transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.2s",
+          opacity: pullDistance > 8 || isRefreshing ? 1 : 0,
+        }}
+        className="fixed top-2 left-1/2 z-50 pointer-events-none flex items-center justify-center transition-opacity"
+      >
+        <div className="bg-[#141720]/95 border border-white/20 shadow-2xl rounded-full px-4 py-2 flex items-center gap-2.5 backdrop-blur-md">
+          <RefreshCw
+            size={14}
+            className={`text-accent ${isRefreshing ? "animate-spin" : ""}`}
+            style={{
+              transform: isRefreshing ? undefined : `rotate(${pullDistance * 4.5}deg)`,
+            }}
+          />
+          <span className="text-[11px] font-semibold text-white tracking-wide">
+            {isRefreshing
+              ? "Actualisation en cours..."
+              : pullDistance >= 55
+              ? "Relâcher pour actualiser"
+              : "Glisser pour actualiser"}
+          </span>
+        </div>
+      </div>
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl md:text-2xl font-bold text-white font-heading">Orders</h1>
           <p className="text-sm text-gray-500 mt-1">{filteredOrders.length} results</p>
         </div>
+        <button
+          onClick={reloadOrders}
+          disabled={isRefreshing}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-surface hover:bg-white/5 border border-white/10 rounded-xl text-xs font-semibold text-gray-300 transition-colors cursor-pointer disabled:opacity-50"
+          title="Actualiser les commandes"
+        >
+          <RefreshCw size={13} className={isRefreshing ? "animate-spin text-accent" : ""} />
+          <span className="hidden sm:inline">Actualiser</span>
+        </button>
       </div>
 
       {/* Top Stats Cards */}
@@ -691,14 +868,10 @@ export default function OrdersPage() {
         </div>
 
         {/* Reset Active Filters Button */}
-        {(productFilter !== "all" || statusFilter !== "all" || searchQuery) && (
+        {(productFilter !== "all" || statusFilter !== "all" || searchQuery || dateFilter !== "today") && (
           <button
-            onClick={() => {
-              setProductFilter("all");
-              setStatusFilter("all");
-              setSearchQuery("");
-            }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-medium hover:bg-red-500/20 transition-colors"
+            onClick={handleResetFilters}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-medium hover:bg-red-500/20 transition-colors cursor-pointer"
           >
             <X size={13} />
             <span>Reset filters</span>
