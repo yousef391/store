@@ -383,7 +383,7 @@ export default function OrdersPage() {
         discount: 200,
         price: initialPrice,
         do_insurance: true,
-        declared_value: initialPrice,
+        declared_value: 2000,
         is_stopdesk: isStopdeskOrder,
         stopdesk_id: "",
         autorisation_ouverture: false,
@@ -487,7 +487,7 @@ export default function OrdersPage() {
       discount: defaultDiscount,
       price: initialPrice,
       do_insurance: true,
-      declared_value: initialPrice,
+      declared_value: 2000,
       is_stopdesk: isStopdeskOrder,
       stopdesk_id: "",
       autorisation_ouverture: false,
@@ -1473,7 +1473,6 @@ export default function OrdersPage() {
                         ...dispatchData,
                         discount: newDiscount,
                         price: newPrice,
-                        declared_value: newPrice,
                       });
                     }}
                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-white appearance-none cursor-pointer"
@@ -1493,7 +1492,7 @@ export default function OrdersPage() {
                       value={dispatchData.price}
                       onChange={(e) => {
                         const newPrice = parseInt(e.target.value) || 0;
-                        setDispatchData({ ...dispatchData, price: newPrice, declared_value: newPrice });
+                        setDispatchData({ ...dispatchData, price: newPrice });
                       }}
                       className="w-full bg-white/5 border border-white/10 rounded-xl pl-4 pr-10 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-white font-mono font-bold"
                     />
@@ -1507,7 +1506,7 @@ export default function OrdersPage() {
                         const isIncluded = e.target.checked;
                         let newPrice = Math.max(0, (dispatchData.originalPrice || 0) - (dispatchData.discount || 0));
                         if (isIncluded) newPrice += dispatchData.deliveryFee || 0;
-                        setDispatchData({ ...dispatchData, include_delivery: isIncluded, price: newPrice, declared_value: newPrice });
+                        setDispatchData({ ...dispatchData, include_delivery: isIncluded, price: newPrice });
                       }}
                       className="rounded border-white/10 bg-white/5 text-blue-500 focus:ring-blue-500"
                     />
@@ -1518,9 +1517,27 @@ export default function OrdersPage() {
                 </div>
               </div>
 
-              {/* Shipping Method */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2">
+              {/* Valeur Déclarée & Shipping Method */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-amber-400 uppercase tracking-wider mb-1">
+                    Valeur Déclarée (Assurance)
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      value={dispatchData.declared_value !== undefined ? dispatchData.declared_value : 2000}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value) || 0;
+                        setDispatchData({ ...dispatchData, declared_value: val });
+                      }}
+                      className="w-full bg-amber-500/10 border border-amber-500/20 rounded-xl pl-4 pr-10 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 text-white font-mono font-bold"
+                    />
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-amber-400 text-xs font-bold">DA</span>
+                  </div>
+                  <p className="text-[10px] text-gray-500 mt-1">Par défaut : 2000 DA (modifiable)</p>
+                </div>
+                <div>
                   <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Shipping Method</label>
                   <select
                     value={dispatchData.is_stopdesk ? "stopdesk" : "home"}
