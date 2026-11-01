@@ -516,7 +516,7 @@ export default function OrdersPage() {
         include_delivery: defaultIncludeDelivery,
         discount: 200,
         price: initialPrice,
-        do_insurance: true,
+        do_insurance: false,
         declared_value: 2000,
         is_stopdesk: isStopdeskOrder,
         stopdesk_id: "",
@@ -620,7 +620,7 @@ export default function OrdersPage() {
       include_delivery: defaultIncludeDelivery,
       discount: defaultDiscount,
       price: initialPrice,
-      do_insurance: true,
+      do_insurance: false,
       declared_value: 2000,
       is_stopdesk: isStopdeskOrder,
       stopdesk_id: "",
@@ -1507,7 +1507,7 @@ export default function OrdersPage() {
                       setDispatchProvider("ecom");
                       if (!dispatchData.include_delivery) {
                         const newPrice = dispatchData.price + (dispatchData.deliveryFee || 0);
-                        setDispatchData({ ...dispatchData, include_delivery: true, price: newPrice, declared_value: newPrice });
+                        setDispatchData({ ...dispatchData, include_delivery: true, price: newPrice });
                       }
                     }}
                     className={`px-3 py-1 rounded-lg text-xs font-bold transition-colors ${
@@ -1522,7 +1522,7 @@ export default function OrdersPage() {
                       setDispatchProvider("yalidine");
                       if (dispatchData.include_delivery) {
                         const newPrice = dispatchData.price - (dispatchData.deliveryFee || 0);
-                        setDispatchData({ ...dispatchData, include_delivery: false, price: newPrice, declared_value: newPrice });
+                        setDispatchData({ ...dispatchData, include_delivery: false, price: newPrice });
                       }
                     }}
                     className={`px-3 py-1 rounded-lg text-xs font-bold transition-colors ${
@@ -1699,16 +1699,23 @@ export default function OrdersPage() {
                   <div className="relative">
                     <input
                       type="number"
+                      disabled={!dispatchData.do_insurance}
                       value={dispatchData.declared_value !== undefined ? dispatchData.declared_value : 2000}
                       onChange={(e) => {
                         const val = parseInt(e.target.value) || 0;
                         setDispatchData({ ...dispatchData, declared_value: val });
                       }}
-                      className="w-full bg-amber-500/10 border border-amber-500/20 rounded-xl pl-4 pr-10 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 text-white font-mono font-bold"
+                      className={`w-full bg-amber-500/10 border border-amber-500/20 rounded-xl pl-4 pr-10 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 text-white font-mono font-bold ${
+                        !dispatchData.do_insurance ? "opacity-40 cursor-not-allowed" : ""
+                      }`}
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-amber-400 text-xs font-bold">DA</span>
                   </div>
-                  <p className="text-[10px] text-gray-500 mt-1">Par défaut : 2000 DA (modifiable)</p>
+                  <p className="text-[10px] text-gray-500 mt-1">
+                    {dispatchData.do_insurance
+                      ? "Par défaut : 2000 DA (modifiable)"
+                      : "Désactivée (Assurance = Non, 0 DA de frais)"}
+                  </p>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Shipping Method</label>
@@ -1736,6 +1743,45 @@ export default function OrdersPage() {
                   <p className="text-[10px] text-orange-400 mt-1">Check Yalidine Dashboard for exact Center IDs.</p>
                 </div>
               )}
+
+              {/* Option Assurance Yalidine (do_insurance) */}
+              <div className="flex items-center justify-between bg-white/5 border border-white/10 rounded-xl p-4 mt-2">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider">
+                      Assurance Colis (Yalidine)
+                    </label>
+                    <span
+                      className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${
+                        dispatchData.do_insurance
+                          ? "bg-amber-500/15 text-amber-300 border-amber-500/30"
+                          : "bg-emerald-500/15 text-emerald-300 border-emerald-500/30"
+                      }`}
+                    >
+                      {dispatchData.do_insurance ? "Assurance Active" : "Sans Assurance (0 DA de Frais)"}
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-gray-500 mt-0.5">
+                    {dispatchData.do_insurance
+                      ? "Assurance appliquée selon la valeur déclarée."
+                      : "0 DA de taxe d'assurance prélevée par Yalidine sur votre bordereau."}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setDispatchData({ ...dispatchData, do_insurance: !dispatchData.do_insurance })}
+                  className={`relative w-12 h-7 rounded-full transition-colors duration-200 cursor-pointer ${
+                    dispatchData.do_insurance ? "bg-amber-500" : "bg-gray-600"
+                  }`}
+                  title={dispatchData.do_insurance ? "Désactiver l'assurance" : "Activer l'assurance"}
+                >
+                  <span
+                    className={`absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full shadow-md transition-transform duration-200 ${
+                      dispatchData.do_insurance ? "translate-x-5" : "translate-x-0"
+                    }`}
+                  />
+                </button>
+              </div>
 
               {/* Autorisation d'ouverture */}
               <div className="flex items-center justify-between bg-white/5 border border-white/10 rounded-xl p-4 mt-2">
