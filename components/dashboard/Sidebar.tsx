@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { BarChart3, ShoppingBag, Package, UserX, Clock, Settings, Users, LogOut, X, Menu } from "lucide-react";
+import { BarChart3, ShoppingBag, Package, UserX, Clock, Settings, Users, LogOut, X, Menu, Truck } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/components/dashboard/AuthGuard";
@@ -13,13 +13,14 @@ import type { UserRole } from "@/lib/auth";
 /*  Nav items — each item declares which roles can see it              */
 /* ------------------------------------------------------------------ */
 const navItems = [
-  { href: "/dashboard",             icon: BarChart3,  label: "Statistics", roles: ["admin", "sub_admin"] },
-  { href: "/dashboard/orders",      icon: ShoppingBag, label: "Orders",    roles: ["admin", "sub_admin"] },
-  { href: "/dashboard/products",    icon: Package,    label: "Products",   roles: ["admin"] },
-  { href: "/dashboard/abandoned",   icon: UserX,      label: "Abandoned",     roles: ["admin"] },
-  { href: "/dashboard/histories",   icon: Clock,      label: "Histories",     roles: ["admin"] },
-  { href: "/dashboard/sub-accounts", icon: Users,     label: "Sub Accounts",  roles: ["admin"] },
-  { href: "/dashboard/settings",    icon: Settings,   label: "Settings",      roles: ["admin"] },
+  { href: "/dashboard",             icon: BarChart3,  label: "Overview",       roles: ["admin", "sub_admin"] },
+  { href: "/dashboard/orders",      icon: ShoppingBag, label: "Orders",        roles: ["admin", "sub_admin"] },
+  { href: "/dashboard/stats",       icon: Truck,       label: "Stats Livraison", roles: ["admin", "sub_admin"] },
+  { href: "/dashboard/products",    icon: Package,    label: "Products",       roles: ["admin"] },
+  { href: "/dashboard/abandoned",   icon: UserX,      label: "Abandoned",      roles: ["admin"] },
+  { href: "/dashboard/histories",   icon: Clock,      label: "Histories",      roles: ["admin"] },
+  { href: "/dashboard/sub-accounts", icon: Users,     label: "Sub Accounts",   roles: ["admin"] },
+  { href: "/dashboard/settings",    icon: Settings,   label: "Settings",       roles: ["admin"] },
 ] satisfies { href: string; icon: React.ElementType; label: string; roles: UserRole[] }[];
 
 /* ------------------------------------------------------------------ */

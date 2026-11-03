@@ -273,6 +273,18 @@ export async function fetchStoreSettings() {
   return data;
 }
 
+// ──── YALIDINE SYNC ────
+export async function syncYalidineParcels(trackings?: string[]) {
+  const res = await fetch("/api/yalidine/sync", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ trackings }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Erreur de synchronisation Yalidine");
+  return data;
+}
+
 export async function updateStoreSettings(updates: Record<string, unknown>) {
   const { data, error } = await supabase
     .from("store_settings")
