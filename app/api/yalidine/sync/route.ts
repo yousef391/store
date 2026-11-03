@@ -51,6 +51,7 @@ function mapYalidineStatus(rawStatus: string): { status: string; action: string;
 
 // POST /api/yalidine/sync
 // Syncs parcel statuses from Yalidine API into Supabase orders
+// Supports date range (date_creation or date_last_status) or specific tracking IDs
 export async function POST(request: Request) {
   try {
     const supabase = getAdminClient();
@@ -69,150 +70,203 @@ export async function POST(request: Request) {
       );
     }
 
-    // Optional specific trackings from request body
+    // 2. Parse request parameters
+    let startDate = "";
+    let endDate = "";
+    let dateType: "date_creation" | "date_last_status" = "date_creation";
     let targetTrackings: string[] = [];
+
     try {
       const body = await request.json();
+      if (body?.startDate) startDate = String(body.startDate).trim();
+      if (body?.endDate) endDate = String(body.endDate).trim();
+      if (body?.dateType === "date_last_status") dateType = "date_last_status";
       if (Array.isArray(body?.trackings)) {
         targetTrackings = body.trackings.filter(Boolean);
       }
     } catch {
-      // No body or empty
+      // Empty or no JSON body
     }
 
-    // 2. Fetch orders from Supabase that have tracking_id
-    let query = supabase
+    // Default to last 30 days if no date range or trackings provided
+    if (!startDate && targetTrackings.length === 0) {
+      const now = new Date();
+      const past = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      endDate = now.toISOString().split("T")[0];
+      startDate = past.toISOString().split("T")[0];
+    } else if (startDate && !endDate) {
+      endDate = startDate;
+    }
+
+    // 3. Fetch orders from Supabase for local matching
+    const { data: existingOrders } = await supabase
       .from("orders")
-      .select("id, order_number, tracking_id, status, name, note")
-      .not("tracking_id", "is", null);
+      .select("id, order_number, tracking_id, status, name, note");
 
-    if (targetTrackings.length > 0) {
-      query = query.in("tracking_id", targetTrackings);
+    interface ExistingOrder {
+      id: string;
+      order_number: number;
+      tracking_id?: string | null;
+      status: string;
+      name?: string | null;
+      note?: string | null;
     }
 
-    const { data: ordersWithTracking, error: fetchErr } = await query;
+    const ordersByTracking = new Map<string, ExistingOrder>();
+    const ordersByNumber = new Map<number, ExistingOrder>();
+    const ordersById = new Map<string, ExistingOrder>();
 
-    if (fetchErr || !ordersWithTracking || ordersWithTracking.length === 0) {
-      return NextResponse.json({
-        success: true,
-        message: "Aucun colis avec numéro de suivi à synchroniser.",
-        synced: 0,
-        updated: 0,
-      });
-    }
-
-    // Map by tracking_id for instant O(1) lookup
-    const orderMap = new Map<string, (typeof ordersWithTracking)[0]>();
-    for (const o of ordersWithTracking) {
-      if (o.tracking_id) {
-        orderMap.set(o.tracking_id.trim().toLowerCase(), o);
+    if (existingOrders) {
+      for (const o of existingOrders) {
+        if (o.tracking_id) ordersByTracking.set(o.tracking_id.trim().toLowerCase(), o);
+        if (o.order_number) ordersByNumber.set(o.order_number, o);
+        if (o.id) ordersById.set(o.id.toString(), o);
       }
     }
 
-    const allTrackingIds = Array.from(orderMap.keys());
-    const batchSize = 25; // Group up to 25 trackings per GET request
-    let totalUpdated = 0;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const allParcels: any[] = [];
+    let updatedCount = 0;
     const summary = { livre: 0, retourne: 0, en_livraison: 0, echoue: 0, expedie: 0 };
-    const parcelDetails: Array<{
-      tracking: string;
-      order_number: number;
-      last_status: string;
-      date_last_status?: string;
-      payment_status?: string;
-      price?: number;
-      delivery_fee?: number;
-    }> = [];
 
-    // 3. Process batches from Yalidine API
-    for (let i = 0; i < allTrackingIds.length; i += batchSize) {
-      const batch = allTrackingIds.slice(i, i + batchSize);
-      const trackingQueryParam = batch.join(",");
+    // Helper to call Yalidine
+    const fetchYalidine = async (endpointUrl: string) => {
+      const res = await fetch(endpointUrl, {
+        headers: {
+          "X-API-ID": settings.yalidine_api_id,
+          "X-API-TOKEN": settings.yalidine_api_token,
+        },
+      });
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`Yalidine API error (${res.status}): ${errorText}`);
+      }
+      return res.json();
+    };
 
-      try {
-        const yalidineRes = await fetch(
-          `https://api.yalidine.app/v1/parcels/?tracking=${trackingQueryParam}`,
-          {
-            headers: {
-              "X-API-ID": settings.yalidine_api_id,
-              "X-API-TOKEN": settings.yalidine_api_token,
-            },
-          }
-        );
+    // 4. Case A: Query by Date Range
+    if (startDate && endDate) {
+      const dateParamValue = startDate === endDate ? startDate : `${startDate},${endDate}`;
+      let page = 1;
+      let hasMore = true;
+      const maxPages = 5; // Safely fetch up to 500 parcels per sync
 
-        if (!yalidineRes.ok) {
-          console.warn(`Yalidine batch fetch failed (${yalidineRes.status}):`, await yalidineRes.text());
-          continue;
+      while (hasMore && page <= maxPages) {
+        const url = `https://api.yalidine.app/v1/parcels/?${dateType}=${dateParamValue}&page_size=100&page=${page}`;
+        const data = await fetchYalidine(url);
+        const parcels = data?.data || [];
+        allParcels.push(...parcels);
+
+        hasMore = Boolean(data?.has_more && parcels.length > 0);
+        page++;
+      }
+    }
+    // Case B: Query by Trackings list
+    else if (targetTrackings.length > 0) {
+      const batchSize = 25;
+      for (let i = 0; i < targetTrackings.length; i += batchSize) {
+        const batch = targetTrackings.slice(i, i + batchSize);
+        const url = `https://api.yalidine.app/v1/parcels/?tracking=${batch.join(",")}`;
+        try {
+          const data = await fetchYalidine(url);
+          const parcels = data?.data || [];
+          allParcels.push(...parcels);
+        } catch (err) {
+          console.error("Batch tracking error:", err);
+        }
+      }
+    }
+
+    // 5. Match and Update Supabase Orders
+    for (const p of allParcels) {
+      const rawTracking = (p.tracking || "").toString().trim();
+      const rawOrderId = (p.order_id || "").toString().trim();
+      const rawStatus = (p.last_status || "").toString().trim();
+
+      if (!rawStatus) continue;
+
+      const mapping = mapYalidineStatus(rawStatus);
+
+      // Try matching by tracking_id, order_number, or UUID id
+      let matchedOrder = rawTracking ? ordersByTracking.get(rawTracking.toLowerCase()) : null;
+
+      if (!matchedOrder && rawOrderId) {
+        // Try parsed number (e.g. "166" or "#166")
+        const cleanNum = parseInt(rawOrderId.replace(/[^\d]/g, ""), 10);
+        if (!isNaN(cleanNum) && ordersByNumber.has(cleanNum)) {
+          matchedOrder = ordersByNumber.get(cleanNum);
+        } else if (ordersById.has(rawOrderId)) {
+          matchedOrder = ordersById.get(rawOrderId);
+        }
+      }
+
+      if (mapping.status in summary) {
+        summary[mapping.status as keyof typeof summary]++;
+      }
+
+      if (matchedOrder) {
+        // Prepare updates
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const updates: Record<string, any> = {
+          status: mapping.status,
+          updated_at: new Date().toISOString(),
+        };
+
+        if (rawTracking && !matchedOrder.tracking_id) {
+          updates.tracking_id = rawTracking;
         }
 
-        const yalidineData = await yalidineRes.json();
-        const parcels = yalidineData?.data || [];
-
-        for (const p of parcels) {
-          const rawTracking = (p.tracking || "").toString().trim().toLowerCase();
-          const order = orderMap.get(rawTracking);
-          if (!order) continue;
-
-          const rawStatus = (p.last_status || "").toString().trim();
-          if (!rawStatus) continue;
-
-          const mapping = mapYalidineStatus(rawStatus);
-
-          parcelDetails.push({
-            tracking: p.tracking,
-            order_number: order.order_number,
-            last_status: rawStatus,
-            date_last_status: p.date_last_status,
-            payment_status: p.payment_status,
-            price: p.price,
-            delivery_fee: p.delivery_fee,
-          });
-
-          // Only update if status or last_status has changed
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const updates: Record<string, any> = {
-            status: mapping.status,
-            updated_at: new Date().toISOString(),
-          };
-
-          if (p.reason) {
-            const noteStamp = `[Yalidine: ${rawStatus} - ${p.reason}]`;
-            updates.note = order.note ? `${order.note} | ${noteStamp}` : noteStamp;
-          }
-
-          let updateRes = await supabase.from("orders").update(updates).eq("id", order.id);
-
-          // Graceful fallback if orders_status_check blocks the new status
-          if (
-            updateRes.error &&
-            (updateRes.error.code === "23514" || updateRes.error.message?.includes("check constraint"))
-          ) {
-            delete updates.status;
-            const fallbackNote = `[Yalidine: ${rawStatus}]`;
-            updates.note = order.note ? `${order.note} | ${fallbackNote}` : fallbackNote;
-            updateRes = await supabase.from("orders").update(updates).eq("id", order.id);
-          }
-
-          if (!updateRes.error) {
-            totalUpdated++;
-            if (mapping.status in summary) {
-              summary[mapping.status as keyof typeof summary]++;
-            }
-          }
+        if (p.reason) {
+          const noteStamp = `[Yalidine: ${rawStatus} - ${p.reason}]`;
+          updates.note = matchedOrder.note ? `${matchedOrder.note} | ${noteStamp}` : noteStamp;
         }
-      } catch (batchErr) {
-        console.error("Batch sync error:", batchErr);
+
+        let updateRes = await supabase.from("orders").update(updates).eq("id", matchedOrder.id);
+
+        // Graceful fallback if check constraint orders_status_check blocks status
+        if (
+          updateRes.error &&
+          (updateRes.error.code === "23514" || updateRes.error.message?.includes("check constraint"))
+        ) {
+          delete updates.status;
+          const fallbackNote = `[Yalidine: ${rawStatus}${p.reason ? ` - ${p.reason}` : ""}]`;
+          updates.note = matchedOrder.note ? `${matchedOrder.note} | ${fallbackNote}` : fallbackNote;
+          updateRes = await supabase.from("orders").update(updates).eq("id", matchedOrder.id);
+        }
+
+        if (!updateRes.error) {
+          updatedCount++;
+        }
       }
     }
 
     return NextResponse.json({
       success: true,
-      synced: allTrackingIds.length,
-      updated: totalUpdated,
+      totalParcelsFound: allParcels.length,
+      updatedOrdersCount: updatedCount,
+      dateRange: startDate && endDate ? { startDate, endDate, dateType } : null,
       summary,
-      parcels: parcelDetails,
+      parcels: allParcels.map((p) => ({
+        tracking: p.tracking,
+        order_id: p.order_id,
+        firstname: p.firstname,
+        familyname: p.familyname,
+        contact_phone: p.contact_phone,
+        to_wilaya_name: p.to_wilaya_name,
+        to_commune_name: p.to_commune_name,
+        product_list: p.product_list,
+        price: p.price,
+        delivery_fee: p.delivery_fee,
+        last_status: p.last_status,
+        date_last_status: p.date_last_status,
+        date_creation: p.date_creation,
+        payment_status: p.payment_status,
+        label: p.label,
+        reason: p.reason || null,
+      })),
     });
   } catch (err: unknown) {
-    console.error("Yalidine Sync Route Error:", err);
+    console.error("Yalidine Date Sync Route Error:", err);
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Internal Server Error" },
       { status: 500 }

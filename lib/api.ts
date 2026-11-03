@@ -274,11 +274,16 @@ export async function fetchStoreSettings() {
 }
 
 // ──── YALIDINE SYNC ────
-export async function syncYalidineParcels(trackings?: string[]) {
+export async function syncYalidineParcels(options?: {
+  startDate?: string;
+  endDate?: string;
+  dateType?: "date_creation" | "date_last_status";
+  trackings?: string[];
+}) {
   const res = await fetch("/api/yalidine/sync", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ trackings }),
+    body: JSON.stringify(options || {}),
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Erreur de synchronisation Yalidine");
