@@ -21,6 +21,7 @@ const ACTION_ICONS: Record<string, { icon: React.ElementType; color: string }> =
   order_shipped: { icon: Truck, color: "text-indigo-400" },
   order_delivered: { icon: Package, color: "text-emerald-400" },
   order_returned: { icon: RotateCcw, color: "text-orange-400" },
+  order_failed: { icon: XCircle, color: "text-yellow-400" },
   product_added: { icon: Package, color: "text-blue-400" },
   product_updated: { icon: Settings, color: "text-gray-400" },
   product_deleted: { icon: Trash2, color: "text-red-400" },

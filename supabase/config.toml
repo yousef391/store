@@ -1,0 +1,5 @@
+project_id = "vlaaxmwvernmgwjhpuwn"
+
+[functions.yalidine-webhook]
+verify_jwt = false
+

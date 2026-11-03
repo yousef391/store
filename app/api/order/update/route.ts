@@ -39,8 +39,10 @@ export async function POST(request: Request) {
     if (res.error && (res.error.code === "23514" || res.error.message.includes("check constraint"))) {
       if (typeof currentPayload.status === "string" && currentPayload.status.startsWith("recall_")) {
         currentPayload.status = "recall";
-      } else if (currentPayload.status === "expedie") {
+      } else if (currentPayload.status === "expedie" || currentPayload.status === "en_livraison" || currentPayload.status === "livre") {
         currentPayload.status = "confirmed";
+      } else if (currentPayload.status === "retourne" || currentPayload.status === "echoue") {
+        currentPayload.status = "cancelled";
       }
       res = await attemptUpdate(currentPayload);
     }

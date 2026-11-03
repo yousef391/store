@@ -70,7 +70,7 @@ export async function fetchShowcaseVariants(productId: number) {
 export function normalizeOrder(order: any) {
   if (!order) return order;
   let status = order.status;
-  // If order has tracking_id, it is dispatched (expédié)
+  // If order has tracking_id, it is dispatched (expédié) by default unless delivered/returned/cancelled
   if (order.tracking_id && (status === "confirmed" || status === "new" || status === "expedie" || !status)) {
     status = "expedie";
   } else if (status === "recall") {
@@ -82,6 +82,17 @@ export function normalizeOrder(order: any) {
       status = "recall_1";
     }
   }
+
+  // Fallback to check if note contains Yalidine delivery updates
+  if (status !== "livre" && status !== "retourne" && typeof order.note === "string") {
+    const lowerNote = order.note.toLowerCase();
+    if (lowerNote.includes("[yalidine: livré") || lowerNote.includes("[yalidine: livre")) {
+      status = "livre";
+    } else if (lowerNote.includes("[yalidine: retourné") || lowerNote.includes("[yalidine: retour")) {
+      status = "retourne";
+    }
+  }
+
   return {
     ...order,
     status,
