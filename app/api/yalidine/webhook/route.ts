@@ -64,27 +64,88 @@ function mapYalidineStatus(rawStatus: string): { status: string; action: string;
   return { status: "expedie", action: "order_shipped", label: rawStatus || "Mise à jour" };
 }
 
+// ── GET: Handles Yalidine CRC Token Handshake & Healthcheck ──
+export async function GET(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const crcToken = searchParams.get("crc_token");
+
+    // Yalidine validation test requires returning the crc_token as plain text with 200 OK
+    if (crcToken) {
+      return new Response(crcToken, {
+        status: 200,
+        headers: {
+          "Content-Type": "text/plain",
+          "Access-Control-Allow-Origin": "*",
+        },
+      });
+    }
+
+    return new Response("ok", {
+      status: 200,
+      headers: {
+        "Content-Type": "text/plain",
+        "Access-Control-Allow-Origin": "*",
+      },
+    });
+  } catch (err) {
+    console.error("Yalidine Webhook GET Error:", err);
+    return new Response("ok", { status: 200 });
+  }
+}
+
+// ── OPTIONS: Preflight CORS ──
 export async function OPTIONS() {
   return new NextResponse("ok", {
     status: 200,
     headers: {
       "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type, X-Yalidine-Signature",
     },
   });
 }
 
+// ── POST: Handles live events & CRC token validation via POST ──
 export async function POST(request: Request) {
   try {
+    const url = new URL(request.url);
+    const queryCrc = url.searchParams.get("crc_token");
+    if (queryCrc) {
+      return new Response(queryCrc, {
+        status: 200,
+        headers: { "Content-Type": "text/plain" },
+      });
+    }
+
     const rawBody = await request.text();
-    if (!rawBody) {
-      return NextResponse.json({ error: "Empty request body" }, { status: 400 });
+    if (!rawBody || rawBody.trim().length === 0) {
+      return new Response("ok", {
+        status: 200,
+        headers: { "Content-Type": "text/plain" },
+      });
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let parsed: any;
+    try {
+      parsed = JSON.parse(rawBody);
+    } catch {
+      // If plain text body was sent as crc_token
+      return new Response("ok", { status: 200, headers: { "Content-Type": "text/plain" } });
+    }
+
+    // If body contains crc_token
+    if (parsed && parsed.crc_token) {
+      return new Response(String(parsed.crc_token), {
+        status: 200,
+        headers: { "Content-Type": "text/plain" },
+      });
     }
 
     const supabase = getAdminClient();
 
-    // 1. Verify HMAC Signature if secret is configured
+    // Verify HMAC Signature if secret is configured and header provided
     const providedSignature = request.headers.get("x-yalidine-signature") || request.headers.get("X-Yalidine-Signature");
     const webhookSecret = process.env.YALIDINE_WEBHOOK_SECRET;
 
@@ -94,15 +155,6 @@ export async function POST(request: Request) {
         console.warn("Invalid Yalidine webhook signature");
         return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
       }
-    }
-
-    // 2. Parse payload
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let parsed: any;
-    try {
-      parsed = JSON.parse(rawBody);
-    } catch {
-      return NextResponse.json({ error: "Invalid JSON format" }, { status: 400 });
     }
 
     // Extract events
@@ -133,7 +185,7 @@ export async function POST(request: Request) {
       message?: string;
     }> = [];
 
-    // 3. Process events
+    // Process events
     for (const ev of eventsList) {
       const tracking = (ev.tracking || ev.tracking_id || "").toString().trim();
       const orderRef = (ev.order_id || "").toString().trim();
@@ -241,4 +293,3 @@ export async function POST(request: Request) {
     );
   }
 }
-

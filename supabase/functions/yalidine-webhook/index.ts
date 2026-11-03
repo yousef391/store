@@ -4,6 +4,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.8";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-yalidine-signature",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
 };
 
 interface WebhookEvent {
@@ -81,28 +82,72 @@ async function verifyHmacSignature(rawBody: string, signature: string, secret: s
 }
 
 serve(async (req) => {
-  // Handle CORS Preflight
+  // 1. Handle CORS Preflight
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
+  // 2. Handle GET (Yalidine CRC Token Handshake & Healthcheck)
+  const url = new URL(req.url);
+  const queryCrc = url.searchParams.get("crc_token");
+
+  if (req.method === "GET") {
+    if (queryCrc) {
+      return new Response(queryCrc, {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "text/plain" },
+      });
+    }
+    return new Response("ok", {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "text/plain" },
+    });
+  }
+
+  // 3. Handle POST
   if (req.method !== "POST") {
-    return new Response(JSON.stringify({ error: "Method not allowed. Use POST." }), {
+    return new Response(JSON.stringify({ error: "Method not allowed. Use GET or POST." }), {
       status: 405,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 
   try {
-    const rawBody = await req.text();
-    if (!rawBody) {
-      return new Response(JSON.stringify({ error: "Empty request body" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+    if (queryCrc) {
+      return new Response(queryCrc, {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "text/plain" },
       });
     }
 
-    // 1. Supabase Client Setup
+    const rawBody = await req.text();
+    if (!rawBody || rawBody.trim().length === 0) {
+      return new Response("ok", {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "text/plain" },
+      });
+    }
+
+    // Parse JSON
+    let parsed: any;
+    try {
+      parsed = JSON.parse(rawBody);
+    } catch {
+      return new Response("ok", {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "text/plain" },
+      });
+    }
+
+    // If body contains crc_token
+    if (parsed && parsed.crc_token) {
+      return new Response(String(parsed.crc_token), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "text/plain" },
+      });
+    }
+
+    // Supabase Client Setup
     const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
     if (!supabaseUrl || !supabaseServiceKey) {
@@ -117,7 +162,7 @@ serve(async (req) => {
       auth: { persistSession: false, autoRefreshToken: false },
     });
 
-    // 2. Secret Verification (optional if webhook secret configured in Yalidine)
+    // Secret Verification (optional if webhook secret configured in Yalidine)
     const webhookSecret = Deno.env.get("YALIDINE_WEBHOOK_SECRET");
     const providedSignature = req.headers.get("x-yalidine-signature");
 
@@ -130,17 +175,6 @@ serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-    }
-
-    // 3. Parse JSON Body
-    let parsed: any;
-    try {
-      parsed = JSON.parse(rawBody);
-    } catch {
-      return new Response(JSON.stringify({ error: "Invalid JSON format" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
     }
 
     // Extract list of events
@@ -168,7 +202,7 @@ serve(async (req) => {
 
     const results: Array<{ tracking?: string; order_id?: string | number; success: boolean; status?: string; message?: string }> = [];
 
-    // 4. Process Each Event
+    // Process Each Event
     for (const ev of eventsList) {
       const tracking = (ev.tracking || ev.tracking_id || "").toString().trim();
       const orderRef = (ev.order_id || "").toString().trim();
@@ -185,7 +219,6 @@ serve(async (req) => {
       if (tracking) {
         orderQuery = orderQuery.eq("tracking_id", tracking);
       } else if (orderRef) {
-        // Try match by order_number or id
         const numRef = parseInt(orderRef, 10);
         if (!isNaN(numRef)) {
           orderQuery = orderQuery.or(`order_number.eq.${numRef},id.eq.${orderRef}`);
@@ -214,7 +247,6 @@ serve(async (req) => {
         updates.tracking_id = tracking;
       }
 
-      // If there's a reason for failure/alert, append note
       if (reason) {
         const noteStamp = `[Yalidine: ${rawStatus} - ${reason}]`;
         updates.note = order.note ? `${order.note} | ${noteStamp}` : noteStamp;
@@ -288,4 +320,3 @@ serve(async (req) => {
     );
   }
 });
-
