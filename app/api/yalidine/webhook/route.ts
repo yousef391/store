@@ -28,26 +28,54 @@ interface WebhookEvent {
 function mapYalidineStatus(rawStatus: string): { status: string; action: string; label: string } {
   const s = (rawStatus || "").trim().toLowerCase();
 
-  if (s.includes("livré") || s.includes("livre") || s.includes("delivered")) {
-    return { status: "livre", action: "order_delivered", label: "Livré" };
-  }
-  if (s.includes("retour") || s.includes("returned")) {
-    return { status: "retourne", action: "order_returned", label: "Retourné" };
-  }
-  if (s.includes("sorti en livraison") || s.includes("en cours de livraison") || s.includes("en livraison")) {
+  // 1. "Prêt pour livreur" / Sorti en livraison -> En cours de livraison (NOT livré!)
+  if (
+    s.includes("livreur") ||
+    s.includes("sorti en livraison") ||
+    s.includes("en cours de livraison") ||
+    s.includes("en livraison")
+  ) {
     return { status: "en_livraison", action: "order_shipped", label: "En cours de livraison" };
   }
+
+  // 2. Echèc livraison and all return stages are counted as Retour
   if (
+    s.includes("retour") ||
+    s.includes("returned") ||
     s.includes("echèc") ||
     s.includes("échec") ||
     s.includes("echec") ||
+    s.includes("abandonné") ||
+    s.includes("abandonne")
+  ) {
+    return { status: "retourne", action: "order_returned", label: "Retourné" };
+  }
+
+  // 3. Truly Delivered ("Livré", "Livré payé", "Livré non payé")
+  if (
+    s === "livré" ||
+    s === "livre" ||
+    s.startsWith("livré") ||
+    s.startsWith("livre ") ||
+    s.includes("livré payé") ||
+    s.includes("livré non payé") ||
+    s.includes("delivered")
+  ) {
+    return { status: "livre", action: "order_delivered", label: "Livré" };
+  }
+
+  // 4. Temporary issues / Pending
+  if (
+    s.includes("tentative") ||
     s.includes("alerte") ||
     s.includes("attente") ||
     s.includes("injoignable") ||
     s.includes("reporté")
   ) {
-    return { status: "echoue", action: "order_failed", label: "Échec de livraison" };
+    return { status: "echoue", action: "order_failed", label: "Tentative / En attente" };
   }
+
+  // 5. In transit
   if (
     s.includes("expédié") ||
     s.includes("expedie") ||

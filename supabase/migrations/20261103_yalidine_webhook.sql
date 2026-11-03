@@ -48,16 +48,20 @@ BEGIN
   v_lower := lower(trim(p_status));
 
   -- Status mapping
-  IF v_lower LIKE '%livré%' OR v_lower LIKE '%livre%' OR v_lower LIKE '%delivered%' THEN
-    v_mapped_status := 'livre';
-    v_action := 'order_delivered';
-  ELSIF v_lower LIKE '%retour%' OR v_lower LIKE '%returned%' THEN
-    v_mapped_status := 'retourne';
-    v_action := 'order_returned';
-  ELSIF v_lower LIKE '%sorti en livraison%' OR v_lower LIKE '%en cours de livraison%' OR v_lower LIKE '%en livraison%' THEN
+  -- 1. Sorti en livraison / Prêt pour livreur -> en_livraison (NOT livré!)
+  IF v_lower LIKE '%livreur%' OR v_lower LIKE '%sorti en livraison%' OR v_lower LIKE '%en cours de livraison%' OR v_lower LIKE '%en livraison%' THEN
     v_mapped_status := 'en_livraison';
     v_action := 'order_shipped';
-  ELSIF v_lower LIKE '%echèc%' OR v_lower LIKE '%échec%' OR v_lower LIKE '%echec%' OR v_lower LIKE '%alerte%' OR v_lower LIKE '%attente%' THEN
+  -- 2. Retours et Échecs de livraison -> retourne
+  ELSIF v_lower LIKE '%retour%' OR v_lower LIKE '%returned%' OR v_lower LIKE '%echèc%' OR v_lower LIKE '%échec%' OR v_lower LIKE '%echec%' OR v_lower LIKE '%abandonné%' THEN
+    v_mapped_status := 'retourne';
+    v_action := 'order_returned';
+  -- 3. Livré réel
+  ELSIF v_lower LIKE 'livré%' OR v_lower LIKE 'livre%' OR v_lower LIKE '%livré payé%' OR v_lower LIKE '%delivered%' THEN
+    v_mapped_status := 'livre';
+    v_action := 'order_delivered';
+  -- 4. Alertes / Tentatives temporaires
+  ELSIF v_lower LIKE '%tentative%' OR v_lower LIKE '%alerte%' OR v_lower LIKE '%attente%' OR v_lower LIKE '%injoignable%' THEN
     v_mapped_status := 'echoue';
     v_action := 'order_failed';
   ELSE

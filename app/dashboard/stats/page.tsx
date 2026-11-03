@@ -84,10 +84,54 @@ const STATUS_LABELS: Record<string, string> = {
 
 function normalizeStatus(raw: string = ""): string {
   const s = raw.toLowerCase().trim();
-  if (s.includes("livré") || s.includes("livre") || s.includes("delivered")) return "livre";
-  if (s.includes("retour") || s.includes("returned")) return "retourne";
-  if (s.includes("sorti en livraison") || s.includes("en cours de livraison") || s.includes("en livraison")) return "en_livraison";
-  if (s.includes("echèc") || s.includes("échec") || s.includes("echec") || s.includes("alerte") || s.includes("attente")) return "echoue";
+
+  // 1. "Prêt pour livreur" / Sorti en livraison -> en_livraison (NOT livré!)
+  if (
+    s.includes("livreur") ||
+    s.includes("sorti en livraison") ||
+    s.includes("en cours de livraison") ||
+    s.includes("en livraison")
+  ) {
+    return "en_livraison";
+  }
+
+  // 2. Echèc livraison and all return stages -> retourne
+  if (
+    s.includes("retour") ||
+    s.includes("returned") ||
+    s.includes("echèc") ||
+    s.includes("échec") ||
+    s.includes("echec") ||
+    s.includes("abandonné") ||
+    s.includes("abandonne")
+  ) {
+    return "retourne";
+  }
+
+  // 3. Truly Delivered
+  if (
+    s === "livré" ||
+    s === "livre" ||
+    s.startsWith("livré") ||
+    s.startsWith("livre ") ||
+    s.includes("livré payé") ||
+    s.includes("livré non payé") ||
+    s.includes("delivered")
+  ) {
+    return "livre";
+  }
+
+  // 4. Temporary / Pending
+  if (
+    s.includes("tentative") ||
+    s.includes("alerte") ||
+    s.includes("attente") ||
+    s.includes("injoignable") ||
+    s.includes("reporté")
+  ) {
+    return "echoue";
+  }
+
   return "expedie";
 }
 
