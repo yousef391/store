@@ -230,7 +230,7 @@ export default function OrderDetailModal({
                     <div className="flex items-center gap-1.5 flex-wrap mt-1.5">
                       {order.note.includes("Autorisation d'ouverture: OUI") && (
                         <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-md">
-                          🔓 Autorisation d'ouverture : OUI
+                          🔓 Autorisation d&apos;ouverture : OUI
                         </span>
                       )}
                       {order.note.match(/Heure:\s*([^\]|]+)/) && (

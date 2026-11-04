@@ -620,6 +620,17 @@ export default function OrdersPage() {
     const isStopdeskOrder = Boolean(order.commune?.includes("[Stopdesk]"));
     const cleanCommune = (order.commune || "").replace(/\s*\[Stopdesk\]/i, "").trim();
 
+    // Check if order note already contains a delivery time/hour
+    let detectedDeliveryTime = "";
+    let hasDeliveryTime = false;
+    if (order.note) {
+      const match = order.note.match(/Heure:\s*([^\]|]+)/i);
+      if (match) {
+        detectedDeliveryTime = match[1].trim();
+        hasDeliveryTime = true;
+      }
+    }
+
     setDispatchData({
       name: order.name,
       phone: order.phone,
@@ -637,8 +648,8 @@ export default function OrdersPage() {
       is_stopdesk: isStopdeskOrder,
       stopdesk_id: "",
       autorisation_ouverture: true,
-      has_delivery_time: false,
-      delivery_time: "",
+      has_delivery_time: hasDeliveryTime,
+      delivery_time: detectedDeliveryTime,
       forceRetry: true,
     });
 
@@ -1676,16 +1687,176 @@ export default function OrdersPage() {
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-blue-400 uppercase tracking-wider mb-1">Nom du Produit</label>
-                <input
-                  type="text"
-                  value={dispatchData.product_list || ""}
-                  onChange={(e) => setDispatchData({ ...dispatchData, product_list: e.target.value })}
-                  placeholder="Ex: Ensemble Nocta - Full Black - XL"
-                  className="w-full bg-blue-500/10 border border-blue-500/20 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder:text-gray-600"
-                />
-                <p className="text-[10px] text-gray-500 mt-1">Ce nom sera envoyé comme description du contenu à Yalidine.</p>
+              {/* ─── GROUP: PRODUIT & CONSIGNES DE LIVRAISON ─── */}
+              <div className="p-4 rounded-2xl bg-blue-500/5 border border-blue-500/20 space-y-3.5">
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-bold text-blue-400 uppercase tracking-wider">
+                      Nom du Produit
+                    </label>
+                    <span className="text-[10px] text-gray-400">Description Colis (Bordereau)</span>
+                  </div>
+                  <input
+                    type="text"
+                    value={dispatchData.product_list || ""}
+                    onChange={(e) => setDispatchData({ ...dispatchData, product_list: e.target.value })}
+                    placeholder="Ex: Ensemble Nocta - Full Black - XL"
+                    className="w-full bg-blue-500/10 border border-blue-500/20 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder:text-gray-600 font-medium"
+                  />
+                </div>
+
+                {/* Autorisation d'ouverture */}
+                <div className="flex items-center justify-between bg-white/5 border border-white/10 rounded-xl p-3">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <label className="block text-xs font-bold text-gray-200 uppercase tracking-wider">
+                        Autorisation d&apos;ouverture
+                      </label>
+                      <span
+                        className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${
+                          dispatchData.autorisation_ouverture
+                            ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/30"
+                            : "bg-gray-500/15 text-gray-400 border-gray-500/30"
+                        }`}
+                      >
+                        {dispatchData.autorisation_ouverture ? "Activée par défaut (OUI)" : "Désactivée (NON)"}
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-gray-400 mt-0.5">Le client peut ouvrir le colis et vérifier le produit avant paiement.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setDispatchData({ ...dispatchData, autorisation_ouverture: !dispatchData.autorisation_ouverture })}
+                    className={`relative w-12 h-7 rounded-full transition-colors duration-200 cursor-pointer ${
+                      dispatchData.autorisation_ouverture ? "bg-emerald-500" : "bg-gray-600"
+                    }`}
+                    title={dispatchData.autorisation_ouverture ? "Désactiver l'autorisation" : "Activer l'autorisation"}
+                  >
+                    <span
+                      className={`absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full shadow-md transition-transform duration-200 ${
+                        dispatchData.autorisation_ouverture ? "translate-x-5" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {/* Heure de livraison (Timing) */}
+                <div className="bg-white/5 border border-white/10 rounded-xl p-3 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <label className="block text-xs font-bold text-gray-200 uppercase tracking-wider">
+                          🕒 Heure de Livraison (Timing)
+                        </label>
+                        <span
+                          className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${
+                            dispatchData.has_delivery_time
+                              ? "bg-amber-500/15 text-amber-300 border-amber-500/30"
+                              : "bg-gray-500/15 text-gray-400 border-gray-500/30"
+                          }`}
+                        >
+                          {dispatchData.has_delivery_time ? "Option Active" : "Optionnel (Désactivé)"}
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-gray-400 mt-0.5">
+                        Définir une heure ou un créneau souhaité pour la livraison.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setDispatchData({
+                          ...dispatchData,
+                          has_delivery_time: !dispatchData.has_delivery_time,
+                          delivery_time: !dispatchData.has_delivery_time && !dispatchData.delivery_time ? "Matin (09h - 13h)" : dispatchData.delivery_time,
+                        })
+                      }
+                      className={`relative w-12 h-7 rounded-full transition-colors duration-200 cursor-pointer ${
+                        dispatchData.has_delivery_time ? "bg-amber-500" : "bg-gray-600"
+                      }`}
+                      title={dispatchData.has_delivery_time ? "Désactiver l'heure de livraison" : "Activer l'heure de livraison"}
+                    >
+                      <span
+                        className={`absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full shadow-md transition-transform duration-200 ${
+                          dispatchData.has_delivery_time ? "translate-x-5" : "translate-x-0"
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  {dispatchData.has_delivery_time ? (
+                    <div className="pt-2 border-t border-white/5 space-y-2.5">
+                      {/* Suggestion pills */}
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mr-1">Suggestions :</span>
+                        {[
+                          "Matin (09h - 13h)",
+                          "Après-midi (14h - 18h)",
+                          "Fin d'après-midi (17h - 20h)",
+                          "Après 16h00",
+                          "Avant 12h00",
+                        ].map((preset) => (
+                          <button
+                            key={preset}
+                            type="button"
+                            onClick={() => setDispatchData({ ...dispatchData, delivery_time: preset })}
+                            className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                              dispatchData.delivery_time === preset
+                                ? "bg-amber-500 text-black font-bold shadow-md shadow-amber-500/20"
+                                : "bg-white/5 text-gray-300 hover:text-white hover:bg-white/10"
+                            }`}
+                          >
+                            {preset}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Custom text or time input */}
+                      <div>
+                        <input
+                          type="text"
+                          value={dispatchData.delivery_time || ""}
+                          onChange={(e) => setDispatchData({ ...dispatchData, delivery_time: e.target.value })}
+                          placeholder="Ex: 14h:30, Après 17h, Matin..."
+                          className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500 font-mono"
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="pt-1.5 border-t border-white/5 flex items-center justify-between text-[11px] text-gray-500">
+                      <span>Toute la journée (Aucun créneau strict)</span>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setDispatchData({
+                            ...dispatchData,
+                            has_delivery_time: true,
+                            delivery_time: "Matin (09h - 13h)",
+                          })
+                        }
+                        className="text-xs text-amber-400 hover:text-amber-300 font-bold underline cursor-pointer"
+                      >
+                        + Définir une heure
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Aperçu en temps réel */}
+                <div className="p-3 bg-black/40 border border-white/5 rounded-xl space-y-1 font-mono text-xs">
+                  <span className="text-[10px] text-gray-400 uppercase font-bold block">
+                    Texte imprimé sur le bordereau Yalidine :
+                  </span>
+                  <p className="text-white font-medium break-all">
+                    <span className="text-blue-300">{dispatchData.product_list || "Produit"}</span>
+                    {dispatchData.autorisation_ouverture && (
+                      <span className="text-emerald-400"> - Autorisation d&apos;ouverture: OUI</span>
+                    )}
+                    {dispatchData.has_delivery_time && dispatchData.delivery_time && (
+                      <span className="text-amber-300"> - Heure livraison: {dispatchData.delivery_time}</span>
+                    )}
+                  </p>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1836,157 +2007,6 @@ export default function OrdersPage() {
                     }`}
                   />
                 </button>
-              </div>
-
-              {/* Autorisation d'ouverture */}
-              <div className="flex items-center justify-between bg-white/5 border border-white/10 rounded-xl p-4 mt-2">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider">
-                      Autorisation d&apos;ouverture
-                    </label>
-                    <span
-                      className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${
-                        dispatchData.autorisation_ouverture
-                          ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/30"
-                          : "bg-gray-500/15 text-gray-400 border-gray-500/30"
-                      }`}
-                    >
-                      {dispatchData.autorisation_ouverture ? "Activée par défaut (OUI)" : "Désactivée (NON)"}
-                    </span>
-                  </div>
-                  <p className="text-[10px] text-gray-500 mt-0.5">Le client peut ouvrir le colis et vérifier le produit avant paiement.</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setDispatchData({ ...dispatchData, autorisation_ouverture: !dispatchData.autorisation_ouverture })}
-                  className={`relative w-12 h-7 rounded-full transition-colors duration-200 cursor-pointer ${
-                    dispatchData.autorisation_ouverture ? "bg-emerald-500" : "bg-gray-600"
-                  }`}
-                  title={dispatchData.autorisation_ouverture ? "Désactiver l'autorisation" : "Activer l'autorisation"}
-                >
-                  <span
-                    className={`absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full shadow-md transition-transform duration-200 ${
-                      dispatchData.autorisation_ouverture ? "translate-x-5" : "translate-x-0"
-                    }`}
-                  />
-                </button>
-              </div>
-
-              {/* Heure de livraison (Optionnel: Activer / Désactiver) */}
-              <div className="bg-white/5 border border-white/10 rounded-xl p-4 mt-2 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider">
-                        Heure de Livraison (Créneau)
-                      </label>
-                      <span
-                        className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${
-                          dispatchData.has_delivery_time
-                            ? "bg-blue-500/15 text-blue-300 border-blue-500/30"
-                            : "bg-gray-500/15 text-gray-400 border-gray-500/30"
-                        }`}
-                      >
-                        {dispatchData.has_delivery_time ? "Option Active" : "Optionnel (Désactivé)"}
-                      </span>
-                    </div>
-                    <p className="text-[10px] text-gray-500 mt-0.5">
-                      Définir une heure ou un créneau souhaité pour la livraison.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setDispatchData({
-                        ...dispatchData,
-                        has_delivery_time: !dispatchData.has_delivery_time,
-                        delivery_time: !dispatchData.has_delivery_time && !dispatchData.delivery_time ? "Matin (09h - 13h)" : dispatchData.delivery_time,
-                      })
-                    }
-                    className={`relative w-12 h-7 rounded-full transition-colors duration-200 cursor-pointer ${
-                      dispatchData.has_delivery_time ? "bg-blue-500" : "bg-gray-600"
-                    }`}
-                    title={dispatchData.has_delivery_time ? "Désactiver l'heure de livraison" : "Activer l'heure de livraison"}
-                  >
-                    <span
-                      className={`absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full shadow-md transition-transform duration-200 ${
-                        dispatchData.has_delivery_time ? "translate-x-5" : "translate-x-0"
-                      }`}
-                    />
-                  </button>
-                </div>
-
-                {dispatchData.has_delivery_time && (
-                  <div className="pt-2 border-t border-white/5 space-y-2.5">
-                    {/* Quick suggestion pills */}
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mr-1">Suggestions :</span>
-                      {[
-                        "Matin (09h - 13h)",
-                        "Après-midi (14h - 18h)",
-                        "Fin d'après-midi (17h - 20h)",
-                        "Après 16h00",
-                        "Avant 12h00",
-                      ].map((preset) => (
-                        <button
-                          key={preset}
-                          type="button"
-                          onClick={() => setDispatchData({ ...dispatchData, delivery_time: preset })}
-                          className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer ${
-                            dispatchData.delivery_time === preset
-                              ? "bg-blue-500 text-white font-bold shadow-md shadow-blue-500/20"
-                              : "bg-white/5 text-gray-300 hover:text-white hover:bg-white/10"
-                          }`}
-                        >
-                          {preset}
-                        </button>
-                      ))}
-                    </div>
-
-                    {/* Custom text or time input */}
-                    <div>
-                      <input
-                        type="text"
-                        value={dispatchData.delivery_time || ""}
-                        onChange={(e) => setDispatchData({ ...dispatchData, delivery_time: e.target.value })}
-                        placeholder="Ex: 14h:30, Après 17h, Matin..."
-                        className="w-full bg-blue-500/10 border border-blue-500/20 rounded-xl px-4 py-2 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Aperçu Colis & Bordereau */}
-              <div className="p-3.5 bg-blue-500/10 border border-blue-500/20 rounded-xl space-y-1.5 mt-2">
-                <div className="flex items-center justify-between text-[11px] font-bold text-blue-400 uppercase tracking-wider">
-                  <span>Aperçu sur le bordereau & commande :</span>
-                  <span className="text-[10px] text-gray-400 font-normal">Visible par le livreur & dashboard</span>
-                </div>
-                <div className="p-2.5 bg-black/40 rounded-lg border border-white/5 font-mono text-xs text-white space-y-1.5">
-                  <div className="flex items-start gap-1.5">
-                    <span className="text-gray-400 shrink-0">📦 Produit :</span>
-                    <span className="font-bold text-blue-200 break-all">{dispatchData.product_list || "---"}</span>
-                  </div>
-                  <div className="flex items-center gap-2 flex-wrap pt-1 border-t border-white/5">
-                    <span
-                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold border ${
-                        dispatchData.autorisation_ouverture
-                          ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
-                          : "bg-gray-500/20 text-gray-400 border-gray-500/30"
-                      }`}
-                    >
-                      {dispatchData.autorisation_ouverture ? "🔓 Autorisation d'ouverture : OUI" : "🔒 Autorisation d'ouverture : NON"}
-                    </span>
-
-                    {dispatchData.has_delivery_time && dispatchData.delivery_time && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                        🕒 Heure : {dispatchData.delivery_time}
-                      </span>
-                    )}
-                  </div>
-                </div>
               </div>
             </div>
 
