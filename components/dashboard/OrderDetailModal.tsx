@@ -226,6 +226,20 @@ export default function OrderDetailModal({
                     <span className="text-white font-medium">{order.size || "Standard"}</span> · Qté:{" "}
                     <span className="text-white font-bold">×{order.quantity || 1}</span>
                   </p>
+                  {order.note && (order.note.includes("Autorisation d'ouverture") || order.note.includes("Heure:")) && (
+                    <div className="flex items-center gap-1.5 flex-wrap mt-1.5">
+                      {order.note.includes("Autorisation d'ouverture: OUI") && (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-md">
+                          🔓 Autorisation d'ouverture : OUI
+                        </span>
+                      )}
+                      {order.note.match(/Heure:\s*([^\]|]+)/) && (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-300 bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 rounded-md">
+                          🕒 Heure livraison : {order.note.match(/Heure:\s*([^\]|]+)/)?.[1].trim()}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="text-right">

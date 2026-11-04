@@ -165,6 +165,9 @@ export async function POST(request: Request) {
     if (overrides?.autorisation_ouverture) {
       productDescription += ` - Autorisation d'ouverture: OUI`;
     }
+    if (overrides?.has_delivery_time && overrides?.delivery_time) {
+      productDescription += ` - Heure livraison: ${String(overrides.delivery_time).trim()}`;
+    }
 
     const yalidinePayload = [{
       order_id: referenceId,
@@ -204,14 +207,33 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: result?.message || "Failed to create parcel in Yalidine" }, { status: 400 });
     }
 
-    // 5. Save tracking_id and update status to expedie
+    // 5. Save tracking_id, status and dispatch note to orders
     const trackingId = result.tracking;
-    let updateRes = await supabase.from("orders").update({ tracking_id: trackingId, status: "expedie" }).eq("id", order.id);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const orderUpdates: Record<string, any> = {
+      tracking_id: trackingId,
+      status: "expedie",
+    };
+
+    const dispatchNotes: string[] = [];
+    if (overrides?.autorisation_ouverture) {
+      dispatchNotes.push("Autorisation d'ouverture: OUI");
+    }
+    if (overrides?.has_delivery_time && overrides?.delivery_time) {
+      dispatchNotes.push(`Heure: ${String(overrides.delivery_time).trim()}`);
+    }
+    if (dispatchNotes.length > 0) {
+      const noteBadge = `[${dispatchNotes.join(" · ")}]`;
+      orderUpdates.note = order.note ? `${order.note} | ${noteBadge}` : noteBadge;
+    }
+
+    let updateRes = await supabase.from("orders").update(orderUpdates).eq("id", order.id);
 
     // If check constraint rejects 'expedie', save tracking_id
     if (updateRes.error && (updateRes.error.code === "23514" || updateRes.error.message.includes("check constraint"))) {
       console.warn("orders_status_check rejected 'expedie', saving tracking_id only:", updateRes.error.message);
-      updateRes = await supabase.from("orders").update({ tracking_id: trackingId }).eq("id", order.id);
+      delete orderUpdates.status;
+      updateRes = await supabase.from("orders").update(orderUpdates).eq("id", order.id);
     }
 
     if (updateRes.error) {

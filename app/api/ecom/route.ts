@@ -82,6 +82,24 @@ export async function POST(request: Request) {
       referenceId = `${referenceId}-R${Math.floor(100 + Math.random() * 900)}`;
     }
 
+    let articleDesc = overrides?.product_list || `${order.item} - ${order.color} - ${order.size}`;
+    if (overrides?.autorisation_ouverture) {
+      articleDesc += ` - Autorisation d'ouverture: OUI`;
+    }
+    if (overrides?.has_delivery_time && overrides?.delivery_time) {
+      articleDesc += ` - Heure livraison: ${String(overrides.delivery_time).trim()}`;
+    }
+
+    const dispatchNotes: string[] = [];
+    if (overrides?.autorisation_ouverture) {
+      dispatchNotes.push("Autorisation d'ouverture: OUI");
+    }
+    if (overrides?.has_delivery_time && overrides?.delivery_time) {
+      dispatchNotes.push(`Heure: ${String(overrides.delivery_time).trim()}`);
+    }
+    const noteBadge = dispatchNotes.length > 0 ? `[${dispatchNotes.join(" · ")}]` : "";
+    const finalNote = order.note ? (noteBadge ? `${order.note} | ${noteBadge}` : order.note) : noteBadge;
+
     const ecomPayload = {
       Colis: [
         {
@@ -94,9 +112,9 @@ export async function POST(request: Request) {
           Adresse: finalAddress,
           Wilaya: wilayaId,
           Commune: cleanCommune,
-          Article: overrides?.product_list || `${order.item} - ${order.color} - ${order.size}`,
+          Article: articleDesc,
           Ref_Article: order.item || "",
-          NoteFournisseur: overrides?.note || "",
+          NoteFournisseur: finalNote || overrides?.note || "",
           Total: priceNumber.toString(),
           ID_Externe: referenceId,
           Source: "Dashboard"
@@ -132,16 +150,25 @@ export async function POST(request: Request) {
 
     // 6. Save tracking_id to Database and mark as expedie
     const trackingId = result.Tracking;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const orderUpdates: Record<string, any> = {
+      tracking_id: trackingId,
+      status: "expedie",
+    };
+    if (finalNote) {
+      orderUpdates.note = finalNote;
+    }
     
     let updateRes = await supabase
       .from("orders")
-      .update({ tracking_id: trackingId, status: "expedie" })
+      .update(orderUpdates)
       .eq("id", order.id);
 
     // If check constraint rejects 'expedie', save tracking_id
     if (updateRes.error && (updateRes.error.code === "23514" || updateRes.error.message.includes("check constraint"))) {
       console.warn("orders_status_check rejected 'expedie', saving tracking_id only:", updateRes.error.message);
-      updateRes = await supabase.from("orders").update({ tracking_id: trackingId }).eq("id", order.id);
+      delete orderUpdates.status;
+      updateRes = await supabase.from("orders").update(orderUpdates).eq("id", order.id);
     }
 
     if (updateRes.error) {
