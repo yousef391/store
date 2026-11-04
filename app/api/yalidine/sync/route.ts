@@ -129,14 +129,13 @@ export async function POST(request: Request) {
     // 3. Fetch orders from Supabase for local matching
     const { data: existingOrders } = await supabase
       .from("orders")
-      .select("id, order_number, tracking_id, status, name, note");
+      .select("id, order_number, tracking_id, status, note");
 
     interface ExistingOrder {
       id: string;
       order_number: number;
       tracking_id?: string | null;
       status: string;
-      name?: string | null;
       note?: string | null;
     }
 
@@ -175,37 +174,82 @@ export async function POST(request: Request) {
     // 4. Case A: Query by Date Range
     if (startDate && endDate) {
       const dateParamValue = startDate === endDate ? startDate : `${startDate},${endDate}`;
-      let page = 1;
-      let hasMore = true;
       const maxPages = 5; // Safely fetch up to 500 parcels per sync
 
-      while (hasMore && page <= maxPages) {
-        const url = `https://api.yalidine.app/v1/parcels/?${dateType}=${dateParamValue}&page_size=100&page=${page}`;
-        const data = await fetchYalidine(url);
-        const parcels = data?.data || [];
-        allParcels.push(...parcels);
+      // Fetch first page
+      const firstPageUrl = `https://api.yalidine.app/v1/parcels/?${dateType}=${dateParamValue}&page_size=100&page=1`;
+      const firstPageData = await fetchYalidine(firstPageUrl);
+      const parcels = firstPageData?.data || [];
+      allParcels.push(...parcels);
 
-        hasMore = Boolean(data?.has_more && parcels.length > 0);
-        page++;
+      // If more pages exist, fetch remaining pages in parallel
+      if (firstPageData?.has_more && parcels.length > 0) {
+        const totalData = Number(firstPageData?.total_data);
+        const totalPages = totalData && !isNaN(totalData)
+          ? Math.min(maxPages, Math.ceil(totalData / 100))
+          : maxPages;
+
+        if (totalPages > 1) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const pagePromises: Promise<any>[] = [];
+          for (let p = 2; p <= totalPages; p++) {
+            pagePromises.push(
+              fetchYalidine(
+                `https://api.yalidine.app/v1/parcels/?${dateType}=${dateParamValue}&page_size=100&page=${p}`
+              ).catch((err) => {
+                console.error(`Error fetching Yalidine page ${p}:`, err);
+                return { data: [] };
+              })
+            );
+          }
+
+          const remainingPages = await Promise.all(pagePromises);
+          for (const pageRes of remainingPages) {
+            const pageParcels = pageRes?.data || [];
+            allParcels.push(...pageParcels);
+          }
+        }
       }
     }
     // Case B: Query by Trackings list
     else if (targetTrackings.length > 0) {
-      const batchSize = 25;
+      const batchSize = 50;
+      const trackingBatches: string[][] = [];
       for (let i = 0; i < targetTrackings.length; i += batchSize) {
-        const batch = targetTrackings.slice(i, i + batchSize);
-        const url = `https://api.yalidine.app/v1/parcels/?tracking=${batch.join(",")}`;
-        try {
-          const data = await fetchYalidine(url);
-          const parcels = data?.data || [];
-          allParcels.push(...parcels);
-        } catch (err) {
-          console.error("Batch tracking error:", err);
-        }
+        trackingBatches.push(targetTrackings.slice(i, i + batchSize));
+      }
+
+      const batchResults = await Promise.all(
+        trackingBatches.map(async (batch) => {
+          try {
+            const data = await fetchYalidine(
+              `https://api.yalidine.app/v1/parcels/?tracking=${batch.join(",")}`
+            );
+            return data?.data || [];
+          } catch (err) {
+            console.error("Batch tracking error:", err);
+            return [];
+          }
+        })
+      );
+
+      for (const res of batchResults) {
+        allParcels.push(...res);
       }
     }
 
     // 5. Match and Update Supabase Orders
+    interface PendingUpdate {
+      orderId: string;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      updates: Record<string, any>;
+      rawStatus: string;
+      reason?: string | null;
+      currentNote?: string | null;
+    }
+
+    const pendingUpdates: PendingUpdate[] = [];
+
     for (const p of allParcels) {
       const rawTracking = (p.tracking || "").toString().trim();
       const rawOrderId = (p.order_id || "").toString().trim();
@@ -215,11 +259,11 @@ export async function POST(request: Request) {
 
       const mapping = mapYalidineStatus(rawStatus);
 
-      // Try matching by tracking_id, order_number, or UUID id
+      // 1. Direct O(1) matching by tracking ID (highest priority & cleanest)
       let matchedOrder = rawTracking ? ordersByTracking.get(rawTracking.toLowerCase()) : null;
 
+      // 2. Fallback matching only if tracking was not matched
       if (!matchedOrder && rawOrderId) {
-        // Try parsed number (e.g. "166" or "#166")
         const cleanNum = parseInt(rawOrderId.replace(/[^\d]/g, ""), 10);
         if (!isNaN(cleanNum) && ordersByNumber.has(cleanNum)) {
           matchedOrder = ordersByNumber.get(cleanNum);
@@ -233,39 +277,81 @@ export async function POST(request: Request) {
       }
 
       if (matchedOrder) {
-        // Prepare updates
+        // Detect if anything actually changed
+        const statusNeedsUpdate = matchedOrder.status !== mapping.status;
+        const trackingNeedsUpdate = Boolean(rawTracking && matchedOrder.tracking_id !== rawTracking);
+
+        let newNote = matchedOrder.note;
+        let noteNeedsUpdate = false;
+        if (p.reason) {
+          const noteStamp = `[Yalidine: ${rawStatus} - ${p.reason}]`;
+          if (!matchedOrder.note || !matchedOrder.note.includes(p.reason)) {
+            newNote = matchedOrder.note ? `${matchedOrder.note} | ${noteStamp}` : noteStamp;
+            noteNeedsUpdate = true;
+          }
+        }
+
+        // If nothing changed, skip completely (prevents hundreds of unnecessary DB updates!)
+        if (!statusNeedsUpdate && !trackingNeedsUpdate && !noteNeedsUpdate) {
+          continue;
+        }
+
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const updates: Record<string, any> = {
-          status: mapping.status,
           updated_at: new Date().toISOString(),
         };
 
-        if (rawTracking && !matchedOrder.tracking_id) {
+        if (statusNeedsUpdate) {
+          updates.status = mapping.status;
+        }
+
+        if (trackingNeedsUpdate) {
           updates.tracking_id = rawTracking;
         }
 
-        if (p.reason) {
-          const noteStamp = `[Yalidine: ${rawStatus} - ${p.reason}]`;
-          updates.note = matchedOrder.note ? `${matchedOrder.note} | ${noteStamp}` : noteStamp;
+        if (noteNeedsUpdate) {
+          updates.note = newNote;
         }
 
-        let updateRes = await supabase.from("orders").update(updates).eq("id", matchedOrder.id);
+        pendingUpdates.push({
+          orderId: matchedOrder.id,
+          updates,
+          rawStatus,
+          reason: p.reason,
+          currentNote: matchedOrder.note,
+        });
 
-        // Graceful fallback if check constraint orders_status_check blocks status
-        if (
-          updateRes.error &&
-          (updateRes.error.code === "23514" || updateRes.error.message?.includes("check constraint"))
-        ) {
-          delete updates.status;
-          const fallbackNote = `[Yalidine: ${rawStatus}${p.reason ? ` - ${p.reason}` : ""}]`;
-          updates.note = matchedOrder.note ? `${matchedOrder.note} | ${fallbackNote}` : fallbackNote;
-          updateRes = await supabase.from("orders").update(updates).eq("id", matchedOrder.id);
-        }
-
-        if (!updateRes.error) {
-          updatedCount++;
-        }
+        // Update in-memory reference to avoid duplicate update queues if tracking is processed again
+        if (statusNeedsUpdate) matchedOrder.status = mapping.status;
+        if (trackingNeedsUpdate) matchedOrder.tracking_id = rawTracking;
+        if (noteNeedsUpdate) matchedOrder.note = newNote;
       }
+    }
+
+    // 6. Execute pending updates concurrently in batches of 15
+    const CONCURRENCY_LIMIT = 15;
+    for (let i = 0; i < pendingUpdates.length; i += CONCURRENCY_LIMIT) {
+      const batch = pendingUpdates.slice(i, i + CONCURRENCY_LIMIT);
+      await Promise.all(
+        batch.map(async ({ orderId, updates, rawStatus, reason, currentNote }) => {
+          let updateRes = await supabase.from("orders").update(updates).eq("id", orderId);
+
+          // Graceful fallback if check constraint orders_status_check blocks status
+          if (
+            updateRes.error &&
+            (updateRes.error.code === "23514" || updateRes.error.message?.includes("check constraint"))
+          ) {
+            delete updates.status;
+            const fallbackNote = `[Yalidine: ${rawStatus}${reason ? ` - ${reason}` : ""}]`;
+            updates.note = currentNote ? `${currentNote} | ${fallbackNote}` : fallbackNote;
+            updateRes = await supabase.from("orders").update(updates).eq("id", orderId);
+          }
+
+          if (!updateRes.error) {
+            updatedCount++;
+          }
+        })
+      );
     }
 
     return NextResponse.json({

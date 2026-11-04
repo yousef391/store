@@ -221,7 +221,9 @@ export default function DeliveryStatsPage() {
         if (Array.isArray(res.parcels)) {
           setYalidineParcels(res.parcels);
         }
-        await loadData();
+        if (updated > 0) {
+          await loadData();
+        }
       } else {
         setSyncMessage(res.message || "Aucun colis trouvé pour cette période.");
       }
@@ -242,13 +244,19 @@ export default function DeliveryStatsPage() {
   const mergedItems = useMemo(() => {
     // If Yalidine parcels were fetched for this range, use them as primary source
     if (yalidineParcels.length > 0) {
+      // Index orders for fast O(1) matching instead of O(N*M) nested search
+      const ordersByTracking = new Map<string, Order>();
+      const ordersByNumber = new Map<string, Order>();
+
+      for (const o of orders) {
+        if (o.tracking_id) ordersByTracking.set(o.tracking_id.toLowerCase().trim(), o);
+        if (o.order_number) ordersByNumber.set(o.order_number.toString(), o);
+      }
+
       return yalidineParcels.map((p) => {
-        // Find matching local order if any
-        const matched = orders.find(
-          (o) =>
-            (p.tracking && o.tracking_id?.toLowerCase() === p.tracking.toLowerCase()) ||
-            (p.order_id && o.order_number?.toString() === p.order_id.replace(/[^\d]/g, ""))
-        );
+        const trKey = (p.tracking || "").toLowerCase().trim();
+        const numKey = p.order_id ? p.order_id.replace(/[^\d]/g, "") : "";
+        const matched = (trKey ? ordersByTracking.get(trKey) : null) || (numKey ? ordersByNumber.get(numKey) : null);
 
         return {
           id: matched?.id || p.tracking,
