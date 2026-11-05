@@ -17,6 +17,7 @@ import {
   StickyNote,
   Pencil,
   Eye,
+  Package,
 } from "lucide-react";
 import { fetchOrders, updateOrderStatus, updateOrder, createHistory } from "@/lib/api";
 import { useAuth } from "@/components/dashboard/AuthGuard";
@@ -818,38 +819,40 @@ export default function OrdersPage() {
           )}
         </div>
 
-        <select
-          value={productFilter}
-          onChange={(e) => setProductFilter(e.target.value)}
-          className="bg-surface border border-white/10 rounded-xl px-3 py-2 text-xs font-bold text-gray-300 focus:outline-none appearance-none cursor-pointer"
-        >
-          <option value="all">All Products</option>
-          {productOptions.map((p) => (
-            <option key={p} value={p}>
-              {p} {productCounts[p] ? `(${productCounts[p]})` : ""}
-            </option>
-          ))}
-        </select>
+        <div className="grid grid-cols-2 sm:flex sm:items-center gap-2">
+          <select
+            value={productFilter}
+            onChange={(e) => setProductFilter(e.target.value)}
+            className="bg-surface border border-white/10 rounded-xl px-3 py-2 text-xs font-bold text-gray-300 focus:outline-none appearance-none cursor-pointer truncate"
+          >
+            <option value="all">All Products</option>
+            {productOptions.map((p) => (
+              <option key={p} value={p}>
+                {p} {productCounts[p] ? `(${productCounts[p]})` : ""}
+              </option>
+            ))}
+          </select>
 
-        <select
-          value={dateFilter}
-          onChange={(e) => setDateFilter(e.target.value as "today" | "yesterday" | "week" | "month" | "all")}
-          className="bg-surface border border-white/10 rounded-xl px-3 py-2 text-xs font-bold text-gray-300 focus:outline-none appearance-none cursor-pointer"
-        >
-          <option value="today">Today</option>
-          <option value="yesterday">Yesterday</option>
-          <option value="week">This Week</option>
-          <option value="month">This Month</option>
-          <option value="all">All Time</option>
-        </select>
+          <select
+            value={dateFilter}
+            onChange={(e) => setDateFilter(e.target.value as "today" | "yesterday" | "week" | "month" | "all")}
+            className="bg-surface border border-white/10 rounded-xl px-3 py-2 text-xs font-bold text-gray-300 focus:outline-none appearance-none cursor-pointer truncate"
+          >
+            <option value="today">Today</option>
+            <option value="yesterday">Yesterday</option>
+            <option value="week">This Week</option>
+            <option value="month">This Month</option>
+            <option value="all">All Time</option>
+          </select>
+        </div>
       </div>
 
       {/* Status Pills & Active Filter Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex flex-wrap items-center gap-1 bg-white/5 p-1 rounded-xl w-full sm:w-fit overflow-x-auto">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5 bg-white/5 p-1 rounded-xl w-full sm:w-fit overflow-x-auto no-scrollbar py-1">
           <button
             onClick={() => setStatusFilter("all")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+            className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
               statusFilter === "all" ? "bg-accent text-black" : "text-gray-500 hover:text-gray-300"
             }`}
           >
@@ -857,7 +860,7 @@ export default function OrdersPage() {
           </button>
           <button
             onClick={() => setStatusFilter("new")}
-            className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-colors capitalize flex items-center gap-1.5 ${
+            className={`shrink-0 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-colors capitalize flex items-center gap-1.5 ${
               statusFilter === "new" ? "bg-blue-500/20 text-blue-400 border border-blue-500/30" : "text-gray-500 hover:text-gray-300"
             }`}
           >
@@ -866,7 +869,7 @@ export default function OrdersPage() {
           </button>
           <button
             onClick={() => setStatusFilter("confirmed")}
-            className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-colors capitalize flex items-center gap-1.5 ${
+            className={`shrink-0 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-colors capitalize flex items-center gap-1.5 ${
               statusFilter === "confirmed" ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "text-gray-500 hover:text-gray-300"
             }`}
           >
@@ -875,7 +878,7 @@ export default function OrdersPage() {
           </button>
           <button
             onClick={() => setStatusFilter("expedie")}
-            className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-colors capitalize flex items-center gap-1.5 ${
+            className={`shrink-0 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-colors capitalize flex items-center gap-1.5 ${
               statusFilter === "expedie" ? "bg-purple-500/20 text-purple-400 border border-purple-500/30" : "text-gray-500 hover:text-gray-300"
             }`}
           >
@@ -884,7 +887,7 @@ export default function OrdersPage() {
           </button>
           <button
             onClick={() => setStatusFilter("recall")}
-            className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-colors capitalize flex items-center gap-1.5 ${
+            className={`shrink-0 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-colors capitalize flex items-center gap-1.5 ${
               statusFilter === "recall" ? "bg-amber-500/20 text-amber-400 border border-amber-500/30" : "text-gray-500 hover:text-gray-300"
             }`}
           >
@@ -893,7 +896,7 @@ export default function OrdersPage() {
           </button>
           <button
             onClick={() => setStatusFilter("cancelled")}
-            className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-colors capitalize flex items-center gap-1.5 ${
+            className={`shrink-0 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-colors capitalize flex items-center gap-1.5 ${
               statusFilter === "cancelled" ? "bg-red-500/20 text-red-400 border border-red-500/30" : "text-gray-500 hover:text-gray-300"
             }`}
           >
@@ -906,7 +909,7 @@ export default function OrdersPage() {
         {(productFilter !== "all" || statusFilter !== "all" || searchQuery || dateFilter !== "today") && (
           <button
             onClick={handleResetFilters}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-medium hover:bg-red-500/20 transition-colors cursor-pointer"
+            className="self-start sm:self-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-medium hover:bg-red-500/20 transition-colors cursor-pointer"
           >
             <X size={13} />
             <span>Reset filters</span>
@@ -977,7 +980,7 @@ export default function OrdersPage() {
             {/* ═══════════════════════════════════════════════════════════ */}
             {/* MOBILE CARDS VIEW (ENHANCED FOR MOBILE DASHBOARD)           */}
             {/* ═══════════════════════════════════════════════════════════ */}
-            <div className="md:hidden flex flex-col gap-2.5 p-2.5">
+            <div className="md:hidden flex flex-col gap-3 p-3">
               {paginatedOrders.map((order) => {
                 const currentStatus = statusColors[order.status] || statusColors.recall || {
                   bg: "bg-gray-500/10",
@@ -990,24 +993,26 @@ export default function OrdersPage() {
                 return (
                   <div
                     key={order.id}
-                    className={`rounded-2xl border transition-all p-3.5 flex flex-col gap-2.5 ${
+                    className={`rounded-2xl border transition-all p-4 flex flex-col gap-3 ${
                       selectedOrderIds.has(order.id)
-                        ? "bg-accent/5 border-accent/30"
+                        ? "bg-accent/5 border-accent/30 shadow-lg shadow-accent/5"
                         : "bg-white/[0.02] border-white/5 hover:border-white/10"
                     }`}
                   >
                     {/* Top Row: Checkbox, Name, Order #, Total */}
                     <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 min-w-0">
+                      <div className="flex items-center gap-2.5 min-w-0 flex-1">
                         <button
+                          type="button"
                           onClick={() => toggleSelection(order.id)}
-                          className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors ${
+                          className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 transition-colors ${
                             selectedOrderIds.has(order.id) ? "bg-accent border-accent text-black" : "border-white/20 hover:border-white/40"
                           }`}
                         >
-                          {selectedOrderIds.has(order.id) && <Check size={10} />}
+                          {selectedOrderIds.has(order.id) && <Check size={12} strokeWidth={3} />}
                         </button>
                         <button
+                          type="button"
                           onClick={() => setSelectedDetailOrder(order)}
                           className="text-sm font-bold text-white hover:text-accent truncate text-left transition-colors"
                         >
@@ -1017,12 +1022,12 @@ export default function OrdersPage() {
                           #{order.order_number}
                         </span>
                       </div>
-                      <span className="text-sm font-black text-white tabular-nums shrink-0">
+                      <span className="text-sm font-black text-white tabular-nums shrink-0 ml-1">
                         {order.total.toLocaleString()} DA
                       </span>
                     </div>
 
-                    {/* Date & Exact Time Badge (Mobile) */}
+                    {/* Date & Exact Time Badge (Mobile) + Source */}
                     <div className="flex items-center justify-between text-[11px] text-gray-400">
                       <div className="flex items-center gap-1.5 font-mono text-[11px] text-gray-300">
                         <Clock size={12} className="text-accent shrink-0" />
@@ -1043,18 +1048,19 @@ export default function OrdersPage() {
                     </div>
 
                     {/* Phone + Direct Call Button */}
-                    <div className="flex items-center justify-between gap-2 bg-white/[0.02] p-2 rounded-xl border border-white/5">
-                      <div className="flex items-center gap-1.5 min-w-0">
+                    <div className="flex items-center justify-between gap-2 bg-white/[0.02] p-2.5 rounded-xl border border-white/5">
+                      <div className="flex items-center gap-2 min-w-0">
                         <button
+                          type="button"
                           onClick={() => copyPhone(order.phone)}
                           className="flex items-center gap-1 text-xs text-blue-400 font-mono font-bold"
                           dir="ltr"
                         >
                           <span>{order.phone}</span>
                           {copiedPhone === order.phone ? (
-                            <Check size={11} className="text-emerald-400" />
+                            <Check size={12} className="text-emerald-400" />
                           ) : (
-                            <Copy size={11} className="text-gray-500 hover:text-gray-300" />
+                            <Copy size={12} className="text-gray-500 hover:text-gray-300" />
                           )}
                         </button>
                         {phoneCounts[order.phone] > 1 && (
@@ -1070,7 +1076,7 @@ export default function OrdersPage() {
                       {/* 📞 Direct Call Button (Appel) */}
                       <a
                         href={`tel:${order.phone}`}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500 text-black hover:bg-emerald-400 active:scale-95 transition-all text-xs font-black shadow-md shadow-emerald-500/10"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500 text-black hover:bg-emerald-400 active:scale-95 transition-all text-xs font-black shadow-md shadow-emerald-500/10 shrink-0"
                       >
                         <PhoneCall size={12} />
                         <span>Appeler</span>
@@ -1078,18 +1084,18 @@ export default function OrdersPage() {
                     </div>
 
                     {/* Item & Location details */}
-                    <div className="flex items-center justify-between text-xs text-gray-400">
-                      <span className="truncate max-w-[200px] text-gray-200 font-medium">
+                    <div className="flex items-center justify-between gap-2 text-xs text-gray-400">
+                      <span className="truncate flex-1 min-w-0 text-gray-200 font-medium">
                         {order.item} {order.size ? `(${order.size})` : ""}
                       </span>
-                      <div className="flex items-center gap-1.5 text-[11px] text-gray-400">
+                      <div className="flex items-center gap-1.5 text-[11px] text-gray-400 shrink-0">
                         <span>{order.wilaya}</span>
                         {order.commune?.includes("[Stopdesk]") ? (
-                          <span className="text-[9px] font-bold text-amber-400 bg-amber-400/10 border border-amber-400/20 px-1 py-0.2 rounded">
+                          <span className="text-[9px] font-bold text-amber-400 bg-amber-400/10 border border-amber-400/20 px-1.5 py-0.5 rounded">
                             🏢 Stopdesk
                           </span>
                         ) : (
-                          <span className="text-[9px] font-bold text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-1 py-0.2 rounded">
+                          <span className="text-[9px] font-bold text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-1.5 py-0.5 rounded">
                             🏠 Domicile
                           </span>
                         )}
@@ -1105,7 +1111,7 @@ export default function OrdersPage() {
                           </span>
                         )}
                         {order.note.match(/Heure:\s*([^\]|]+)/) && (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-300 bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 rounded-lg">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-300 bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 rounded-lg" dir="auto">
                             🕒 {order.note.match(/Heure:\s*([^\]|]+)/)?.[1].trim()}
                           </span>
                         )}
@@ -1133,13 +1139,12 @@ export default function OrdersPage() {
                       </button>
                     )}
 
-                    {/* Bottom Row: Status Dropdown + Shipping + Actions */}
-                    <div className="flex items-center gap-1.5 pt-1 border-t border-white/5">
-                      {/* Status Dropdown */}
+                    {/* Action Section: Row 1 (Status & Dispatch) */}
+                    <div className="flex items-center gap-2 pt-2 border-t border-white/5">
                       <select
                         value={order.status}
                         onChange={(e) => handleUpdateStatus(order.id, e.target.value)}
-                        className={`flex-1 appearance-none bg-surface/80 outline-none cursor-pointer px-2 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-lg text-center border ${currentStatus.border} ${currentStatus.text}`}
+                        className={`flex-1 min-w-0 appearance-none bg-surface/90 outline-none cursor-pointer px-2.5 py-2 text-xs font-bold uppercase tracking-wider rounded-xl text-center border ${currentStatus.border} ${currentStatus.text}`}
                       >
                         {STATUS_OPTIONS.map((s) => (
                           <option key={s} value={s} className="bg-[#141720] text-white">
@@ -1148,65 +1153,67 @@ export default function OrdersPage() {
                         ))}
                       </select>
 
-                      {/* Shipping Dispatch */}
                       {order.tracking_id ? (
-                        <div className="flex items-center gap-1">
-                          <span className="text-[9px] font-mono font-bold text-purple-300 bg-purple-500/10 border border-purple-500/20 px-2 py-1 rounded truncate max-w-[85px]">
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <span className="text-[10px] font-mono font-bold text-purple-300 bg-purple-500/10 border border-purple-500/20 px-2 py-1.5 rounded-lg truncate max-w-[105px]">
                             {order.tracking_id}
                           </span>
                           <button
                             onClick={() => openDispatchModal(order, "yalidine")}
                             disabled={pushingId === order.id}
-                            title="Yalidine"
-                            className="p-1.5 bg-white/5 hover:bg-rose-500/10 text-gray-400 hover:text-rose-400 rounded-lg transition-colors"
+                            title="Modifier l'expédition"
+                            className="p-2 bg-white/5 hover:bg-rose-500/10 text-gray-400 hover:text-rose-400 rounded-lg transition-colors"
                           >
-                            <RefreshCw size={11} />
+                            <RefreshCw size={12} className={pushingId === order.id ? "animate-spin" : ""} />
                           </button>
                         </div>
                       ) : (
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1.5 shrink-0">
                           <button
                             onClick={() => openDispatchModal(order, "ecom")}
                             disabled={pushingId === order.id}
-                            className="px-2 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold rounded-lg hover:bg-emerald-500/20 transition-colors"
+                            className="px-2.5 py-2 bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-bold rounded-xl hover:bg-emerald-500/25 active:scale-95 transition-all flex items-center gap-1"
                           >
-                            Ecom
+                            <Truck size={12} />
+                            <span>Ecom</span>
                           </button>
                           <button
                             onClick={() => openDispatchModal(order, "yalidine")}
                             disabled={pushingId === order.id}
-                            className="px-2 py-1 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[10px] font-bold rounded-lg hover:bg-rose-500/20 transition-colors"
+                            className="px-2.5 py-2 bg-rose-500/15 border border-rose-500/30 text-rose-400 text-xs font-bold rounded-xl hover:bg-rose-500/25 active:scale-95 transition-all flex items-center gap-1"
                           >
-                            Yalidine
+                            <Truck size={12} />
+                            <span>Yalidine</span>
                           </button>
                         </div>
                       )}
+                    </div>
 
-                      {/* Edit Button */}
-                      <button
-                        onClick={() => setEditingOrder(order)}
-                        title="Modifier la commande"
-                        className="p-1.5 bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white rounded-lg transition-colors"
-                      >
-                        <Pencil size={13} />
-                      </button>
-
-                      {/* Details View Button */}
+                    {/* Action Section: Row 2 (Details, Edit, Delete) */}
+                    <div className="flex items-center gap-2">
                       <button
                         onClick={() => setSelectedDetailOrder(order)}
-                        title="Voir détails & historique des relances"
-                        className="p-1.5 bg-accent/10 hover:bg-accent/20 text-accent rounded-lg transition-colors"
+                        className="flex-1 py-2 px-3 bg-white/5 hover:bg-white/10 active:bg-white/15 text-gray-300 hover:text-white rounded-xl transition-all text-xs font-semibold flex items-center justify-center gap-1.5"
                       >
-                        <Eye size={13} />
+                        <Eye size={13} className="text-accent" />
+                        <span>Détails & Relances</span>
                       </button>
 
-                      {/* Delete */}
+                      <button
+                        onClick={() => setEditingOrder(order)}
+                        className="py-2 px-3 bg-white/5 hover:bg-white/10 active:bg-white/15 text-gray-300 hover:text-white rounded-xl transition-all text-xs font-semibold flex items-center justify-center gap-1.5"
+                      >
+                        <Pencil size={13} />
+                        <span>Modifier</span>
+                      </button>
+
                       <button
                         onClick={() => handleDelete(order.id, order.tracking_id)}
                         disabled={deletingId === order.id}
-                        className="p-1.5 bg-white/5 hover:bg-red-500/10 text-gray-500 hover:text-red-400 rounded-lg transition-colors disabled:opacity-50"
+                        className="p-2 bg-white/5 hover:bg-red-500/15 text-gray-400 hover:text-red-400 rounded-xl transition-colors disabled:opacity-50"
+                        title="Supprimer"
                       >
-                        <Trash2 size={13} />
+                        <Trash2 size={14} />
                       </button>
                     </div>
                   </div>
@@ -1494,16 +1501,16 @@ export default function OrdersPage() {
 
         {/* Pagination */}
         {filteredOrders.length > rowsPerPage && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-white/5">
-            <span className="text-xs text-gray-600">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-white/5">
+            <span className="text-xs text-gray-500 order-2 sm:order-1">
               {(currentPage - 1) * rowsPerPage + 1}-
               {Math.min(currentPage * rowsPerPage, filteredOrders.length)} / {filteredOrders.length}
             </span>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 order-1 sm:order-2 overflow-x-auto max-w-full no-scrollbar py-1">
               <button
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="p-1.5 rounded border border-white/10 text-gray-500 hover:bg-white/5 disabled:opacity-30"
+                className="p-1.5 rounded-lg border border-white/10 text-gray-400 hover:bg-white/5 disabled:opacity-30 shrink-0"
               >
                 <ChevronLeft size={14} />
               </button>
@@ -1511,8 +1518,8 @@ export default function OrdersPage() {
                 <button
                   key={i}
                   onClick={() => setCurrentPage(i + 1)}
-                  className={`w-7 h-7 rounded text-xs font-bold ${
-                    currentPage === i + 1 ? "bg-accent text-black" : "text-gray-600 hover:text-gray-400"
+                  className={`w-7 h-7 rounded-lg text-xs font-bold shrink-0 transition-colors ${
+                    currentPage === i + 1 ? "bg-accent text-black" : "text-gray-500 hover:text-gray-300 hover:bg-white/5"
                   }`}
                 >
                   {i + 1}
@@ -1521,7 +1528,7 @@ export default function OrdersPage() {
               <button
                 onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
-                className="p-1.5 rounded border border-white/10 text-gray-500 hover:bg-white/5 disabled:opacity-30"
+                className="p-1.5 rounded-lg border border-white/10 text-gray-400 hover:bg-white/5 disabled:opacity-30 shrink-0"
               >
                 <ChevronRight size={14} />
               </button>
@@ -1561,85 +1568,114 @@ export default function OrdersPage() {
       {/* MODAL: YALIDINE / ECOM DISPATCH                                   */}
       {/* ═════════════════════════════════════════════════════════════════ */}
       {editingDispatchOrder && (
-        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center md:p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-[#141720] rounded-t-[1.5rem] md:rounded-2xl w-full md:max-w-xl max-h-[95vh] md:max-h-[90vh] overflow-y-auto shadow-2xl p-5 md:p-8 border border-white/5">
-            <div className="flex justify-between items-center mb-5 md:mb-6">
-              <div>
-                <h3 className="text-lg md:text-xl font-bold text-white font-heading">Confirm Dispatch</h3>
-                <div className="flex items-center gap-2 mt-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setDispatchProvider("ecom");
-                      if (!dispatchData.include_delivery) {
-                        const newPrice = dispatchData.price + (dispatchData.deliveryFee || 0);
-                        setDispatchData({ ...dispatchData, include_delivery: true, price: newPrice });
-                      }
-                    }}
-                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-colors ${
-                      dispatchProvider === "ecom" ? "bg-emerald-500 text-black" : "bg-white/5 text-gray-400 hover:text-white"
-                    }`}
-                  >
-                    🚚 Ecom Delivery
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setDispatchProvider("yalidine");
-                      if (dispatchData.include_delivery) {
-                        const newPrice = dispatchData.price - (dispatchData.deliveryFee || 0);
-                        setDispatchData({ ...dispatchData, include_delivery: false, price: newPrice });
-                      }
-                    }}
-                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-colors ${
-                      dispatchProvider === "yalidine" ? "bg-rose-500 text-white" : "bg-white/5 text-gray-400 hover:text-white"
-                    }`}
-                  >
-                    📦 Yalidine Express
-                  </button>
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/75 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-[#141720] border border-white/10 rounded-t-3xl sm:rounded-2xl w-full max-w-xl max-h-[92vh] sm:max-h-[88vh] flex flex-col shadow-2xl overflow-hidden">
+            {/* Modal Header */}
+            <div className="shrink-0 px-4 py-3 sm:px-6 sm:py-4 border-b border-white/5 bg-white/[0.02] space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-base sm:text-lg font-bold text-white font-heading flex items-center gap-2">
+                    <span>Expédier la Commande</span>
+                    <span className="text-accent text-xs sm:text-sm font-mono font-bold">
+                      #{editingDispatchOrder.order_number}
+                    </span>
+                  </h3>
+                  <p className="text-[11px] text-gray-400 mt-0.5">
+                    Configurez le colis et transmettez-le à la société de livraison.
+                  </p>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => setEditingDispatchOrder(null)}
+                  className="p-2 rounded-full hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
+                >
+                  <X size={18} />
+                </button>
               </div>
-              <button
-                onClick={() => setEditingDispatchOrder(null)}
-                className="p-2 bg-white/5 hover:bg-white/10 rounded-full text-gray-400 transition-colors"
-              >
-                <X size={20} />
-              </button>
+
+              {/* Segmented Provider Switch */}
+              <div className="grid grid-cols-2 p-1 bg-white/5 rounded-xl border border-white/10">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDispatchProvider("ecom");
+                    if (!dispatchData.include_delivery) {
+                      const newPrice = dispatchData.price + (dispatchData.deliveryFee || 0);
+                      setDispatchData({ ...dispatchData, include_delivery: true, price: newPrice });
+                    }
+                  }}
+                  className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                    dispatchProvider === "ecom"
+                      ? "bg-emerald-500 text-black shadow-md shadow-emerald-500/20"
+                      : "text-gray-400 hover:text-white"
+                  }`}
+                >
+                  <Truck size={14} />
+                  <span>Ecom Delivery</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDispatchProvider("yalidine");
+                    if (dispatchData.include_delivery) {
+                      const newPrice = dispatchData.price - (dispatchData.deliveryFee || 0);
+                      setDispatchData({ ...dispatchData, include_delivery: false, price: newPrice });
+                    }
+                  }}
+                  className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                    dispatchProvider === "yalidine"
+                      ? "bg-[#e11d48] text-white shadow-md shadow-rose-500/20"
+                      : "text-gray-400 hover:text-white"
+                  }`}
+                >
+                  <Package size={14} />
+                  <span>Yalidine Express</span>
+                </button>
+              </div>
             </div>
 
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Scrollable Form Body */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+              {/* Customer Info */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Customer Name</label>
+                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
+                    Nom du Client
+                  </label>
                   <input
                     type="text"
                     value={dispatchData.name}
                     onChange={(e) => setDispatchData({ ...dispatchData, name: e.target.value })}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Phone</label>
+                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
+                    Téléphone
+                  </label>
                   <input
                     type="text"
                     value={dispatchData.phone}
                     onChange={(e) => setDispatchData({ ...dispatchData, phone: e.target.value })}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
                     dir="ltr"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Wilaya & Commune */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Wilaya</label>
+                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
+                    Wilaya
+                  </label>
                   <select
                     value={dispatchData.wilaya}
                     onChange={(e) => {
                       setDispatchData({ ...dispatchData, wilaya: e.target.value, commune: "" });
                       fetchYalidineCommunes(e.target.value);
                     }}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-white appearance-none cursor-pointer"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-white appearance-none cursor-pointer"
                   >
                     <option value="" disabled>
                       Sélectionner Wilaya
@@ -1662,7 +1698,7 @@ export default function OrdersPage() {
                     value={dispatchData.commune}
                     onChange={(e) => setDispatchData({ ...dispatchData, commune: e.target.value })}
                     disabled={!dispatchData.wilaya || loadingCommunes}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-white appearance-none cursor-pointer disabled:opacity-50"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-white appearance-none cursor-pointer disabled:opacity-50"
                   >
                     <option value="" disabled>
                       Sélectionner Commune
@@ -1677,18 +1713,21 @@ export default function OrdersPage() {
                 </div>
               </div>
 
+              {/* Address */}
               <div>
-                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Detailed Address</label>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
+                  Adresse Détaillée
+                </label>
                 <input
                   type="text"
                   value={dispatchData.address}
                   onChange={(e) => setDispatchData({ ...dispatchData, address: e.target.value })}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
                 />
               </div>
 
-              {/* ─── GROUP: PRODUIT & CONSIGNES DE LIVRAISON ─── */}
-              <div className="p-4 rounded-2xl bg-blue-500/5 border border-blue-500/20 space-y-3.5">
+              {/* GROUP: PRODUIT & CONSIGNES DE LIVRAISON */}
+              <div className="p-3.5 sm:p-4 rounded-2xl bg-blue-500/5 border border-blue-500/20 space-y-3.5">
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className="block text-xs font-bold text-blue-400 uppercase tracking-wider">
@@ -1701,14 +1740,14 @@ export default function OrdersPage() {
                     value={dispatchData.product_list || ""}
                     onChange={(e) => setDispatchData({ ...dispatchData, product_list: e.target.value })}
                     placeholder="Ex: Ensemble Nocta - Full Black - XL"
-                    className="w-full bg-blue-500/10 border border-blue-500/20 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder:text-gray-600 font-medium"
+                    className="w-full bg-blue-500/10 border border-blue-500/20 rounded-xl px-3.5 py-2.5 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder:text-gray-600 font-medium"
                   />
                 </div>
 
                 {/* Autorisation d'ouverture */}
-                <div className="flex items-center justify-between bg-white/5 border border-white/10 rounded-xl p-3">
-                  <div>
-                    <div className="flex items-center gap-2">
+                <div className="flex items-center justify-between gap-3 bg-white/5 border border-white/10 rounded-xl p-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-1.5">
                       <label className="block text-xs font-bold text-gray-200 uppercase tracking-wider">
                         Autorisation d&apos;ouverture
                       </label>
@@ -1719,15 +1758,17 @@ export default function OrdersPage() {
                             : "bg-gray-500/15 text-gray-400 border-gray-500/30"
                         }`}
                       >
-                        {dispatchData.autorisation_ouverture ? "Activée par défaut (OUI)" : "Désactivée (NON)"}
+                        {dispatchData.autorisation_ouverture ? "Activée (OUI)" : "Désactivée (NON)"}
                       </span>
                     </div>
-                    <p className="text-[10px] text-gray-400 mt-0.5">Le client peut ouvrir le colis et vérifier le produit avant paiement.</p>
+                    <p className="text-[10px] text-gray-400 mt-0.5 leading-snug">
+                      Le client peut ouvrir le colis et vérifier le produit avant paiement.
+                    </p>
                   </div>
                   <button
                     type="button"
                     onClick={() => setDispatchData({ ...dispatchData, autorisation_ouverture: !dispatchData.autorisation_ouverture })}
-                    className={`relative w-12 h-7 rounded-full transition-colors duration-200 cursor-pointer ${
+                    className={`shrink-0 relative w-12 h-7 rounded-full transition-colors duration-200 cursor-pointer ${
                       dispatchData.autorisation_ouverture ? "bg-emerald-500" : "bg-gray-600"
                     }`}
                     title={dispatchData.autorisation_ouverture ? "Désactiver l'autorisation" : "Activer l'autorisation"}
@@ -1742,9 +1783,9 @@ export default function OrdersPage() {
 
                 {/* Heure de livraison (Timing) */}
                 <div className="bg-white/5 border border-white/10 rounded-xl p-3 space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-1.5">
                         <label className="block text-xs font-bold text-gray-200 uppercase tracking-wider">
                           🕒 Heure de Livraison (Timing)
                         </label>
@@ -1755,10 +1796,10 @@ export default function OrdersPage() {
                               : "bg-gray-500/15 text-gray-400 border-gray-500/30"
                           }`}
                         >
-                          {dispatchData.has_delivery_time ? "Option Active" : "Optionnel (Désactivé)"}
+                          {dispatchData.has_delivery_time ? "Option Active" : "Optionnel"}
                         </span>
                       </div>
-                      <p className="text-[10px] text-gray-400 mt-0.5">
+                      <p className="text-[10px] text-gray-400 mt-0.5 leading-snug">
                         Définir une heure ou un créneau souhaité pour la livraison.
                       </p>
                     </div>
@@ -1771,7 +1812,7 @@ export default function OrdersPage() {
                           delivery_time: !dispatchData.has_delivery_time && !dispatchData.delivery_time ? "صباحاً (09h - 13h)" : dispatchData.delivery_time,
                         })
                       }
-                      className={`relative w-12 h-7 rounded-full transition-colors duration-200 cursor-pointer ${
+                      className={`shrink-0 relative w-12 h-7 rounded-full transition-colors duration-200 cursor-pointer ${
                         dispatchData.has_delivery_time ? "bg-amber-500" : "bg-gray-600"
                       }`}
                       title={dispatchData.has_delivery_time ? "Désactiver l'heure de livraison" : "Activer l'heure de livraison"}
@@ -1788,7 +1829,7 @@ export default function OrdersPage() {
                     <div className="pt-2 border-t border-white/5 space-y-2.5">
                       {/* Suggestion pills */}
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mr-1">Suggestions :</span>
+                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mr-1 shrink-0">Suggestions :</span>
                         {[
                           "صباحاً (09h - 13h)",
                           "بعد الظهر (14h - 18h)",
@@ -1799,8 +1840,9 @@ export default function OrdersPage() {
                           <button
                             key={preset}
                             type="button"
+                            dir="rtl"
                             onClick={() => setDispatchData({ ...dispatchData, delivery_time: preset })}
-                            className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                            className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer whitespace-nowrap ${
                               dispatchData.delivery_time === preset
                                 ? "bg-amber-500 text-black font-bold shadow-md shadow-amber-500/20"
                                 : "bg-white/5 text-gray-300 hover:text-white hover:bg-white/10"
@@ -1818,7 +1860,8 @@ export default function OrdersPage() {
                           value={dispatchData.delivery_time || ""}
                           onChange={(e) => setDispatchData({ ...dispatchData, delivery_time: e.target.value })}
                           placeholder="Ex: 14h:30, بعد 17h, صباحاً..."
-                          className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500 font-mono"
+                          dir="auto"
+                          className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2 text-base sm:text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500 font-mono"
                         />
                       </div>
                     </div>
@@ -1847,7 +1890,7 @@ export default function OrdersPage() {
                   <span className="text-[10px] text-gray-400 uppercase font-bold block">
                     Texte imprimé sur le bordereau Yalidine :
                   </span>
-                  <p className="text-white font-medium break-all">
+                  <p className="text-white font-medium break-words leading-relaxed" dir="auto">
                     <span className="text-blue-300">{dispatchData.product_list || "Produit"}</span>
                     {dispatchData.autorisation_ouverture && (
                       <span className="text-emerald-400"> - Autorisation d&apos;ouverture: OUI</span>
@@ -1859,9 +1902,10 @@ export default function OrdersPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Discount & Product Price */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Discount</label>
+                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Remise</label>
                   <select
                     value={dispatchData.discount ?? 200}
                     onChange={(e) => {
@@ -1874,7 +1918,7 @@ export default function OrdersPage() {
                         price: newPrice,
                       });
                     }}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-white appearance-none cursor-pointer"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-white appearance-none cursor-pointer"
                   >
                     <option value="0" className="bg-[#141720]">0 DA</option>
                     <option value="100" className="bg-[#141720]">-100 DA</option>
@@ -1884,7 +1928,7 @@ export default function OrdersPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Product Price</label>
+                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Prix à Encaisser</label>
                   <div className="relative">
                     <input
                       type="number"
@@ -1893,11 +1937,11 @@ export default function OrdersPage() {
                         const newPrice = parseInt(e.target.value) || 0;
                         setDispatchData({ ...dispatchData, price: newPrice });
                       }}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl pl-4 pr-10 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-white font-mono font-bold"
+                      className="w-full bg-white/5 border border-white/10 rounded-xl pl-3.5 pr-10 py-2.5 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-white font-mono font-bold"
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 text-xs font-bold">DA</span>
                   </div>
-                  <label className="flex items-center gap-2 mt-2 cursor-pointer">
+                  <label className="flex items-center gap-2 mt-2 cursor-pointer select-none">
                     <input
                       type="checkbox"
                       checked={dispatchData.include_delivery || false}
@@ -1909,7 +1953,7 @@ export default function OrdersPage() {
                       }}
                       className="rounded border-white/10 bg-white/5 text-blue-500 focus:ring-blue-500"
                     />
-                    <span className="text-[10px] text-gray-400 font-bold">
+                    <span className="text-[11px] text-gray-400 font-bold">
                       Inclure Livraison (+{dispatchData.deliveryFee || 0} DA)
                     </span>
                   </label>
@@ -1917,7 +1961,7 @@ export default function OrdersPage() {
               </div>
 
               {/* Valeur Déclarée & Shipping Method */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
                   <label className="block text-xs font-bold text-amber-400 uppercase tracking-wider mb-1">
                     Valeur Déclarée (Assurance)
@@ -1931,7 +1975,7 @@ export default function OrdersPage() {
                         const val = parseInt(e.target.value) || 0;
                         setDispatchData({ ...dispatchData, declared_value: val });
                       }}
-                      className={`w-full bg-amber-500/10 border border-amber-500/20 rounded-xl pl-4 pr-10 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 text-white font-mono font-bold ${
+                      className={`w-full bg-amber-500/10 border border-amber-500/20 rounded-xl pl-3.5 pr-10 py-2.5 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 text-white font-mono font-bold ${
                         !dispatchData.do_insurance ? "opacity-40 cursor-not-allowed" : ""
                       }`}
                     />
@@ -1944,11 +1988,11 @@ export default function OrdersPage() {
                   </p>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Shipping Method</label>
+                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Mode de Livraison</label>
                   <select
                     value={dispatchData.is_stopdesk ? "stopdesk" : "home"}
                     onChange={(e) => setDispatchData({ ...dispatchData, is_stopdesk: e.target.value === "stopdesk" })}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-white appearance-none cursor-pointer"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-white appearance-none cursor-pointer"
                   >
                     <option value="home" className="bg-[#141720]">Tarif à domicile</option>
                     <option value="stopdesk" className="bg-[#141720]">Tarif stop-desk</option>
@@ -1957,23 +2001,23 @@ export default function OrdersPage() {
               </div>
 
               {dispatchData.is_stopdesk && (
-                <div className="p-4 bg-orange-500/10 border border-orange-500/20 rounded-xl mt-4">
+                <div className="p-3.5 bg-orange-500/10 border border-orange-500/20 rounded-xl">
                   <label className="block text-xs font-bold text-orange-400 uppercase tracking-wider mb-1">Stop Desk ID</label>
                   <input
                     type="text"
                     placeholder="e.g. 160001"
                     value={dispatchData.stopdesk_id}
                     onChange={(e) => setDispatchData({ ...dispatchData, stopdesk_id: e.target.value })}
-                    className="w-full bg-white/5 border border-orange-500/20 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 text-white"
+                    className="w-full bg-white/5 border border-orange-500/20 rounded-xl px-3.5 py-2.5 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 text-white"
                   />
                   <p className="text-[10px] text-orange-400 mt-1">Check Yalidine Dashboard for exact Center IDs.</p>
                 </div>
               )}
 
               {/* Option Assurance Yalidine (do_insurance) */}
-              <div className="flex items-center justify-between bg-white/5 border border-white/10 rounded-xl p-4 mt-2">
-                <div>
-                  <div className="flex items-center gap-2">
+              <div className="flex items-center justify-between gap-3 bg-white/5 border border-white/10 rounded-xl p-3.5">
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-1.5">
                     <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider">
                       Assurance Colis (Yalidine)
                     </label>
@@ -1984,10 +2028,10 @@ export default function OrdersPage() {
                           : "bg-emerald-500/15 text-emerald-300 border-emerald-500/30"
                       }`}
                     >
-                      {dispatchData.do_insurance ? "Assurance Active" : "Sans Assurance (0 DA de Frais)"}
+                      {dispatchData.do_insurance ? "Active" : "Sans Assurance (0 DA)"}
                     </span>
                   </div>
-                  <p className="text-[10px] text-gray-500 mt-0.5">
+                  <p className="text-[10px] text-gray-500 mt-0.5 leading-snug">
                     {dispatchData.do_insurance
                       ? "Assurance appliquée selon la valeur déclarée."
                       : "0 DA de taxe d'assurance prélevée par Yalidine sur votre bordereau."}
@@ -1996,7 +2040,7 @@ export default function OrdersPage() {
                 <button
                   type="button"
                   onClick={() => setDispatchData({ ...dispatchData, do_insurance: !dispatchData.do_insurance })}
-                  className={`relative w-12 h-7 rounded-full transition-colors duration-200 cursor-pointer ${
+                  className={`shrink-0 relative w-12 h-7 rounded-full transition-colors duration-200 cursor-pointer ${
                     dispatchData.do_insurance ? "bg-amber-500" : "bg-gray-600"
                   }`}
                   title={dispatchData.do_insurance ? "Désactiver l'assurance" : "Activer l'assurance"}
@@ -2010,23 +2054,36 @@ export default function OrdersPage() {
               </div>
             </div>
 
-            <div className="mt-6 flex justify-end gap-3">
+            {/* Sticky Action Footer */}
+            <div className="shrink-0 p-4 sm:px-6 sm:py-4 bg-[#141720]/95 backdrop-blur-md border-t border-white/10 flex items-center gap-3">
               <button
+                type="button"
                 onClick={() => setEditingDispatchOrder(null)}
-                className="px-5 py-2.5 rounded-xl text-sm font-bold text-gray-400 bg-white/5 hover:bg-white/10 transition-colors"
+                className="flex-1 sm:flex-initial px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-gray-400 bg-white/5 hover:bg-white/10 active:bg-white/15 transition-all text-center"
               >
-                Cancel
+                Annuler
               </button>
               <button
+                type="button"
                 onClick={handleDispatchPush}
                 disabled={pushingId === editingDispatchOrder.id}
-                className={`px-5 py-2.5 rounded-xl text-sm font-bold text-white transition-colors flex items-center justify-center min-w-[140px] ${
-                  dispatchProvider === "ecom" ? "bg-emerald-600 hover:bg-emerald-700" : "bg-[#e11d48] hover:bg-[#be123c]"
+                className={`flex-[2] sm:flex-initial sm:min-w-[200px] px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-white transition-all flex items-center justify-center gap-2 shadow-lg active:scale-[0.98] ${
+                  dispatchProvider === "ecom"
+                    ? "bg-emerald-600 hover:bg-emerald-500 shadow-emerald-600/20"
+                    : "bg-[#e11d48] hover:bg-[#be123c] shadow-rose-600/20"
                 }`}
               >
-                {pushingId === editingDispatchOrder.id
-                  ? "Dispatching..."
-                  : `Confirm & Send (${dispatchProvider === "ecom" ? "Ecom" : "Yalidine"})`}
+                {pushingId === editingDispatchOrder.id ? (
+                  <>
+                    <RefreshCw size={14} className="animate-spin" />
+                    <span>Envoi en cours...</span>
+                  </>
+                ) : (
+                  <>
+                    <Truck size={14} />
+                    <span>Confirmer & Envoyer ({dispatchProvider === "ecom" ? "Ecom" : "Yalidine"})</span>
+                  </>
+                )}
               </button>
             </div>
           </div>
