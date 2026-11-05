@@ -12,6 +12,7 @@ import RoleGuard from "@/components/dashboard/RoleGuard";
 const statusColors: Record<string, { bg: string; text: string; border: string; dot: string; label: string }> = {
   new: { bg: "bg-blue-500/10", text: "text-blue-400", border: "border-blue-500/20", dot: "bg-blue-400", label: "New" },
   confirmed: { bg: "bg-emerald-500/10", text: "text-emerald-400", border: "border-emerald-500/20", dot: "bg-emerald-400", label: "Confirmed" },
+  confirme_reporte: { bg: "bg-indigo-500/15", text: "text-indigo-400", border: "border-indigo-500/30", dot: "bg-indigo-400", label: "Confirmé Reporté" },
   expedie: { bg: "bg-purple-500/10", text: "text-purple-400", border: "border-purple-500/20", dot: "bg-purple-400", label: "Expédié" },
   recall_1: { bg: "bg-amber-500/10", text: "text-amber-400", border: "border-amber-500/20", dot: "bg-amber-400", label: "Recall 1" },
   recall_2: { bg: "bg-amber-600/15", text: "text-amber-300", border: "border-amber-500/30", dot: "bg-amber-500", label: "Recall 2" },

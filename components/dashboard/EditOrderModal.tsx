@@ -46,6 +46,7 @@ interface EditOrderModalProps {
 const STATUS_LIST = [
   { value: "new", label: "New" },
   { value: "confirmed", label: "Confirmed" },
+  { value: "confirme_reporte", label: "Confirmé Reporté" },
   { value: "expedie", label: "Expédié" },
   { value: "en_livraison", label: "En livraison" },
   { value: "livre", label: "Livré" },

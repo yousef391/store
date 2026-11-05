@@ -18,6 +18,7 @@ import {
   Pencil,
   Eye,
   Package,
+  Calendar,
 } from "lucide-react";
 import { fetchOrders, updateOrderStatus, updateOrder, createHistory } from "@/lib/api";
 import { useAuth } from "@/components/dashboard/AuthGuard";
@@ -30,6 +31,7 @@ import OrderDetailModal from "@/components/dashboard/OrderDetailModal";
 const STATUS_OPTIONS = [
   "new",
   "confirmed",
+  "confirme_reporte",
   "expedie",
   "en_livraison",
   "livre",
@@ -49,6 +51,7 @@ const statusColors: Record<
 > = {
   new: { bg: "bg-blue-500/10", text: "text-blue-400", border: "border-blue-500/20", dot: "bg-blue-400", label: "New" },
   confirmed: { bg: "bg-emerald-500/10", text: "text-emerald-400", border: "border-emerald-500/20", dot: "bg-emerald-400", label: "Confirmed" },
+  confirme_reporte: { bg: "bg-indigo-500/15", text: "text-indigo-400", border: "border-indigo-500/30", dot: "bg-indigo-400", label: "Confirmé Reporté" },
   expedie: { bg: "bg-purple-500/10", text: "text-purple-400", border: "border-purple-500/20", dot: "bg-purple-400", label: "Expédié" },
   en_livraison: { bg: "bg-cyan-500/15", text: "text-cyan-400", border: "border-cyan-500/30", dot: "bg-cyan-400", label: "En livraison" },
   livre: { bg: "bg-emerald-500/20", text: "text-emerald-300", border: "border-emerald-500/40", dot: "bg-emerald-400", label: "Livré" },
@@ -89,6 +92,12 @@ export default function OrdersPage() {
   // Modals for editing & details view
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
   const [selectedDetailOrder, setSelectedDetailOrder] = useState<Order | null>(null);
+
+  // Postpone modal state
+  const [postponingOrder, setPostponingOrder] = useState<Order | null>(null);
+  const [postponeReason, setPostponeReason] = useState("");
+  const [postponeDate, setPostponeDate] = useState("");
+  const [savingPostpone, setSavingPostpone] = useState(false);
 
   // Dispatch (Yalidine & Ecom Delivery)
   const [pushingId, setPushingId] = useState<string | null>(null);
@@ -362,7 +371,17 @@ export default function OrdersPage() {
   const paginatedOrders = filteredOrders.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
 
   // Status Update & Recall Tracking
-  const handleUpdateStatus = async (id: string, status: string) => {
+  const handleUpdateStatus = async (id: string, status: string, skipModal = false) => {
+    if (status === "confirme_reporte" && !skipModal) {
+      const order = orders.find((o) => o.id === id);
+      if (order) {
+        setPostponingOrder(order);
+        setPostponeReason("");
+        setPostponeDate("");
+        return;
+      }
+    }
+
     try {
       const order = orders.find((o) => o.id === id);
       const updatedRecalls = order?.recalls ? [...order.recalls] : [];
@@ -410,6 +429,61 @@ export default function OrdersPage() {
       }
     } catch (err) {
       console.error("Failed to update status:", err);
+    }
+  };
+
+  const handleConfirmPostpone = async () => {
+    if (!postponingOrder) return;
+    setSavingPostpone(true);
+    try {
+      const parts: string[] = [];
+      if (postponeReason.trim()) {
+        parts.push(postponeReason.trim());
+      }
+      if (postponeDate.trim()) {
+        parts.push(`Date prévue: ${postponeDate.trim()}`);
+      }
+      const delayTag = parts.length > 0 ? `[Reporté: ${parts.join(" — ")}]` : "[Reporté]";
+
+      const existingNote = postponingOrder.note || "";
+      const updatedNote = existingNote ? `${existingNote}\n${delayTag}` : delayTag;
+
+      const updatedRes = await updateOrder(postponingOrder.id, {
+        status: "confirme_reporte",
+        note: updatedNote,
+      });
+
+      const finalStatus = updatedRes?.status || "confirme_reporte";
+      const finalNote = updatedRes?.note ?? updatedNote;
+
+      setOrders((prev) =>
+        prev.map((o) =>
+          o.id === postponingOrder.id
+            ? { ...o, status: finalStatus, note: finalNote }
+            : o
+        )
+      );
+
+      if (selectedDetailOrder?.id === postponingOrder.id) {
+        setSelectedDetailOrder((prev) =>
+          prev ? { ...prev, status: finalStatus, note: finalNote } : null
+        );
+      }
+
+      await createHistory({
+        action: "order_confirme_reporte",
+        description: `Order #${postponingOrder.order_number} marqué comme Confirmé Reporté (${delayTag}) — ${postponingOrder.name}`,
+        details: postponingOrder.item,
+      }).catch(console.error);
+
+      setPostponingOrder(null);
+      setPostponeReason("");
+      setPostponeDate("");
+    } catch (err) {
+      console.error("Failed to postpone order:", err);
+      alert(`Erreur lors du report: ${err instanceof Error ? err.message : "Erreur inconnue"}`);
+    } finally {
+      setSavingPostpone(false);
     }
   };
 
@@ -478,7 +552,7 @@ export default function OrdersPage() {
     let updated = 0;
     for (const id of Array.from(selectedOrderIds)) {
       try {
-        await handleUpdateStatus(id, status);
+        await handleUpdateStatus(id, status, true);
         updated++;
       } catch (err) {
         console.error("Bulk status error", err);
@@ -875,6 +949,15 @@ export default function OrdersPage() {
           >
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
             Confirmed
+          </button>
+          <button
+            onClick={() => setStatusFilter("confirme_reporte")}
+            className={`shrink-0 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-colors capitalize flex items-center gap-1.5 ${
+              statusFilter === "confirme_reporte" ? "bg-indigo-500/20 text-indigo-400 border border-indigo-500/30" : "text-gray-500 hover:text-gray-300"
+            }`}
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
+            Confirmé Reporté
           </button>
           <button
             onClick={() => setStatusFilter("expedie")}
@@ -2082,6 +2165,153 @@ export default function OrdersPage() {
                   <>
                     <Truck size={14} />
                     <span>Confirmer & Envoyer ({dispatchProvider === "ecom" ? "Ecom" : "Yalidine"})</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Postpone Reason Modal */}
+      {postponingOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="relative w-full max-w-lg bg-[#141720] border border-indigo-500/30 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+            {/* Header */}
+            <div className="p-4 sm:p-5 border-b border-white/10 bg-indigo-500/10 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shrink-0">
+                  <Clock size={20} />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white flex items-center gap-2">
+                    <span>Reporter la commande</span>
+                    <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                      Confirmé Reporté
+                    </span>
+                  </h3>
+                  <p className="text-xs text-gray-400 mt-0.5 truncate max-w-[240px] sm:max-w-xs">
+                    #{postponingOrder.order_number} — {postponingOrder.name} ({postponingOrder.phone})
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPostponingOrder(null)}
+                className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-4 sm:p-5 space-y-4 overflow-y-auto">
+              <div className="bg-white/5 border border-white/10 rounded-xl p-3 text-xs text-gray-300 flex items-start gap-2.5">
+                <span className="text-indigo-400 text-sm mt-0.5 font-bold">ℹ️</span>
+                <p className="leading-relaxed">
+                  Cette commande reste <strong>confirmée</strong> dans vos statistiques, mais son expédition est différée. Le motif sera visible directement sur la fiche commande.
+                </p>
+              </div>
+
+              {/* Quick Presets */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-300 mb-2">
+                  Motifs fréquents (cliquez pour sélectionner) :
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {[
+                    { fr: "Client absent aujourd'hui", ar: "الزبون غير متواجد اليوم" },
+                    { fr: "Livraison ce week-end (Samedi)", ar: "التوصيل في نهاية الأسبوع" },
+                    { fr: "Attente de la paie (Fin du mois)", ar: "في انتظار الراتب" },
+                    { fr: "Client en déplacement / voyage", ar: "الزبون في سفر" },
+                    { fr: "Demande du client de reporter", ar: "الزبون طلب التأجيل" },
+                    { fr: "Rupture de stock temporaire", ar: "نفاد مؤقت للمخزون" },
+                  ].map((preset) => {
+                    const isSelected = postponeReason === preset.fr;
+                    return (
+                      <button
+                        key={preset.fr}
+                        type="button"
+                        onClick={() => setPostponeReason(isSelected ? "" : preset.fr)}
+                        className={`text-left p-2.5 rounded-xl border transition-all text-xs flex flex-col gap-0.5 ${
+                          isSelected
+                            ? "bg-indigo-500/20 border-indigo-500/50 text-indigo-200 shadow-sm ring-1 ring-indigo-500/50"
+                            : "bg-surface/80 border-white/10 text-gray-300 hover:border-white/20 hover:bg-white/5"
+                        }`}
+                      >
+                        <span className="font-medium text-white">{preset.fr}</span>
+                        <span className="text-[10px] text-gray-400 font-arabic">{preset.ar}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Custom reason */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-300 mb-1.5">
+                  Motif personnalisé ou précisions :
+                </label>
+                <textarea
+                  value={postponeReason}
+                  onChange={(e) => setPostponeReason(e.target.value)}
+                  placeholder="Ex: Le client demande de livrer jeudi après 16h..."
+                  rows={2}
+                  className="w-full bg-[#0d0f15] border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500/50 resize-none"
+                />
+              </div>
+
+              {/* Postponed date */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-300 mb-1.5 flex items-center gap-1.5">
+                  <Calendar size={13} className="text-indigo-400" />
+                  <span>Date d&apos;expédition prévue (optionnelle) :</span>
+                </label>
+                <input
+                  type="date"
+                  value={postponeDate}
+                  onChange={(e) => setPostponeDate(e.target.value)}
+                  className="w-full bg-[#0d0f15] border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500/50 [color-scheme:dark]"
+                />
+              </div>
+
+              {/* Previous note if exists */}
+              {postponingOrder.note && (
+                <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-2.5 text-[11px] text-amber-300 flex items-start gap-2">
+                  <StickyNote size={13} className="shrink-0 mt-0.5" />
+                  <div className="truncate">
+                    <span className="font-bold">Note existante: </span>
+                    <span className="text-gray-300">{postponingOrder.note}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-white/10 bg-[#0d0f15] flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={() => setPostponingOrder(null)}
+                disabled={savingPostpone}
+                className="px-4 py-2 rounded-xl text-xs font-bold text-gray-400 bg-white/5 hover:bg-white/10 transition-colors"
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmPostpone}
+                disabled={savingPostpone}
+                className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 transition-all flex items-center gap-2 shadow-lg shadow-indigo-600/20 active:scale-95 disabled:opacity-50"
+              >
+                {savingPostpone ? (
+                  <>
+                    <RefreshCw size={13} className="animate-spin" />
+                    <span>Enregistrement...</span>
+                  </>
+                ) : (
+                  <>
+                    <Check size={14} />
+                    <span>Valider (Confirmé Reporté)</span>
                   </>
                 )}
               </button>

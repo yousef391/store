@@ -49,7 +49,7 @@ export default function DashboardPage() {
   }, [role, assignedProducts]);
 
   const stats = useMemo(() => {
-    const isCompleted = (s: string) => s === "confirmed" || s === "expedie";
+    const isCompleted = (s: string) => s === "confirmed" || s === "confirme_reporte" || s === "expedie";
     const totalRevenue = orders
       .filter((o) => isCompleted(o.status))
       .reduce((sum, o) => sum + (o.total || 0), 0);
@@ -70,7 +70,7 @@ export default function DashboardPage() {
 
   const revenueData = useMemo(() => {
     const days: Record<string, number> = {};
-    orders.filter((o) => o.status === "confirmed" || o.status === "expedie").forEach((o) => {
+    orders.filter((o) => o.status === "confirmed" || o.status === "confirme_reporte" || o.status === "expedie").forEach((o) => {
       const day = new Date(o.created_at).toLocaleDateString("en", { month: "short", day: "numeric" });
       days[day] = (days[day] || 0) + (o.total || 0);
     });

@@ -172,7 +172,7 @@ export async function updateOrder(id: string, updates: Record<string, any>) {
   if (error && (error.code === "23514" || error.message?.includes("check constraint"))) {
     if (typeof payload.status === "string" && payload.status.startsWith("recall_")) {
       payload.status = "recall";
-    } else if (payload.status === "expedie") {
+    } else if (payload.status === "confirme_reporte" || payload.status === "expedie") {
       payload.status = "confirmed";
     }
     const retry = await supabase
