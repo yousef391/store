@@ -1768,7 +1768,7 @@ export default function OrdersPage() {
                         setDispatchData({
                           ...dispatchData,
                           has_delivery_time: !dispatchData.has_delivery_time,
-                          delivery_time: !dispatchData.has_delivery_time && !dispatchData.delivery_time ? "Matin (09h - 13h)" : dispatchData.delivery_time,
+                          delivery_time: !dispatchData.has_delivery_time && !dispatchData.delivery_time ? "صباحاً (09h - 13h)" : dispatchData.delivery_time,
                         })
                       }
                       className={`relative w-12 h-7 rounded-full transition-colors duration-200 cursor-pointer ${
@@ -1790,11 +1790,11 @@ export default function OrdersPage() {
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mr-1">Suggestions :</span>
                         {[
-                          "Matin (09h - 13h)",
-                          "Après-midi (14h - 18h)",
-                          "Fin d'après-midi (17h - 20h)",
-                          "Après 16h00",
-                          "Avant 12h00",
+                          "صباحاً (09h - 13h)",
+                          "بعد الظهر (14h - 18h)",
+                          "مساءً (17h - 20h)",
+                          "بعد 16h00",
+                          "قبل 12h00",
                         ].map((preset) => (
                           <button
                             key={preset}
@@ -1817,7 +1817,7 @@ export default function OrdersPage() {
                           type="text"
                           value={dispatchData.delivery_time || ""}
                           onChange={(e) => setDispatchData({ ...dispatchData, delivery_time: e.target.value })}
-                          placeholder="Ex: 14h:30, Après 17h, Matin..."
+                          placeholder="Ex: 14h:30, بعد 17h, صباحاً..."
                           className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500 font-mono"
                         />
                       </div>
@@ -1831,7 +1831,7 @@ export default function OrdersPage() {
                           setDispatchData({
                             ...dispatchData,
                             has_delivery_time: true,
-                            delivery_time: "Matin (09h - 13h)",
+                            delivery_time: "صباحاً (09h - 13h)",
                           })
                         }
                         className="text-xs text-amber-400 hover:text-amber-300 font-bold underline cursor-pointer"
