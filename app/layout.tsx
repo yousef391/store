@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Montserrat, DM_Sans } from "next/font/google";
 import { I18nProvider } from "@/hooks/useI18n";
 import "./globals.css";
@@ -16,6 +16,15 @@ const dmSans = DM_Sans({
   variable: "--font-dm",
   display: "swap",
 });
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
+  themeColor: "#0a0a0a",
+};
 
 export const metadata: Metadata = {
   title: "ROVA — Streetwear Premium",
@@ -42,10 +51,21 @@ export default function RootLayout({
   return (
     <html lang="fr" className={`${montserrat.variable} ${dmSans.variable}`}>
       <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-        <meta name="theme-color" content="#0a0a0a" />
         <link rel="manifest" href="/manifest.json" />
         <link rel="apple-touch-icon" href="/icon-192.png" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                  navigator.serviceWorker.register('/sw.js').then((reg) => {
+                    reg.update();
+                  }).catch(() => {});
+                });
+              }
+            `,
+          }}
+        />
       </head>
       <body className="antialiased">
         <I18nProvider>

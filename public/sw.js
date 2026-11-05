@@ -1,68 +1,49 @@
-const CACHE_NAME = 'nova-admin-v2';
-const SHELL_ASSETS = [
-  '/dashboard',
-  '/dashboard/orders',
-  '/dashboard/settings',
-];
+const CACHE_NAME = 'nova-admin-v4';
 
-// Install — cache the app shell
+// Install — activate immediately
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(SHELL_ASSETS))
-  );
   self.skipWaiting();
 });
 
-// Activate — clean old caches
+// Activate — aggressively clean all old caches
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
       Promise.all(
-        keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k))
+        keys.map((k) => {
+          if (k !== CACHE_NAME) {
+            return caches.delete(k);
+          }
+        })
       )
     )
   );
   self.clients.claim();
 });
 
-// Fetch — network-first for API/data, cache-first for static assets
+// Fetch — ALWAYS Network-First so PWAs never get trapped with stale code
 self.addEventListener('fetch', (event) => {
   const { request } = event;
-  const url = new URL(request.url);
 
   // Never cache API calls, Supabase requests, or non-http schemas
   if (
-    url.pathname.startsWith('/api/') ||
-    url.hostname.includes('supabase') ||
+    request.url.includes('/api/') ||
+    request.url.includes('supabase') ||
     !request.url.startsWith('http')
   ) {
     return;
   }
 
-  // For navigation requests, try network first, fall back to cache
-  if (request.mode === 'navigate') {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-          return response;
-        })
-        .catch(() => caches.match(request))
-    );
-    return;
-  }
-
-  // For static assets, cache-first
+  // Network-first: try network, fall back to cache when offline
   event.respondWith(
-    caches.match(request).then((cached) => {
-      return cached || fetch(request).then((response) => {
-        if (response.ok) {
+    fetch(request)
+      .then((response) => {
+        if (response && response.status === 200) {
           const clone = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
         }
         return response;
-      });
-    })
+      })
+      .catch(() => caches.match(request))
   );
 });

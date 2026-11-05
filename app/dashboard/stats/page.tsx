@@ -424,7 +424,7 @@ export default function DeliveryStatsPage() {
 
   return (
     <RoleGuard allowedRoles={["admin", "sub_admin"]}>
-      <div className="flex flex-col gap-6 max-w-7xl pb-16">
+      <div className="flex flex-col gap-4 sm:gap-6 w-full max-w-7xl min-w-0 pb-16">
         {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
@@ -446,7 +446,7 @@ export default function DeliveryStatsPage() {
         <div className="bg-surface rounded-2xl p-4 md:p-5 border border-white/5 space-y-4 shadow-lg">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-white/5 pb-3">
             {/* Presets */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 md:pb-0">
               <span className="text-xs text-gray-500 font-bold uppercase tracking-wider mr-1 hidden sm:inline">
                 Période :
               </span>
@@ -460,7 +460,7 @@ export default function DeliveryStatsPage() {
                 <button
                   key={p.id}
                   onClick={() => applyPreset(p.id as typeof preset)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer whitespace-nowrap ${
+                  className={`shrink-0 px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer whitespace-nowrap ${
                     preset === p.id
                       ? "bg-accent text-black font-bold shadow-md shadow-accent/20"
                       : "bg-white/5 text-gray-300 hover:text-white hover:bg-white/10"
@@ -491,10 +491,10 @@ export default function DeliveryStatsPage() {
 
           {/* Date Pickers & Action Button */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-2 flex-wrap">
-              <div className="flex items-center gap-1.5 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs">
-                <Calendar size={14} className="text-accent" />
-                <span className="text-gray-400">Du :</span>
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center w-full sm:w-auto">
+              <div className="flex items-center gap-1.5 bg-white/5 border border-white/10 rounded-xl px-2.5 py-2 text-xs">
+                <Calendar size={14} className="text-accent shrink-0" />
+                <span className="text-gray-400 shrink-0">Du :</span>
                 <input
                   type="date"
                   value={startDate}
@@ -502,13 +502,13 @@ export default function DeliveryStatsPage() {
                     setStartDate(e.target.value);
                     setPreset("custom");
                   }}
-                  className="bg-transparent text-white font-mono font-medium focus:outline-none cursor-pointer"
+                  className="bg-transparent text-white font-mono font-medium focus:outline-none cursor-pointer w-full text-xs"
                 />
               </div>
 
-              <div className="flex items-center gap-1.5 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs">
-                <Calendar size={14} className="text-accent" />
-                <span className="text-gray-400">Au :</span>
+              <div className="flex items-center gap-1.5 bg-white/5 border border-white/10 rounded-xl px-2.5 py-2 text-xs">
+                <Calendar size={14} className="text-accent shrink-0" />
+                <span className="text-gray-400 shrink-0">Au :</span>
                 <input
                   type="date"
                   value={endDate}
@@ -516,7 +516,7 @@ export default function DeliveryStatsPage() {
                     setEndDate(e.target.value);
                     setPreset("custom");
                   }}
-                  className="bg-transparent text-white font-mono font-medium focus:outline-none cursor-pointer"
+                  className="bg-transparent text-white font-mono font-medium focus:outline-none cursor-pointer w-full text-xs"
                 />
               </div>
             </div>
@@ -524,7 +524,7 @@ export default function DeliveryStatsPage() {
             <button
               onClick={handleFetchYalidineByDate}
               disabled={syncing || !startDate || !endDate}
-              className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold bg-accent text-black hover:bg-accent/90 transition-all shadow-lg shadow-accent/20 cursor-pointer disabled:opacity-50"
+              className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold bg-accent text-black hover:bg-accent/90 transition-all shadow-lg shadow-accent/20 cursor-pointer disabled:opacity-50"
             >
               <RefreshCw size={14} className={syncing ? "animate-spin" : ""} />
               {syncing ? "Récupération en cours..." : "Récupérer les Colis (Yalidine)"}
@@ -622,7 +622,7 @@ export default function DeliveryStatsPage() {
         {/* Charts Row */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Donut Chart: Statut des Colis */}
-          <div className="bg-surface rounded-2xl p-5 border border-white/5 flex flex-col justify-between">
+          <div className="bg-surface rounded-2xl p-4 sm:p-5 border border-white/5 flex flex-col justify-between min-w-0 overflow-hidden">
             <div>
               <h3 className="text-sm font-bold text-white mb-1">Répartition des Statuts</h3>
               <p className="text-xs text-gray-500 mb-4">Colis de la période sélectionnée</p>
@@ -675,7 +675,7 @@ export default function DeliveryStatsPage() {
           </div>
 
           {/* Bar Chart: Performance par Wilaya */}
-          <div className="lg:col-span-2 bg-surface rounded-2xl p-5 border border-white/5">
+          <div className="lg:col-span-2 bg-surface rounded-2xl p-4 sm:p-5 border border-white/5 min-w-0 overflow-hidden">
             <h3 className="text-sm font-bold text-white mb-1">Performance par Wilaya</h3>
             <p className="text-xs text-gray-500 mb-4">Volume total, colis livrés et retours par région</p>
 
@@ -747,8 +747,114 @@ export default function DeliveryStatsPage() {
             </div>
           </div>
 
-          {/* Table Content */}
-          <div className="overflow-x-auto">
+          {/* Mobile Cards View (Yalidine Parcels) */}
+          <div className="md:hidden flex flex-col gap-3 p-3">
+            {displayedParcels.length === 0 ? (
+              <div className="py-12 text-center text-gray-500 text-xs">
+                Aucun colis trouvé pour cette période. Cliquez sur « Récupérer les Colis » pour charger les données.
+              </div>
+            ) : (
+              displayedParcels.map((p, idx) => {
+                const tracking = p.tracking_id;
+                const statusClass =
+                  p.status === "livre"
+                    ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/30"
+                    : p.status === "retourne"
+                    ? "bg-rose-500/15 text-rose-300 border-rose-500/30"
+                    : p.status === "en_livraison"
+                    ? "bg-cyan-500/15 text-cyan-300 border-cyan-500/30"
+                    : p.status === "echoue"
+                    ? "bg-yellow-500/15 text-yellow-300 border-yellow-500/30"
+                    : "bg-purple-500/15 text-purple-300 border-purple-500/30";
+
+                return (
+                  <div
+                    key={`${p.id}-${idx}`}
+                    className="rounded-2xl border border-white/5 bg-white/[0.02] p-3.5 flex flex-col gap-2.5"
+                  >
+                    {/* Top Row: Order #, Date, Status */}
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-sm font-bold text-white font-mono">
+                          {p.order_number ? `#${p.order_number}` : "—"}
+                        </span>
+                        {p.date_status && (
+                          <span className="text-[10px] text-gray-400 font-mono">
+                            {new Date(p.date_status).toLocaleDateString("fr-FR", {
+                              day: "numeric",
+                              month: "short",
+                            })}
+                          </span>
+                        )}
+                      </div>
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border shrink-0 ${statusClass}`}>
+                        {STATUS_LABELS[p.status] || p.raw_status || p.status}
+                      </span>
+                    </div>
+
+                    {/* Customer & Location */}
+                    <div className="flex items-center justify-between gap-2 text-xs">
+                      <span className="font-semibold text-white truncate max-w-[170px]">{p.name}</span>
+                      <span className="text-gray-400 text-[11px] truncate shrink-0">
+                        {p.wilaya} {p.commune ? `(${p.commune})` : ""}
+                      </span>
+                    </div>
+
+                    {/* Tracking & Amount */}
+                    <div className="flex items-center justify-between gap-2 bg-white/[0.02] p-2.5 rounded-xl border border-white/5">
+                      {tracking ? (
+                        <div className="flex items-center gap-1.5 font-mono text-xs">
+                          <span className="text-accent font-bold">{tracking}</span>
+                          <button
+                            type="button"
+                            onClick={() => copyText(tracking)}
+                            className="text-gray-500 hover:text-white p-1 cursor-pointer"
+                            title="Copier le tracking"
+                          >
+                            {copiedTracking === tracking ? (
+                              <Check size={12} className="text-emerald-400" />
+                            ) : (
+                              <Copy size={12} />
+                            )}
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="text-[11px] text-gray-600 italic">Pas de tracking</span>
+                      )}
+
+                      <span className="font-mono font-bold text-sm text-white shrink-0">
+                        {(p.price || 0).toLocaleString()} DA
+                      </span>
+                    </div>
+
+                    {/* Reason (if failed or returned) */}
+                    {p.reason && (
+                      <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-[11px] leading-tight">
+                        <span className="font-bold mr-1">Motif:</span>
+                        <span>{p.reason.replace(/.*\[Yalidine:\s*/, "").replace(/\].*/, "")}</span>
+                      </div>
+                    )}
+
+                    {/* Action: Bordereau Link */}
+                    {tracking && (
+                      <a
+                        href={p.label || `https://yalidine.app/app/bordereau.php?tracking=${tracking}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full py-2 bg-white/5 hover:bg-white/10 active:bg-white/15 text-accent text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 border border-white/5"
+                      >
+                        <ExternalLink size={13} />
+                        <span>Imprimer le Bordereau</span>
+                      </a>
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* Desktop Table Content */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="border-b border-white/5 text-gray-400 font-bold uppercase tracking-wider text-[10px]">

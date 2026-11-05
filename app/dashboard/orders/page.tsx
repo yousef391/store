@@ -741,7 +741,7 @@ export default function OrdersPage() {
         transition: isPulling ? "none" : "transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
         overscrollBehaviorY: "contain",
       }}
-      className="flex flex-col gap-4 lg:gap-6 max-w-7xl relative"
+      className="flex flex-col gap-4 lg:gap-6 w-full max-w-7xl min-w-0 relative"
     >
       {/* Mobile Pull-to-Refresh Floating Pill */}
       <div
