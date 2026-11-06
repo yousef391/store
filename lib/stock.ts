@@ -34,7 +34,7 @@ export interface StockLog {
 export const DEFAULT_SIZES = ["S", "M", "L", "XL", "XXL"];
 
 /**
- * Normalizes size strings for robust matching (e.g. "Taille M" -> "M", "xl" -> "XL")
+ * Normalizes size strings for robust display (e.g. "Taille M" -> "M", "xl" -> "XL")
  */
 export function normalizeSize(rawSize?: string | null): string {
   if (!rawSize) return "Standard";
@@ -44,36 +44,6 @@ export function normalizeSize(rawSize?: string | null): string {
     s = s.split("/")[0].trim();
   }
   return s || "Standard";
-}
-
-/**
- * Matches an order's item name to the correct product in the catalog
- */
-export function matchProductByName<T extends { id: number; name: string; slug?: string }>(
-  itemName: string,
-  productsList: T[]
-): T | undefined {
-  if (!itemName || !productsList || productsList.length === 0) return undefined;
-  const clean = itemName.trim().toLowerCase();
-
-  // 1. Exact name match
-  let match = productsList.find((p) => p.name.trim().toLowerCase() === clean);
-  if (match) return match;
-
-  // 2. Substring match
-  match = productsList.find((p) => {
-    const pName = p.name.trim().toLowerCase();
-    return clean.includes(pName) || pName.includes(clean);
-  });
-  if (match) return match;
-
-  // 3. Slug match
-  match = productsList.find((p) => {
-    if (!p.slug) return false;
-    const slugWords = p.slug.replace(/[-_]/g, " ").toLowerCase();
-    return clean.includes(slugWords) || slugWords.includes(clean);
-  });
-  return match;
 }
 
 /**
@@ -141,7 +111,7 @@ export async function fetchProductsWithStock(): Promise<ProductStock[]> {
         id: p.id,
         name: p.name,
         slug: p.slug,
-        status: p.status || (computedStock > 0 ? "active" : "out_of_stock"),
+        status: p.status || "active",
         price: p.price || 0,
         bundle_price: p.bundle_price,
         images: Array.isArray(p.images) ? p.images : [],
@@ -159,7 +129,7 @@ export async function fetchProductsWithStock(): Promise<ProductStock[]> {
 }
 
 /**
- * Saves size stock for a product, calculating total and updating Supabase safely
+ * Saves size stock for a product manually from the dashboard
  */
 export async function saveProductSizeStock(
   productId: number,
@@ -172,7 +142,7 @@ export async function saveProductSizeStock(
   }
 ): Promise<{ success: boolean; totalStock: number }> {
   const totalStock = Object.values(size_stock).reduce((sum, qty) => sum + Math.max(0, Number(qty) || 0), 0);
-  const status = options?.status || (totalStock > 0 ? "active" : "out_of_stock");
+  const status = options?.status || "active";
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const updates: Record<string, any> = {
@@ -255,142 +225,3 @@ export async function saveProductSizeStock(
 
   return { success: true, totalStock };
 }
-
-/**
- * Handles automatic stock adjustment during an order status transition:
- * - On `expedie`: deducts order quantity from product's size stock (if not already deducted)
- * - On `retourne`: restores order quantity to product's size stock (if previously deducted)
- */
-export async function adjustStockForOrderStatus(params: {
-  orderId: string;
-  orderNumber?: number;
-  itemName: string;
-  size?: string;
-  quantity?: number;
-  previousStatus: string;
-  newStatus: string;
-  isDeducted?: boolean;
-  orderNote?: string | null;
-  userEmail?: string;
-}): Promise<{
-  actionTaken: "deducted" | "restored" | "none";
-  change: number;
-  newStockDeductedStatus: boolean;
-  message?: string;
-}> {
-  const {
-    orderId,
-    orderNumber,
-    itemName,
-    size: rawSize,
-    quantity = 1,
-    previousStatus,
-    newStatus,
-    isDeducted = false,
-    orderNote = "",
-    userEmail,
-  } = params;
-
-  // Determine if stock was deducted previously
-  const wasAlreadyDeducted =
-    isDeducted === true || (typeof orderNote === "string" && orderNote.includes("[STOCK_DEDUCTED]"));
-
-  // Scenario 1: Transitioning to 'expedie' and stock not yet deducted
-  const shouldDeduct = newStatus === "expedie" && previousStatus !== "expedie" && !wasAlreadyDeducted;
-
-  // Scenario 2: Transitioning to 'retourne' and stock was previously deducted
-  const shouldRestore = newStatus === "retourne" && previousStatus !== "retourne" && wasAlreadyDeducted;
-
-  if (!shouldDeduct && !shouldRestore) {
-    return {
-      actionTaken: "none",
-      change: 0,
-      newStockDeductedStatus: wasAlreadyDeducted,
-    };
-  }
-
-  const qty = Math.max(1, quantity || 1);
-  const change = shouldDeduct ? -qty : qty;
-  const targetSize = normalizeSize(rawSize);
-
-  try {
-    const products = await fetchProductsWithStock();
-    const matched = matchProductByName(itemName, products);
-
-    if (!matched) {
-      console.warn(`[Stock] Product "${itemName}" not found in catalog for stock update.`);
-      return {
-        actionTaken: "none",
-        change: 0,
-        newStockDeductedStatus: shouldDeduct ? true : false,
-        message: `Produit "${itemName}" introuvable`,
-      };
-    }
-
-    // Update size stock
-    const updatedSizeStock = { ...matched.size_stock };
-    let sizeKey = Object.keys(updatedSizeStock).find(
-      (k) => k.trim().toUpperCase() === targetSize.trim().toUpperCase()
-    );
-
-    // If size key doesn't exist, create it or use first size
-    if (!sizeKey) {
-      if (targetSize && targetSize !== "Standard") {
-        sizeKey = targetSize;
-        updatedSizeStock[sizeKey] = 0;
-      } else {
-        sizeKey = matched.sizes[0] || "Standard";
-        if (updatedSizeStock[sizeKey] === undefined) {
-          updatedSizeStock[sizeKey] = 0;
-        }
-      }
-    }
-
-    const currentQty = Number(updatedSizeStock[sizeKey]) || 0;
-    const newQty = Math.max(0, currentQty + change);
-    updatedSizeStock[sizeKey] = newQty;
-
-    // Save product stock
-    await saveProductSizeStock(matched.id, updatedSizeStock, {
-      status: matched.status,
-      userEmail: userEmail || "Système",
-      reason: shouldDeduct
-        ? `Commande #${orderNumber || orderId} expédiée (${qty}x ${sizeKey})`
-        : `Commande #${orderNumber || orderId} retournée (+${qty}x ${sizeKey})`,
-    });
-
-    // Try updating stock_logs table if it exists
-    try {
-      await supabase.from("stock_logs").insert({
-        product_id: matched.id,
-        product_name: matched.name,
-        size: sizeKey,
-        change,
-        previous_stock: currentQty,
-        new_stock: newQty,
-        reason: shouldDeduct ? "order_expedie" : "order_retourne",
-        order_id: orderId,
-        order_number: orderNumber,
-        user_email: userEmail || "Système",
-      });
-    } catch {
-      // Ignore if table not created yet
-    }
-
-    return {
-      actionTaken: shouldDeduct ? "deducted" : "restored",
-      change,
-      newStockDeductedStatus: shouldDeduct ? true : false,
-      message: `${shouldDeduct ? "Déduit" : "Réintégré"} ${Math.abs(change)}x ${sizeKey} (${matched.name})`,
-    };
-  } catch (err) {
-    console.error("Error in adjustStockForOrderStatus:", err);
-    return {
-      actionTaken: "none",
-      change: 0,
-      newStockDeductedStatus: wasAlreadyDeducted,
-      message: err instanceof Error ? err.message : "Erreur stock",
-    };
-  }
-}
-

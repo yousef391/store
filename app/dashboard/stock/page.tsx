@@ -326,7 +326,7 @@ export default function StockPage() {
                   </span>
                 </h1>
                 <p className="text-xs text-gray-400">
-                  Gérez les quantités par taille, déductions automatiques et alertes de rupture.
+                  Gérez facilement vos quantités et stocks par taille pour chaque produit actif.
                 </p>
               </div>
             </div>
@@ -829,7 +829,7 @@ export default function StockPage() {
                   <Clock size={16} className="text-accent" />
                   <span>Derniers Mouvements de Stock</span>
                 </h3>
-                <span className="text-xs text-gray-500">Automatique & Manuel</span>
+                <span className="text-xs text-gray-500">Mises à jour du stock</span>
               </div>
 
               {logs.length === 0 ? (

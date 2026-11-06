@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { DEFAULT_SIZES, normalizeSize, matchProductByName } from "@/lib/stock";
+import { DEFAULT_SIZES } from "@/lib/stock";
 
 export const dynamic = "force-dynamic";
 
@@ -71,7 +71,7 @@ export async function GET() {
         id: p.id,
         name: p.name,
         slug: p.slug,
-        status: p.status || (computedStock > 0 ? "active" : "out_of_stock"),
+        status: p.status || "active",
         price: p.price || 0,
         bundle_price: p.bundle_price,
         images: Array.isArray(p.images) ? p.images : [],
@@ -83,7 +83,7 @@ export async function GET() {
       };
     });
 
-    // Try fetching recent stock histories
+    // Fetch recent manual stock histories
     let logs: unknown[] = [];
     try {
       const { data: historyLogs } = await supabase
@@ -107,14 +107,13 @@ export async function GET() {
   }
 }
 
-// POST /api/stock -> adjusts stock manually or on order status change
+// POST /api/stock -> manual product stock update
 export async function POST(request: Request) {
   try {
     const supabase = getAdminClient();
     const body = await request.json();
     const { action } = body;
 
-    // 1. Manual product stock update
     if (action === "update_product") {
       const { productId, size_stock, status, sizes, userEmail } = body;
 
@@ -126,7 +125,7 @@ export async function POST(request: Request) {
         (sum: number, qty) => sum + Math.max(0, Number(qty) || 0),
         0
       );
-      const newStatus = status || (totalStock > 0 ? "active" : "out_of_stock");
+      const newStatus = status || "active";
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const updates: Record<string, any> = {
@@ -191,154 +190,6 @@ export async function POST(request: Request) {
       }
 
       return NextResponse.json({ success: true, product: res.data, totalStock });
-    }
-
-    // 2. Adjust for order transition (expedie / retourne)
-    if (action === "adjust_for_order") {
-      const {
-        orderId,
-        orderNumber,
-        itemName,
-        size: rawSize,
-        quantity = 1,
-        previousStatus,
-        newStatus,
-        isDeducted = false,
-        orderNote = "",
-        userEmail,
-      } = body;
-
-      const wasAlreadyDeducted =
-        isDeducted === true || (typeof orderNote === "string" && orderNote.includes("[STOCK_DEDUCTED]"));
-
-      const shouldDeduct = newStatus === "expedie" && previousStatus !== "expedie" && !wasAlreadyDeducted;
-      const shouldRestore = newStatus === "retourne" && previousStatus !== "retourne" && wasAlreadyDeducted;
-
-      if (!shouldDeduct && !shouldRestore) {
-        return NextResponse.json({
-          actionTaken: "none",
-          change: 0,
-          newStockDeductedStatus: wasAlreadyDeducted,
-        });
-      }
-
-      const qty = Math.max(1, quantity || 1);
-      const change = shouldDeduct ? -qty : qty;
-      const targetSize = normalizeSize(rawSize);
-
-      // Fetch products
-      const { data: rawProducts } = await supabase.from("products").select("*").order("id");
-      const matched = matchProductByName(itemName, rawProducts || []);
-
-      if (!matched) {
-        return NextResponse.json({
-          actionTaken: "none",
-          change: 0,
-          newStockDeductedStatus: shouldDeduct ? true : false,
-          message: `Produit "${itemName}" introuvable`,
-        });
-      }
-
-      // Check fallback size stock
-      let size_stock: Record<string, number> = {};
-      if (matched.size_stock && typeof matched.size_stock === "object") {
-        size_stock = { ...matched.size_stock };
-      } else {
-        const { data: settings } = await supabase
-          .from("store_settings")
-          .select("zone_prices")
-          .eq("id", 1)
-          .single();
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const fallback = (settings?.zone_prices as any)?.size_stocks || {};
-        size_stock = (matched.id ? fallback[matched.id] : {}) || {};
-      }
-
-      // Find or initialize matching size
-      const foundKey = Object.keys(size_stock).find(
-        (k) => k.trim().toUpperCase() === targetSize.trim().toUpperCase()
-      );
-      const fallbackKey = targetSize !== "Standard" ? targetSize : (matched.sizes?.[0] || "Standard");
-      const sizeKey: string = foundKey || fallbackKey;
-
-      if (size_stock[sizeKey] === undefined) {
-        size_stock[sizeKey] = 0;
-      }
-
-      const currentQty = Number(size_stock[sizeKey]) || 0;
-      const newQty = Math.max(0, currentQty + change);
-      size_stock[sizeKey] = newQty;
-
-      const totalStock = Object.values(size_stock).reduce(
-        (sum, q) => sum + Math.max(0, Number(q) || 0),
-        0
-      );
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const updates: Record<string, any> = {
-        stock: totalStock,
-        status: totalStock > 0 ? "active" : "out_of_stock",
-        updated_at: new Date().toISOString(),
-      };
-
-      const updateRes = await supabase
-        .from("products")
-        .update({ ...updates, size_stock })
-        .eq("id", matched.id);
-
-      if (updateRes.error && (updateRes.error.code === "42703" || updateRes.error.message?.includes("column"))) {
-        await supabase.from("products").update(updates).eq("id", matched.id);
-        try {
-          const { data: settings } = await supabase
-            .from("store_settings")
-            .select("zone_prices")
-            .eq("id", 1)
-            .single();
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const zonePrices = (settings?.zone_prices as any) || {};
-          const sizeStocks = zonePrices.size_stocks || {};
-          sizeStocks[matched.id] = size_stock;
-          await supabase
-            .from("store_settings")
-            .update({ zone_prices: { ...zonePrices, size_stocks: sizeStocks } })
-            .eq("id", 1);
-        } catch (e) {
-          console.warn("Fallback persistence error:", e);
-        }
-      }
-
-      // Log in histories
-      try {
-        const desc = shouldDeduct
-          ? `Stock déduit (-${qty} ${sizeKey}) pour Commande #${orderNumber || orderId} expédiée (${matched.name})`
-          : `Stock réintégré (+${qty} ${sizeKey}) pour Commande #${orderNumber || orderId} retournée (${matched.name})`;
-
-        await supabase.from("histories").insert({
-          action: shouldDeduct ? "stock_order_expedie" : "stock_order_retourne",
-          description: desc,
-          user: userEmail || "Système",
-          details: JSON.stringify({
-            order_id: orderId,
-            order_number: orderNumber,
-            product_id: matched.id,
-            size: sizeKey,
-            change,
-            new_stock: totalStock,
-          }),
-        });
-      } catch (hErr) {
-        console.warn("History write error:", hErr);
-      }
-
-      return NextResponse.json({
-        success: true,
-        actionTaken: shouldDeduct ? "deducted" : "restored",
-        change,
-        newStockDeductedStatus: shouldDeduct ? true : false,
-        size: sizeKey,
-        newSizeQty: newQty,
-        totalStock,
-      });
     }
 
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });
