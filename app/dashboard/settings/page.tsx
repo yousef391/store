@@ -411,7 +411,7 @@ export default function SettingsPage() {
                     type="text"
                     value={yalidineApiId2}
                     onChange={(e) => setYalidineApiId2(e.target.value)}
-                    placeholder="26237534515339637272"
+                    placeholder="96027340046218567713"
                     className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-white text-sm font-mono focus:ring-2 focus:ring-blue-500 outline-none placeholder:text-gray-600"
                   />
                 </div>
