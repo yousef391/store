@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { getYalidineAccount, getYalidineAccountsFromSettings } from "@/lib/yalidine";
 
 function getAdminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -12,11 +13,13 @@ function getAdminClient() {
 
 export async function POST(request: Request) {
   try {
-    const { orderId, overrides } = await request.json();
+    const { orderId, overrides, accountId } = await request.json();
 
     if (!orderId) {
       return NextResponse.json({ error: "Order ID is required" }, { status: 400 });
     }
+
+    const targetAccountId = accountId || overrides?.account || overrides?.yalidine_account || "1";
 
     const supabase = getAdminClient();
 
@@ -35,15 +38,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Order already has a tracking ID", tracking_id: order.tracking_id }, { status: 400 });
     }
 
-    // 2. Fetch Yalidine API Credentials
+    // 2. Fetch Yalidine API Credentials (supports Account 1 and Account 2)
     const { data: settings, error: settingsError } = await supabase
       .from("store_settings")
-      .select("yalidine_api_id, yalidine_api_token")
+      .select("*")
       .eq("id", 1)
       .single();
 
-    if (settingsError || !settings?.yalidine_api_id || !settings?.yalidine_api_token) {
-      return NextResponse.json({ error: "Yalidine API credentials not configured in settings." }, { status: 403 });
+    if (settingsError || !settings) {
+      return NextResponse.json({ error: "Store settings could not be loaded." }, { status: 500 });
+    }
+
+    const account = getYalidineAccount(settings, targetAccountId);
+
+    if (!account.api_id || !account.api_token) {
+      return NextResponse.json({
+        error: `Yalidine API credentials not configured for Account ${targetAccountId}. Please check Settings.`
+      }, { status: 403 });
     }
 
     // 3. Format Data for Yalidine
@@ -113,8 +124,8 @@ export async function POST(request: Request) {
       try {
         const commRes = await fetch(`https://api.yalidine.app/v1/communes/?wilaya_id=${wilayaId}`, {
           headers: {
-            "X-API-ID": settings.yalidine_api_id,
-            "X-API-TOKEN": settings.yalidine_api_token
+            "X-API-ID": account.api_id,
+            "X-API-TOKEN": account.api_token
           }
         });
         const commData = await commRes.json();
@@ -188,12 +199,12 @@ export async function POST(request: Request) {
       has_exchange: false
     }];
 
-    // 4. Send to Yalidine
+    // 4. Send to Yalidine (using chosen Account 1 or 2)
     const yalidineResponse = await fetch("https://api.yalidine.app/v1/parcels/", {
       method: "POST",
       headers: {
-        "X-API-ID": settings.yalidine_api_id,
-        "X-API-TOKEN": settings.yalidine_api_token,
+        "X-API-ID": account.api_id,
+        "X-API-TOKEN": account.api_token,
         "Content-Type": "application/json"
       },
       body: JSON.stringify(yalidinePayload)
@@ -213,9 +224,11 @@ export async function POST(request: Request) {
     const orderUpdates: Record<string, any> = {
       tracking_id: trackingId,
       status: "expedie",
+      yalidine_account: account.id,
     };
 
     const dispatchNotes: string[] = [];
+    dispatchNotes.push(`Yalidine: Compte ${account.id}`);
     if (overrides?.autorisation_ouverture) {
       dispatchNotes.push("Autorisation d'ouverture: OUI");
     }
@@ -229,6 +242,12 @@ export async function POST(request: Request) {
 
     let updateRes = await supabase.from("orders").update(orderUpdates).eq("id", order.id);
 
+    // If yalidine_account column doesn't exist, remove and retry
+    if (updateRes.error && (updateRes.error.code === "42703" || updateRes.error.message.includes("column"))) {
+      delete orderUpdates.yalidine_account;
+      updateRes = await supabase.from("orders").update(orderUpdates).eq("id", order.id);
+    }
+
     // If check constraint rejects 'expedie', save tracking_id
     if (updateRes.error && (updateRes.error.code === "23514" || updateRes.error.message.includes("check constraint"))) {
       console.warn("orders_status_check rejected 'expedie', saving tracking_id only:", updateRes.error.message);
@@ -240,7 +259,14 @@ export async function POST(request: Request) {
       console.error("Failed to save tracking_id in orders:", updateRes.error);
     }
 
-    return NextResponse.json({ success: true, tracking_id: trackingId, status: "expedie", yalidine_label: result.label });
+    return NextResponse.json({
+      success: true,
+      tracking_id: trackingId,
+      status: "expedie",
+      account: account.id,
+      account_name: account.name,
+      yalidine_label: result.label
+    });
 
   } catch (err: unknown) {
     console.error("Yalidine Route Error:", err);
@@ -261,19 +287,30 @@ export async function DELETE(request: Request) {
     if (trackingId) {
       const { data: settings } = await supabase
         .from("store_settings")
-        .select("yalidine_api_id, yalidine_api_token")
+        .select("*")
         .eq("id", 1)
         .single();
 
-      if (settings?.yalidine_api_id && settings?.yalidine_api_token) {
-        await fetch(`https://api.yalidine.app/v1/parcels/${trackingId}`, {
-          method: "DELETE",
-          headers: {
-            "X-API-ID": settings.yalidine_api_id,
-            "X-API-TOKEN": settings.yalidine_api_token,
-            "Content-Type": "application/json"
+      if (settings) {
+        const accounts = getYalidineAccountsFromSettings(settings);
+        // Try each account until deleted or handled
+        for (const acc of accounts) {
+          if (acc.api_id && acc.api_token) {
+            try {
+              const delRes = await fetch(`https://api.yalidine.app/v1/parcels/${trackingId}`, {
+                method: "DELETE",
+                headers: {
+                  "X-API-ID": acc.api_id,
+                  "X-API-TOKEN": acc.api_token,
+                  "Content-Type": "application/json"
+                }
+              });
+              if (delRes.ok) break;
+            } catch {
+              // Try next account
+            }
           }
-        });
+        }
       }
     }
 

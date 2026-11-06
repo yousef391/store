@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { getYalidineAccountsFromSettings, YalidineAccount } from "@/lib/yalidine";
 
 function getAdminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -84,14 +85,25 @@ export async function POST(request: Request) {
   try {
     const supabase = getAdminClient();
 
-    // 1. Get Yalidine API Credentials from store_settings
+    // 1. Get Yalidine API Credentials from store_settings (supports Account 1 and 2)
     const { data: settings, error: settingsError } = await supabase
       .from("store_settings")
-      .select("yalidine_api_id, yalidine_api_token")
+      .select("*")
       .eq("id", 1)
       .single();
 
-    if (settingsError || !settings?.yalidine_api_id || !settings?.yalidine_api_token) {
+    if (settingsError || !settings) {
+      return NextResponse.json(
+        { error: "Paramètres de la boutique introuvables." },
+        { status: 500 }
+      );
+    }
+
+    const activeAccounts = getYalidineAccountsFromSettings(settings).filter(
+      (a) => a.api_id && a.api_token
+    );
+
+    if (activeAccounts.length === 0) {
       return NextResponse.json(
         { error: "Identifiants API Yalidine non configurés dans les paramètres." },
         { status: 403 }
@@ -157,84 +169,93 @@ export async function POST(request: Request) {
     const summary = { livre: 0, retourne: 0, en_livraison: 0, echoue: 0, expedie: 0 };
 
     // Helper to call Yalidine
-    const fetchYalidine = async (endpointUrl: string) => {
+    const fetchYalidine = async (endpointUrl: string, account: YalidineAccount) => {
       const res = await fetch(endpointUrl, {
         headers: {
-          "X-API-ID": settings.yalidine_api_id,
-          "X-API-TOKEN": settings.yalidine_api_token,
+          "X-API-ID": account.api_id,
+          "X-API-TOKEN": account.api_token,
         },
       });
       if (!res.ok) {
         const errorText = await res.text();
-        throw new Error(`Yalidine API error (${res.status}): ${errorText}`);
+        throw new Error(`Yalidine API error [${account.name}] (${res.status}): ${errorText}`);
       }
       return res.json();
     };
 
-    // 4. Case A: Query by Date Range
-    if (startDate && endDate) {
-      const dateParamValue = startDate === endDate ? startDate : `${startDate},${endDate}`;
-      const maxPages = 5; // Safely fetch up to 500 parcels per sync
+    // Query across all configured accounts
+    for (const account of activeAccounts) {
+      try {
+        // 4. Case A: Query by Date Range
+        if (startDate && endDate) {
+          const dateParamValue = startDate === endDate ? startDate : `${startDate},${endDate}`;
+          const maxPages = 5; // Safely fetch up to 500 parcels per sync
 
-      // Fetch first page
-      const firstPageUrl = `https://api.yalidine.app/v1/parcels/?${dateType}=${dateParamValue}&page_size=100&page=1`;
-      const firstPageData = await fetchYalidine(firstPageUrl);
-      const parcels = firstPageData?.data || [];
-      allParcels.push(...parcels);
+          // Fetch first page
+          const firstPageUrl = `https://api.yalidine.app/v1/parcels/?${dateType}=${dateParamValue}&page_size=100&page=1`;
+          const firstPageData = await fetchYalidine(firstPageUrl, account);
+          const parcels = firstPageData?.data || [];
+          allParcels.push(...parcels);
 
-      // If more pages exist, fetch remaining pages in parallel
-      if (firstPageData?.has_more && parcels.length > 0) {
-        const totalData = Number(firstPageData?.total_data);
-        const totalPages = totalData && !isNaN(totalData)
-          ? Math.min(maxPages, Math.ceil(totalData / 100))
-          : maxPages;
+          // If more pages exist, fetch remaining pages in parallel
+          if (firstPageData?.has_more && parcels.length > 0) {
+            const totalData = Number(firstPageData?.total_data);
+            const totalPages = totalData && !isNaN(totalData)
+              ? Math.min(maxPages, Math.ceil(totalData / 100))
+              : maxPages;
 
-        if (totalPages > 1) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const pagePromises: Promise<any>[] = [];
-          for (let p = 2; p <= totalPages; p++) {
-            pagePromises.push(
-              fetchYalidine(
-                `https://api.yalidine.app/v1/parcels/?${dateType}=${dateParamValue}&page_size=100&page=${p}`
-              ).catch((err) => {
-                console.error(`Error fetching Yalidine page ${p}:`, err);
-                return { data: [] };
-              })
-            );
-          }
+            if (totalPages > 1) {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const pagePromises: Promise<any>[] = [];
+              for (let p = 2; p <= totalPages; p++) {
+                pagePromises.push(
+                  fetchYalidine(
+                    `https://api.yalidine.app/v1/parcels/?${dateType}=${dateParamValue}&page_size=100&page=${p}`,
+                    account
+                  ).catch((err) => {
+                    console.error(`Error fetching Yalidine page ${p} (${account.name}):`, err);
+                    return { data: [] };
+                  })
+                );
+              }
 
-          const remainingPages = await Promise.all(pagePromises);
-          for (const pageRes of remainingPages) {
-            const pageParcels = pageRes?.data || [];
-            allParcels.push(...pageParcels);
+              const remainingPages = await Promise.all(pagePromises);
+              for (const pageRes of remainingPages) {
+                const pageParcels = pageRes?.data || [];
+                allParcels.push(...pageParcels);
+              }
+            }
           }
         }
-      }
-    }
-    // Case B: Query by Trackings list
-    else if (targetTrackings.length > 0) {
-      const batchSize = 50;
-      const trackingBatches: string[][] = [];
-      for (let i = 0; i < targetTrackings.length; i += batchSize) {
-        trackingBatches.push(targetTrackings.slice(i, i + batchSize));
-      }
-
-      const batchResults = await Promise.all(
-        trackingBatches.map(async (batch) => {
-          try {
-            const data = await fetchYalidine(
-              `https://api.yalidine.app/v1/parcels/?tracking=${batch.join(",")}`
-            );
-            return data?.data || [];
-          } catch (err) {
-            console.error("Batch tracking error:", err);
-            return [];
+        // Case B: Query by Trackings list
+        else if (targetTrackings.length > 0) {
+          const batchSize = 50;
+          const trackingBatches: string[][] = [];
+          for (let i = 0; i < targetTrackings.length; i += batchSize) {
+            trackingBatches.push(targetTrackings.slice(i, i + batchSize));
           }
-        })
-      );
 
-      for (const res of batchResults) {
-        allParcels.push(...res);
+          const batchResults = await Promise.all(
+            trackingBatches.map(async (batch) => {
+              try {
+                const data = await fetchYalidine(
+                  `https://api.yalidine.app/v1/parcels/?tracking=${batch.join(",")}`,
+                  account
+                );
+                return data?.data || [];
+              } catch (err) {
+                console.error(`Batch tracking error (${account.name}):`, err);
+                return [];
+              }
+            })
+          );
+
+          for (const res of batchResults) {
+            allParcels.push(...res);
+          }
+        }
+      } catch (accErr) {
+        console.warn(`Sync error for ${account.name}:`, accErr);
       }
     }
 

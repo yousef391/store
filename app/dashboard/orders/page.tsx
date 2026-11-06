@@ -103,6 +103,7 @@ export default function OrdersPage() {
   const [pushingId, setPushingId] = useState<string | null>(null);
   const [editingDispatchOrder, setEditingDispatchOrder] = useState<Order | null>(null);
   const [dispatchProvider, setDispatchProvider] = useState<"ecom" | "yalidine">("ecom");
+  const [yalidineAccount, setYalidineAccount] = useState<"1" | "2">("2");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [dispatchData, setDispatchData] = useState<any>({});
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -563,7 +564,7 @@ export default function OrdersPage() {
     alert(`Updated ${updated} orders to ${status}.`);
   };
 
-  const handleBulkDispatch = async (provider: "ecom" | "yalidine") => {
+  const handleBulkDispatch = async (provider: "ecom" | "yalidine", accountId: "1" | "2" = "2") => {
     setIsBulking(true);
     let success = 0;
     let failed = 0;
@@ -611,14 +612,19 @@ export default function OrdersPage() {
         const res = await fetch(endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ orderId: order.id, overrides: dispatchData }),
+          body: JSON.stringify({
+            orderId: order.id,
+            overrides: dispatchData,
+            accountId: provider === "yalidine" ? accountId : undefined,
+          }),
         });
         const data = await res.json();
         if (!res.ok || data.error) {
           failed++;
         } else {
           // Auto-mark as expedie when pushed to Yalidine/Ecom!
-          const noteStamp = "[Autorisation d'ouverture: OUI]";
+          const accountTag = provider === "yalidine" ? `Yalidine: Compte ${accountId}` : "Ecom";
+          const noteStamp = `[${accountTag} · Autorisation d'ouverture: OUI]`;
           newOrders[orderIndex].tracking_id = data.tracking_id;
           newOrders[orderIndex].status = "expedie";
           newOrders[orderIndex].note = newOrders[orderIndex].note
@@ -627,7 +633,7 @@ export default function OrdersPage() {
           await updateOrderStatus(order.id, "expedie");
           await createHistory({
             action: "order_expedie",
-            description: `Order #${order.order_number} auto-marked as Expédié on dispatch to ${provider} (Bulk)`,
+            description: `Order #${order.order_number} auto-marked as Expédié on dispatch to ${provider === "yalidine" ? `Yalidine (Compte ${accountId})` : "Ecom"} (Bulk)`,
             details: order.item,
           });
           success++;
@@ -640,7 +646,7 @@ export default function OrdersPage() {
     setOrders(newOrders);
     setSelectedOrderIds(new Set());
     setIsBulking(false);
-    alert(`Bulk Dispatch to ${provider} complete! ${success} succeeded, ${failed} failed.`);
+    alert(`Bulk Dispatch to ${provider === "yalidine" ? `Yalidine (Compte ${accountId})` : "Ecom"} complete! ${success} succeeded, ${failed} failed.`);
   };
 
   const handleBulkDelete = async () => {
@@ -679,9 +685,10 @@ export default function OrdersPage() {
   };
 
   // Dispatch Modal
-  const openDispatchModal = (order: Order, provider: "ecom" | "yalidine" = "ecom") => {
+  const openDispatchModal = (order: Order, provider: "ecom" | "yalidine" = "ecom", account: "1" | "2" = "2") => {
     setEditingDispatchOrder(order);
     setDispatchProvider(provider);
+    setYalidineAccount(account);
     const wilayaMatch = order.wilaya.match(/^(\d+)/);
     const defaultWilayaId = wilayaMatch ? wilayaMatch[1] : "";
     const priceNumber = typeof order.price === "number" ? order.price : parseInt(String(order.price).replace(/[^\d]/g, ""), 10) || 0;
@@ -728,14 +735,14 @@ export default function OrdersPage() {
       forceRetry: true,
     });
 
-    fetchYalidineCommunes(defaultWilayaId || order.wilaya);
+    fetchYalidineCommunes(defaultWilayaId || order.wilaya, account);
   };
 
-  const fetchYalidineCommunes = useCallback(async (wilayaId: string) => {
+  const fetchYalidineCommunes = useCallback(async (wilayaId: string, account: "1" | "2" = "2") => {
     if (!wilayaId) return;
     setLoadingCommunes(true);
     try {
-      const res = await fetch(`/api/yalidine/communes?wilaya_id=${wilayaId}`);
+      const res = await fetch(`/api/yalidine/communes?wilaya_id=${wilayaId}&account=${account}`);
       const data = await res.json();
       setYalidineCommunes(data.communes || []);
     } catch {
@@ -755,16 +762,23 @@ export default function OrdersPage() {
       const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderId: editingDispatchOrder.id, overrides: dispatchData }),
+        body: JSON.stringify({
+          orderId: editingDispatchOrder.id,
+          overrides: dispatchData,
+          accountId: dispatchProvider === "yalidine" ? yalidineAccount : undefined,
+        }),
       });
       const data = await res.json();
       if (!res.ok || data.error) {
-        alert(data.error || `Failed to push to ${dispatchProvider === "ecom" ? "Ecom Delivery" : "Yalidine"}.`);
+        alert(data.error || `Failed to push to ${dispatchProvider === "ecom" ? "Ecom Delivery" : `Yalidine (Compte ${yalidineAccount})`}.`);
       } else {
-        alert(`Successfully dispatched to ${dispatchProvider === "ecom" ? "Ecom Delivery" : "Yalidine"}! Tracking ID: ${data.tracking_id}`);
+        alert(`Successfully dispatched to ${dispatchProvider === "ecom" ? "Ecom Delivery" : `Yalidine (Compte ${yalidineAccount})`}! Tracking ID: ${data.tracking_id}`);
 
         // Update local state: tracking ID, status and dispatch notes
         const dispatchNoteTags: string[] = [];
+        if (dispatchProvider === "yalidine") {
+          dispatchNoteTags.push(`Yalidine: Compte ${yalidineAccount}`);
+        }
         if (dispatchData.autorisation_ouverture) dispatchNoteTags.push("Autorisation d'ouverture: OUI");
         if (dispatchData.has_delivery_time && dispatchData.delivery_time) {
           dispatchNoteTags.push(`Heure: ${String(dispatchData.delivery_time).trim()}`);
@@ -1034,11 +1048,20 @@ export default function OrdersPage() {
               {isBulking ? "Pushing..." : "Push Ecom"}
             </button>
             <button
-              onClick={() => handleBulkDispatch("yalidine")}
+              onClick={() => handleBulkDispatch("yalidine", "1")}
               disabled={isBulking}
+              title="Expédier en masse avec le Compte Yalidine 1"
               className="px-3 py-1.5 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-bold rounded-lg hover:bg-rose-500/20 transition-colors disabled:opacity-50"
             >
-              {isBulking ? "Pushing..." : "Push Yalidine (Expédié)"}
+              {isBulking ? "Pushing..." : "Push Yalidine (C1)"}
+            </button>
+            <button
+              onClick={() => handleBulkDispatch("yalidine", "2")}
+              disabled={isBulking}
+              title="Expédier en masse avec le Compte Yalidine 2"
+              className="px-3 py-1.5 bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold rounded-lg hover:bg-blue-500/20 transition-colors disabled:opacity-50"
+            >
+              {isBulking ? "Pushing..." : "Push Yalidine (C2)"}
             </button>
             <button
               onClick={handleBulkDelete}
@@ -1185,9 +1208,19 @@ export default function OrdersPage() {
                       </div>
                     </div>
 
-                    {/* Badges for Autorisation d'ouverture & Delivery Time */}
-                    {order.note && (order.note.includes("Autorisation d'ouverture") || order.note.includes("Heure:")) && (
+                    {/* Badges for Autorisation d'ouverture, Delivery Time & Yalidine Account */}
+                    {order.note && (order.note.includes("Autorisation d'ouverture") || order.note.includes("Heure:") || order.note.includes("Compte 1") || order.note.includes("Compte 2")) && (
                       <div className="flex items-center gap-1.5 flex-wrap">
+                        {order.note.includes("Compte 1") && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-rose-300 bg-rose-500/15 border border-rose-500/30 px-2 py-0.5 rounded-lg">
+                            📦 Yalidine C1
+                          </span>
+                        )}
+                        {order.note.includes("Compte 2") && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-blue-300 bg-blue-500/15 border border-blue-500/30 px-2 py-0.5 rounded-lg">
+                            📦 Yalidine C2
+                          </span>
+                        )}
                         {order.note.includes("Autorisation d'ouverture: OUI") && (
                           <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-lg">
                             🔓 Ouverture OK
@@ -1467,9 +1500,19 @@ export default function OrdersPage() {
                           <div className="text-xs text-gray-500">
                             {order.color} · {order.size} · ×{order.quantity}
                           </div>
-                          {/* Badges for Autorisation d'ouverture & Delivery Time */}
-                          {order.note && (order.note.includes("Autorisation d'ouverture") || order.note.includes("Heure:")) && (
+                          {/* Badges for Autorisation d'ouverture, Delivery Time & Yalidine Account */}
+                          {order.note && (order.note.includes("Autorisation d'ouverture") || order.note.includes("Heure:") || order.note.includes("Compte 1") || order.note.includes("Compte 2")) && (
                             <div className="flex items-center gap-1.5 flex-wrap mt-1">
+                              {order.note.includes("Compte 1") && (
+                                <span className="inline-flex items-center gap-0.5 text-[9px] font-bold text-rose-300 bg-rose-500/15 border border-rose-500/25 px-1.5 py-0.5 rounded">
+                                  📦 C1
+                                </span>
+                              )}
+                              {order.note.includes("Compte 2") && (
+                                <span className="inline-flex items-center gap-0.5 text-[9px] font-bold text-blue-300 bg-blue-500/15 border border-blue-500/25 px-1.5 py-0.5 rounded">
+                                  📦 C2
+                                </span>
+                              )}
                               {order.note.includes("Autorisation d'ouverture: OUI") && (
                                 <span className="inline-flex items-center gap-0.5 text-[9px] font-bold text-emerald-300 bg-emerald-500/15 border border-emerald-500/25 px-1.5 py-0.5 rounded">
                                   🔓 Ouverture OK
@@ -1715,6 +1758,49 @@ export default function OrdersPage() {
                   <span>Yalidine Express</span>
                 </button>
               </div>
+
+              {/* Yalidine Account Switcher */}
+              {dispatchProvider === "yalidine" && (
+                <div className="flex items-center justify-between gap-2 p-2 bg-rose-500/10 border border-rose-500/20 rounded-xl">
+                  <div className="flex items-center gap-1.5 pl-1">
+                    <span className="text-[11px] font-bold text-rose-300 uppercase tracking-wider">
+                      Compte Yalidine :
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-1.5 min-w-[240px]">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setYalidineAccount("1");
+                        if (dispatchData.wilaya) fetchYalidineCommunes(dispatchData.wilaya, "1");
+                      }}
+                      className={`py-1.5 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                        yalidineAccount === "1"
+                          ? "bg-rose-600 text-white shadow-md shadow-rose-600/30"
+                          : "text-gray-400 hover:text-white bg-white/5"
+                      }`}
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-white/70" />
+                      <span>Compte 1</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setYalidineAccount("2");
+                        if (dispatchData.wilaya) fetchYalidineCommunes(dispatchData.wilaya, "2");
+                      }}
+                      className={`py-1.5 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                        yalidineAccount === "2"
+                          ? "bg-blue-600 text-white shadow-md shadow-blue-600/30"
+                          : "text-gray-400 hover:text-white bg-white/5"
+                      }`}
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-white/70" />
+                      <span>Compte 2</span>
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Scrollable Form Body */}
@@ -2150,9 +2236,11 @@ export default function OrdersPage() {
                 type="button"
                 onClick={handleDispatchPush}
                 disabled={pushingId === editingDispatchOrder.id}
-                className={`flex-[2] sm:flex-initial sm:min-w-[200px] px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-white transition-all flex items-center justify-center gap-2 shadow-lg active:scale-[0.98] ${
+                className={`flex-[2] sm:flex-initial sm:min-w-[200px] px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-white transition-all flex items-center justify-center gap-2 shadow-lg active:scale-[0.98] cursor-pointer ${
                   dispatchProvider === "ecom"
                     ? "bg-emerald-600 hover:bg-emerald-500 shadow-emerald-600/20"
+                    : yalidineAccount === "2"
+                    ? "bg-blue-600 hover:bg-blue-500 shadow-blue-600/20"
                     : "bg-[#e11d48] hover:bg-[#be123c] shadow-rose-600/20"
                 }`}
               >
@@ -2164,7 +2252,13 @@ export default function OrdersPage() {
                 ) : (
                   <>
                     <Truck size={14} />
-                    <span>Confirmer & Envoyer ({dispatchProvider === "ecom" ? "Ecom" : "Yalidine"})</span>
+                    <span>
+                      Confirmer & Envoyer (
+                      {dispatchProvider === "ecom"
+                        ? "Ecom"
+                        : `Yalidine · Compte ${yalidineAccount}`}
+                      )
+                    </span>
                   </>
                 )}
               </button>

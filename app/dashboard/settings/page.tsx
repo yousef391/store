@@ -5,6 +5,7 @@ import { Save, DollarSign, Check, Lock, Building2, Home } from "lucide-react";
 import { defaultZonePrices, defaultStopdeskZonePrices, zoneLabels } from "@/data/wilayas";
 import { fetchStoreSettings, updateStoreSettings } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
+import { getYalidineAccountsFromSettings } from "@/lib/yalidine";
 import RoleGuard from "@/components/dashboard/RoleGuard";
 
 export default function SettingsPage() {
@@ -28,9 +29,13 @@ export default function SettingsPage() {
   const [metaPixelId, setMetaPixelId] = useState("");
   const [metaAccessToken, setMetaAccessToken] = useState("");
 
-  // Yalidine
+  // Yalidine Accounts (Account 1 and Account 2)
   const [yalidineApiId, setYalidineApiId] = useState("");
   const [yalidineApiToken, setYalidineApiToken] = useState("");
+  const [yalidineAccountName1, setYalidineAccountName1] = useState("Compte 1 (Principal)");
+  const [yalidineApiId2, setYalidineApiId2] = useState("");
+  const [yalidineApiToken2, setYalidineApiToken2] = useState("");
+  const [yalidineAccountName2, setYalidineAccountName2] = useState("Compte 2");
 
   // Admin Password (Supabase Auth)
   const [newPassword, setNewPassword] = useState("");
@@ -67,8 +72,16 @@ export default function SettingsPage() {
         setTelegramAbandonedAlerts(data.abandoned_telegram_alerts ?? true);
         setMetaPixelId(data.meta_pixel_id || "");
         setMetaAccessToken(data.meta_access_token || "");
-        setYalidineApiId(data.yalidine_api_id || "");
-        setYalidineApiToken(data.yalidine_api_token || "");
+
+        // Load Yalidine accounts
+        const accounts = getYalidineAccountsFromSettings(data);
+        setYalidineApiId(accounts[0]?.api_id || data.yalidine_api_id || "");
+        setYalidineApiToken(accounts[0]?.api_token || data.yalidine_api_token || "");
+        setYalidineAccountName1(accounts[0]?.name || "Compte 1 (Principal)");
+
+        setYalidineApiId2(accounts[1]?.api_id || "");
+        setYalidineApiToken2(accounts[1]?.api_token || "");
+        setYalidineAccountName2(accounts[1]?.name || "Compte 2");
       }
       setLoading(false);
     }).catch(() => setLoading(false));
@@ -78,10 +91,25 @@ export default function SettingsPage() {
     e.preventDefault();
     setIsSaving(true);
     try {
+      const account1Obj = {
+        id: "1",
+        name: yalidineAccountName1.trim() || "Compte 1 (Principal)",
+        api_id: yalidineApiId.trim(),
+        api_token: yalidineApiToken.trim(),
+      };
+      const account2Obj = {
+        id: "2",
+        name: yalidineAccountName2.trim() || "Compte 2",
+        api_id: yalidineApiId2.trim(),
+        api_token: yalidineApiToken2.trim(),
+      };
+
       const mergedZonePrices = {
         ...extraSettingsData,
         ...domicileZones,
         stopdesk: stopdeskZones,
+        yalidine_account_2: account2Obj,
+        yalidine_accounts: [account1Obj, account2Obj],
       };
 
       await updateStoreSettings({
@@ -94,8 +122,8 @@ export default function SettingsPage() {
         abandoned_telegram_alerts: telegramAbandonedAlerts,
         meta_pixel_id: metaPixelId,
         meta_access_token: metaAccessToken,
-        yalidine_api_id: yalidineApiId,
-        yalidine_api_token: yalidineApiToken,
+        yalidine_api_id: yalidineApiId.trim(),
+        yalidine_api_token: yalidineApiToken.trim(),
       });
       setIsSaving(false);
       setSaved(true);
@@ -294,29 +322,109 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Yalidine Shipping */}
+        {/* Yalidine Shipping (Multi-Account Support) */}
         <div className="bg-surface rounded-2xl border border-white/5 overflow-hidden relative">
           <div className="absolute top-0 left-0 w-1 h-full bg-rose-500" />
-          <div className="p-6 md:p-8">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 bg-rose-500/10 rounded-xl flex items-center justify-center text-rose-400">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="1" y="3" width="15" height="13" /><polygon points="16 8 20 8 23 11 23 16 16 16 16 8" /><circle cx="5.5" cy="18.5" r="2.5" /><circle cx="18.5" cy="18.5" r="2.5" /></svg>
-              </div>
-              <div>
-                <h3 className="font-bold text-lg text-white font-heading">Yalidine Shipping</h3>
-                <p className="text-gray-500 text-sm">API credentials for parcel dispatch.</p>
+          <div className="p-6 md:p-8 space-y-6">
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-rose-500/10 rounded-xl flex items-center justify-center text-rose-400">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="1" y="3" width="15" height="13" /><polygon points="16 8 20 8 23 11 23 16 16 16 16 8" /><circle cx="5.5" cy="18.5" r="2.5" /><circle cx="18.5" cy="18.5" r="2.5" /></svg>
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg text-white font-heading">Yalidine Express (Multi-Comptes)</h3>
+                  <p className="text-gray-500 text-sm">Gérez vos identifiants API Yalidine pour expédier sur le Compte 1 ou le Compte 2.</p>
+                </div>
               </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-bold text-gray-400">API ID</label>
-                <input type="text" value={yalidineApiId} onChange={(e) => setYalidineApiId(e.target.value)} placeholder="26237534515339637272"
-                  className="w-full bg-white/5 border border-white/10 rounded-xl pl-4 pr-4 py-3 text-white text-sm font-mono focus:ring-2 focus:ring-rose-500 outline-none placeholder:text-gray-600" />
+
+            {/* Account 1 */}
+            <div className="p-4 sm:p-5 rounded-2xl bg-white/[0.02] border border-white/10 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-lg bg-rose-500/20 text-rose-400 text-xs font-bold flex items-center justify-center">1</span>
+                  <span className="text-sm font-bold text-white">Compte Yalidine #1 (Principal)</span>
+                </div>
+                <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                  Défaut
+                </span>
               </div>
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-bold text-gray-400">API Token</label>
-                <input type="password" value={yalidineApiToken} onChange={(e) => setYalidineApiToken(e.target.value)} placeholder="8qh59J0iEao..."
-                  className="w-full bg-white/5 border border-white/10 rounded-xl pl-4 pr-4 py-3 text-white text-sm font-mono focus:ring-2 focus:ring-rose-500 outline-none placeholder:text-gray-600" />
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Libellé</label>
+                  <input
+                    type="text"
+                    value={yalidineAccountName1}
+                    onChange={(e) => setYalidineAccountName1(e.target.value)}
+                    placeholder="Compte 1"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-white text-sm focus:ring-2 focus:ring-rose-500 outline-none"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">API ID</label>
+                  <input
+                    type="text"
+                    value={yalidineApiId}
+                    onChange={(e) => setYalidineApiId(e.target.value)}
+                    placeholder="26237534515339637272"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-white text-sm font-mono focus:ring-2 focus:ring-rose-500 outline-none placeholder:text-gray-600"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">API Token</label>
+                  <input
+                    type="password"
+                    value={yalidineApiToken}
+                    onChange={(e) => setYalidineApiToken(e.target.value)}
+                    placeholder="Token Compte 1"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-white text-sm font-mono focus:ring-2 focus:ring-rose-500 outline-none placeholder:text-gray-600"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Account 2 */}
+            <div className="p-4 sm:p-5 rounded-2xl bg-white/[0.02] border border-blue-500/20 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-lg bg-blue-500/20 text-blue-400 text-xs font-bold flex items-center justify-center">2</span>
+                  <span className="text-sm font-bold text-white">Compte Yalidine #2</span>
+                </div>
+                <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                  Secondaire
+                </span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Libellé</label>
+                  <input
+                    type="text"
+                    value={yalidineAccountName2}
+                    onChange={(e) => setYalidineAccountName2(e.target.value)}
+                    placeholder="Compte 2"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-white text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">API ID</label>
+                  <input
+                    type="text"
+                    value={yalidineApiId2}
+                    onChange={(e) => setYalidineApiId2(e.target.value)}
+                    placeholder="26237534515339637272"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-white text-sm font-mono focus:ring-2 focus:ring-blue-500 outline-none placeholder:text-gray-600"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">API Token</label>
+                  <input
+                    type="password"
+                    value={yalidineApiToken2}
+                    onChange={(e) => setYalidineApiToken2(e.target.value)}
+                    placeholder="Token Compte 2"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-white text-sm font-mono focus:ring-2 focus:ring-blue-500 outline-none placeholder:text-gray-600"
+                  />
+                </div>
               </div>
             </div>
           </div>

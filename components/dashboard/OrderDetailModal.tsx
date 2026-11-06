@@ -259,9 +259,17 @@ export default function OrderDetailModal({
               <div className="flex items-center gap-2.5">
                 <Truck size={16} className="text-purple-400 shrink-0" />
                 <div>
-                  <span className="text-[10px] font-bold text-purple-300 uppercase tracking-wider block">
-                    Numéro de Suivi (Yalidine / Transporteur)
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] font-bold text-purple-300 uppercase tracking-wider block">
+                      Numéro de Suivi ({order.note?.includes("Compte 2") ? "Yalidine Compte 2" : order.note?.includes("Compte 1") ? "Yalidine Compte 1" : "Yalidine / Transporteur"})
+                    </span>
+                    {order.note?.includes("Compte 2") && (
+                      <span className="text-[9px] font-mono px-1.5 py-0.2 bg-blue-500/20 text-blue-300 rounded font-bold">C2</span>
+                    )}
+                    {order.note?.includes("Compte 1") && (
+                      <span className="text-[9px] font-mono px-1.5 py-0.2 bg-rose-500/20 text-rose-300 rounded font-bold">C1</span>
+                    )}
+                  </div>
                   <span className="text-xs font-mono font-bold text-white">{order.tracking_id}</span>
                 </div>
               </div>
