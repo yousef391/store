@@ -48,3 +48,4 @@ CREATE POLICY "Allow anon read stock_logs"
   ON public.stock_logs FOR SELECT
   TO anon
   USING (true);
+

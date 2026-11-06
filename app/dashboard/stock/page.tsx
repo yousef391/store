@@ -32,7 +32,7 @@ export default function StockPage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState("");
-  const [filterMode, setFilterMode] = useState<"all" | "active" | "low_stock">("all");
+  const [filterMode, setFilterMode] = useState<"active" | "low_stock" | "all">("active");
 
   // Selected product being edited
   const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
@@ -145,22 +145,21 @@ export default function StockPage() {
         matchesFilter = p.status === "active";
       } else if (filterMode === "low_stock") {
         const hasLowSize = Object.values(p.size_stock).some((qty) => qty <= 3);
-        matchesFilter = p.stock <= 10 || hasLowSize;
+        matchesFilter = p.status === "active" && (p.stock <= 10 || hasLowSize);
       }
 
       return matchesSearch && matchesFilter;
     });
   }, [products, search, filterMode]);
 
-  // Global KPIs
+  // Global KPIs (computed for active products)
   const kpiStats = useMemo(() => {
+    const activeProducts = products.filter((p) => p.status === "active");
     let totalPieces = 0;
-    let activeCount = 0;
     let lowStockCount = 0;
     let outOfStockCount = 0;
 
-    products.forEach((p) => {
-      if (p.status === "active") activeCount++;
+    activeProducts.forEach((p) => {
       totalPieces += p.stock;
 
       Object.values(p.size_stock).forEach((qty) => {
@@ -169,7 +168,12 @@ export default function StockPage() {
       });
     });
 
-    return { totalPieces, activeCount, lowStockCount, outOfStockCount };
+    return {
+      totalPieces,
+      activeCount: activeProducts.length,
+      lowStockCount,
+      outOfStockCount,
+    };
   }, [products]);
 
   // Handle stock adjustments for a size
@@ -426,24 +430,15 @@ export default function StockPage() {
             {/* Filter Pills */}
             <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
               <button
-                onClick={() => setFilterMode("all")}
-                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-colors whitespace-nowrap ${
-                  filterMode === "all"
-                    ? "bg-accent text-black"
-                    : "bg-white/5 text-gray-400 hover:text-white"
-                }`}
-              >
-                Tous
-              </button>
-              <button
                 onClick={() => setFilterMode("active")}
-                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-colors whitespace-nowrap ${
+                className={`px-3 py-1 rounded-lg text-[11px] font-bold transition-colors whitespace-nowrap flex items-center gap-1.5 ${
                   filterMode === "active"
                     ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
                     : "bg-white/5 text-gray-400 hover:text-white"
                 }`}
               >
-                Actifs ({products.filter((p) => p.status === "active").length})
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                Produits Actifs ({products.filter((p) => p.status === "active").length})
               </button>
               <button
                 onClick={() => setFilterMode("low_stock")}
@@ -453,7 +448,17 @@ export default function StockPage() {
                     : "bg-white/5 text-gray-400 hover:text-white"
                 }`}
               >
-                Alertes
+                Stock Faible
+              </button>
+              <button
+                onClick={() => setFilterMode("all")}
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-colors whitespace-nowrap ${
+                  filterMode === "all"
+                    ? "bg-white/20 text-white"
+                    : "bg-white/5 text-gray-400 hover:text-white"
+                }`}
+              >
+                Tous
               </button>
             </div>
 
