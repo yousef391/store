@@ -10,12 +10,12 @@ import {
   Minus,
   Check,
   AlertTriangle,
-  XCircle,
   Layers,
   Save,
   Trash2,
   Clock,
   Sparkles,
+  Coins,
 } from "lucide-react";
 import RoleGuard from "@/components/dashboard/RoleGuard";
 import { useAuth } from "@/components/dashboard/AuthGuard";
@@ -56,9 +56,13 @@ export default function StockPage() {
       const data = await fetchProductsWithStock();
       let list = data || [];
 
-      // Filter for sub-admin if assigned products are configured
-      if (role === "sub_admin" && assignedProducts && assignedProducts.length > 0) {
-        list = list.filter((p) => matchesAssignedProduct(p.name, assignedProducts));
+      // Filter for sub-admin: only show their assigned / selected ensembles
+      if (role === "sub_admin") {
+        const assigned = assignedProducts || [];
+        list = list.filter((p) =>
+          matchesAssignedProduct(p.name, assigned) ||
+          matchesAssignedProduct(p.slug, assigned)
+        );
       }
 
       setProducts(list);
@@ -156,11 +160,13 @@ export default function StockPage() {
   const kpiStats = useMemo(() => {
     const activeProducts = products.filter((p) => p.status === "active");
     let totalPieces = 0;
+    let totalValue = 0;
     let lowStockCount = 0;
     let outOfStockCount = 0;
 
     activeProducts.forEach((p) => {
       totalPieces += p.stock;
+      totalValue += (p.price || 0) * p.stock;
 
       Object.values(p.size_stock).forEach((qty) => {
         if (qty === 0) outOfStockCount++;
@@ -170,6 +176,7 @@ export default function StockPage() {
 
     return {
       totalPieces,
+      totalValue,
       activeCount: activeProducts.length,
       lowStockCount,
       outOfStockCount,
@@ -357,41 +364,43 @@ export default function StockPage() {
               <span className="text-2xl font-extrabold text-white tabular-nums">
                 {kpiStats.totalPieces.toLocaleString()}
               </span>
-              <span className="text-[11px] text-gray-500 ml-1.5">unités</span>
+              <span className="text-[11px] text-gray-500 ml-1.5">pièces</span>
+            </div>
+          </div>
+
+          <div className="bg-surface/80 border border-accent/20 bg-accent/5 rounded-2xl p-4 flex flex-col justify-between shadow-lg shadow-accent/5">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-accent flex items-center gap-1.5">
+              <Coins size={14} className="text-accent" /> Valeur Totale Stock
+            </span>
+            <div className="mt-2">
+              <span className="text-2xl font-extrabold text-accent tabular-nums font-mono">
+                {kpiStats.totalValue.toLocaleString()}
+              </span>
+              <span className="text-[11px] text-accent/80 font-bold ml-1.5">DA</span>
             </div>
           </div>
 
           <div className="bg-surface/80 border border-white/10 rounded-2xl p-4 flex flex-col justify-between">
             <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
-              <Sparkles size={14} className="text-emerald-400" /> Produits Actifs
+              <Sparkles size={14} className="text-emerald-400" /> Ensembles Actifs
             </span>
             <div className="mt-2">
               <span className="text-2xl font-extrabold text-emerald-400 tabular-nums">
                 {kpiStats.activeCount}
               </span>
-              <span className="text-[11px] text-gray-500 ml-1.5">sur {products.length}</span>
+              <span className="text-[11px] text-gray-500 ml-1.5">
+                {role === "sub_admin" ? "assigné(s)" : `sur ${products.length}`}
+              </span>
             </div>
           </div>
 
           <div className="bg-surface/80 border border-white/10 rounded-2xl p-4 flex flex-col justify-between">
             <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
-              <AlertTriangle size={14} className="text-amber-400" /> Stock Faible (≤5)
+              <AlertTriangle size={14} className="text-amber-400" /> Alertes Stock (≤5)
             </span>
             <div className="mt-2">
               <span className="text-2xl font-extrabold text-amber-400 tabular-nums">
                 {kpiStats.lowStockCount}
-              </span>
-              <span className="text-[11px] text-gray-500 ml-1.5">tailles</span>
-            </div>
-          </div>
-
-          <div className="bg-surface/80 border border-white/10 rounded-2xl p-4 flex flex-col justify-between">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
-              <XCircle size={14} className="text-rose-400" /> En Rupture (0)
-            </span>
-            <div className="mt-2">
-              <span className="text-2xl font-extrabold text-rose-400 tabular-nums">
-                {kpiStats.outOfStockCount}
               </span>
               <span className="text-[11px] text-gray-500 ml-1.5">tailles</span>
             </div>
@@ -466,7 +475,9 @@ export default function StockPage() {
             <div className="space-y-2 max-h-[550px] overflow-y-auto pr-1">
               {filteredProducts.length === 0 ? (
                 <div className="p-6 text-center text-xs text-gray-500">
-                  Aucun produit ne correspond à votre recherche.
+                  {role === "sub_admin" && (!assignedProducts || assignedProducts.length === 0)
+                    ? "Aucun ensemble assigné à votre compte sous-admin."
+                    : "Aucun produit ne correspond à votre recherche."}
                 </div>
               ) : (
                 filteredProducts.map((p) => {
@@ -514,12 +525,16 @@ export default function StockPage() {
                           <span>•</span>
                           <span className="truncate">{p.sizes.length} tailles</span>
                         </div>
+                        <div className="mt-1 text-[11px] font-bold text-accent font-mono tabular-nums flex items-center gap-1">
+                          <span>Total :</span>
+                          <span>{((p.price || 0) * p.stock).toLocaleString()} DA</span>
+                        </div>
                       </div>
 
                       {/* Stock Badge */}
-                      <div className="text-right shrink-0">
+                      <div className="text-right shrink-0 flex flex-col items-end gap-1">
                         <span
-                          className={`inline-block px-2 py-0.5 rounded-full text-[11px] font-bold font-mono border ${
+                          className={`inline-block px-2.5 py-1 rounded-lg text-xs font-bold font-mono border ${
                             isOutOfStock
                               ? "bg-rose-500/15 text-rose-400 border-rose-500/30"
                               : p.stock <= 10
@@ -584,16 +599,34 @@ export default function StockPage() {
                     </div>
                   </div>
 
-                  {/* Right side: Live Total Stock Indicator */}
-                  <div className="flex items-center sm:flex-col sm:items-end justify-between gap-1 bg-white/5 sm:bg-transparent p-3 sm:p-0 rounded-xl">
-                    <span className="text-[11px] uppercase tracking-wider text-gray-400 font-semibold">
-                      Stock Total
-                    </span>
-                    <div className="flex items-baseline gap-1.5">
-                      <span className="text-3xl font-extrabold text-accent font-mono tabular-nums">
-                        {liveTotalStock}
+                  {/* Right side: Live Total Stock & Financial Valuation */}
+                  <div className="flex flex-col sm:items-end justify-between gap-2 bg-[#0d0f15] border border-white/10 p-3 sm:p-4 rounded-2xl sm:min-w-[240px] shadow-sm">
+                    <div className="flex items-center sm:flex-col sm:items-end justify-between w-full">
+                      <span className="text-[11px] uppercase tracking-wider text-gray-400 font-semibold">
+                        Stock Total
                       </span>
-                      <span className="text-xs text-gray-400 font-medium">pièces</span>
+                      <div className="flex items-baseline gap-1.5 mt-0.5">
+                        <span className="text-2xl sm:text-3xl font-extrabold text-white font-mono tabular-nums">
+                          {liveTotalStock}
+                        </span>
+                        <span className="text-xs text-gray-400 font-medium">pièces</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center sm:flex-col sm:items-end justify-between w-full pt-2.5 border-t border-white/10">
+                      <span className="text-[11px] uppercase tracking-wider text-accent font-bold flex items-center gap-1">
+                        <Coins size={12} className="text-accent" />
+                        <span>Prix Total en Stock</span>
+                      </span>
+                      <div className="flex items-baseline gap-1 mt-0.5">
+                        <span className="text-xl sm:text-2xl font-extrabold text-accent font-mono tabular-nums">
+                          {((selectedProduct.price || 0) * liveTotalStock).toLocaleString()}
+                        </span>
+                        <span className="text-xs text-accent font-bold">DA</span>
+                      </div>
+                      <span className="text-[10px] text-gray-400 font-mono mt-0.5">
+                        ({(selectedProduct.price || 0).toLocaleString()} DA × {liveTotalStock} pcs)
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -740,6 +773,14 @@ export default function StockPage() {
                               +5
                             </button>
                           </div>
+
+                          {/* Subtotal value for this size */}
+                          <div className="flex items-center justify-between pt-2 border-t border-white/5 text-[11px]">
+                            <span className="text-gray-500 font-medium">Valeur ({qty} pcs) :</span>
+                            <span className="font-bold font-mono text-accent tabular-nums">
+                              {((selectedProduct.price || 0) * qty).toLocaleString()} DA
+                            </span>
+                          </div>
                         </div>
                       );
                     })}
@@ -817,8 +858,10 @@ export default function StockPage() {
                 </div>
               </div>
             ) : (
-              <div className="bg-surface/40 border border-white/5 rounded-2xl p-12 text-center text-gray-500">
-                Sélectionnez un produit à gauche pour configurer son stock.
+              <div className="bg-surface/40 border border-white/5 rounded-2xl p-12 text-center text-gray-400 text-xs sm:text-sm">
+                {role === "sub_admin" && (!assignedProducts || assignedProducts.length === 0)
+                  ? "Aucun ensemble n'est assigné à votre compte sous-admin. Veuillez contacter l'administrateur."
+                  : "Sélectionnez un ensemble à gauche pour afficher et configurer son stock."}
               </div>
             )}
 
