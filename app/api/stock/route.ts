@@ -25,8 +25,9 @@ export async function GET() {
 
     if (prodErr) throw prodErr;
 
-    // Check fallback in store_settings
-    let fallbackSizeStocks: Record<string | number, Record<string, number>> = {};
+    // Check isolated stock_data in store_settings
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let stockDataStore: Record<string | number, any> = {};
     try {
       const { data: settings } = await supabase
         .from("store_settings")
@@ -36,30 +37,40 @@ export async function GET() {
 
       if (settings?.zone_prices && typeof settings.zone_prices === "object") {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        fallbackSizeStocks = (settings.zone_prices as any).size_stocks || {};
+        const zp = settings.zone_prices as any;
+        stockDataStore = zp.stock_data || zp.size_stocks || {};
       }
     } catch {
       // Ignore
     }
 
     const products = (rawProducts || []).map((p) => {
-      const sizes: string[] = Array.isArray(p.sizes) && p.sizes.length > 0 ? p.sizes : [...DEFAULT_SIZES];
-
+      let stockSizes: string[] = [];
       let size_stock: Record<string, number> = {};
-      if (p.size_stock && typeof p.size_stock === "object" && Object.keys(p.size_stock).length > 0) {
+
+      const savedData = stockDataStore[p.id];
+      if (savedData && typeof savedData === "object") {
+        if (savedData.size_stock && typeof savedData.size_stock === "object") {
+          size_stock = { ...savedData.size_stock };
+          stockSizes = Array.isArray(savedData.sizes) && savedData.sizes.length > 0
+            ? [...savedData.sizes]
+            : Object.keys(size_stock);
+        } else {
+          size_stock = { ...savedData };
+          stockSizes = Object.keys(size_stock);
+        }
+      } else if (p.size_stock && typeof p.size_stock === "object" && Object.keys(p.size_stock).length > 0) {
         size_stock = { ...p.size_stock };
-      } else if (fallbackSizeStocks[p.id]) {
-        size_stock = { ...fallbackSizeStocks[p.id] };
-      } else {
-        const total = typeof p.stock === "number" ? p.stock : 0;
-        const perSize = sizes.length > 0 ? Math.floor(total / sizes.length) : total;
-        const remainder = sizes.length > 0 ? total % sizes.length : 0;
-        sizes.forEach((s, idx) => {
-          size_stock[s] = perSize + (idx === 0 ? remainder : 0);
-        });
+        stockSizes = Object.keys(size_stock);
       }
 
-      sizes.forEach((s) => {
+      // If no stock sizes configured yet for this product, initialize with standard stock sizes
+      // NEVER use p.sizes (which is customer view sizes)!
+      if (stockSizes.length === 0) {
+        stockSizes = [...DEFAULT_SIZES];
+      }
+
+      stockSizes.forEach((s) => {
         if (size_stock[s] === undefined) {
           size_stock[s] = 0;
         }
@@ -76,7 +87,7 @@ export async function GET() {
         bundle_price: p.bundle_price,
         images: Array.isArray(p.images) ? p.images : [],
         category: p.category || "General",
-        sizes,
+        sizes: stockSizes, // INDEPENDENT stock sizes ONLY (never touches p.sizes)
         size_stock,
         stock: computedStock,
         updated_at: p.updated_at,
@@ -125,16 +136,18 @@ export async function POST(request: Request) {
         (sum: number, qty) => sum + Math.max(0, Number(qty) || 0),
         0
       );
-      const newStatus = status || "active";
+      const stockSizes = sizes && Array.isArray(sizes) && sizes.length > 0
+        ? sizes
+        : Object.keys(size_stock);
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const updates: Record<string, any> = {
         stock: totalStock,
-        status: newStatus,
         updated_at: new Date().toISOString(),
       };
-      if (sizes && Array.isArray(sizes)) {
-        updates.sizes = sizes;
+      // NEVER update updates.sizes - stock sizes are 100% independent from products.sizes!
+      if (status) {
+        updates.status = status;
       }
 
       // Try update with size_stock column
@@ -153,26 +166,41 @@ export async function POST(request: Request) {
           .eq("id", productId)
           .select()
           .single();
+      }
 
-        try {
-          const { data: settings } = await supabase
-            .from("store_settings")
-            .select("zone_prices")
-            .eq("id", 1)
-            .single();
+      // Persist isolated stock data in store_settings (never affects product.sizes)
+      try {
+        const { data: settings } = await supabase
+          .from("store_settings")
+          .select("zone_prices")
+          .eq("id", 1)
+          .single();
 
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const zonePrices = (settings?.zone_prices as any) || {};
-          const sizeStocks = zonePrices.size_stocks || {};
-          sizeStocks[productId] = size_stock;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const zonePrices = (settings?.zone_prices as any) || {};
+        const stockData = zonePrices.stock_data || {};
+        stockData[productId] = {
+          sizes: stockSizes,
+          size_stock,
+          total: totalStock,
+          updated_at: new Date().toISOString(),
+        };
 
-          await supabase
-            .from("store_settings")
-            .update({ zone_prices: { ...zonePrices, size_stocks: sizeStocks } })
-            .eq("id", 1);
-        } catch (e) {
-          console.warn("Fallback persistence error:", e);
-        }
+        await supabase
+          .from("store_settings")
+          .update({
+            zone_prices: {
+              ...zonePrices,
+              stock_data: stockData,
+              size_stocks: {
+                ...(zonePrices.size_stocks || {}),
+                [productId]: size_stock,
+              },
+            },
+          })
+          .eq("id", 1);
+      } catch (e) {
+        console.warn("Fallback persistence error:", e);
       }
 
       if (res.error) throw res.error;
