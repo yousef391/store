@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { adjustStockForOrderStatus } from "./stock";
 
 // ──── PRODUCTS ────
 export async function fetchProducts() {
@@ -182,10 +183,37 @@ export async function updateOrder(id: string, updates: Record<string, any>) {
       .select()
       .single();
     if (retry.error) throw retry.error;
-    return normalizeOrder({ ...retry.data, status: updates.status });
+    const finalData = { ...retry.data, status: updates.status };
+    if (updates.status === "expedie" || updates.status === "retourne") {
+      adjustStockForOrderStatus({
+        orderId: id,
+        orderNumber: finalData.order_number,
+        itemName: finalData.item,
+        size: finalData.size,
+        quantity: finalData.quantity,
+        previousStatus: retry.data?.status || "",
+        newStatus: updates.status,
+        isDeducted: finalData.stock_deducted,
+        orderNote: finalData.note,
+      }).catch(console.warn);
+    }
+    return normalizeOrder(finalData);
   }
 
   if (error) throw error;
+  if (data && (updates.status === "expedie" || updates.status === "retourne")) {
+    adjustStockForOrderStatus({
+      orderId: id,
+      orderNumber: data.order_number,
+      itemName: data.item,
+      size: data.size,
+      quantity: data.quantity,
+      previousStatus: data.status,
+      newStatus: updates.status,
+      isDeducted: data.stock_deducted,
+      orderNote: data.note,
+    }).catch(console.warn);
+  }
   return normalizeOrder(data);
 }
 

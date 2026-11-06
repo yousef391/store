@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { adjustStockForOrderStatus } from "@/lib/stock";
 
 function getAdminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -31,6 +32,22 @@ export async function POST(request: Request) {
     const attemptUpdate = async (p: Record<string, any>) => {
       return supabase.from("orders").update(p).eq("id", id).select().single();
     };
+
+    // Fetch current order state before update to detect status transition & stock
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let currentOrder: any = null;
+    if (requestedStatus) {
+      try {
+        const { data: ord } = await supabase
+          .from("orders")
+          .select("id, order_number, item, size, quantity, status, note, stock_deducted")
+          .eq("id", id)
+          .single();
+        currentOrder = ord;
+      } catch {
+        // Ignore lookup error
+      }
+    }
 
     const currentPayload = { ...payload };
     let res = await attemptUpdate(currentPayload);
@@ -75,6 +92,37 @@ export async function POST(request: Request) {
 
     if (res.error) {
       return NextResponse.json({ error: res.error.message }, { status: 500 });
+    }
+
+    // Trigger automatic stock adjustment on status transitions to expedie or retourne
+    if (currentOrder && requestedStatus && requestedStatus !== currentOrder.status) {
+      if (requestedStatus === "expedie" || requestedStatus === "retourne") {
+        try {
+          const stockRes = await adjustStockForOrderStatus({
+            orderId: id,
+            orderNumber: currentOrder.order_number,
+            itemName: currentOrder.item,
+            size: currentOrder.size,
+            quantity: currentOrder.quantity,
+            previousStatus: currentOrder.status,
+            newStatus: requestedStatus,
+            isDeducted: currentOrder.stock_deducted,
+            orderNote: currentOrder.note,
+          });
+
+          if (stockRes.actionTaken === "deducted") {
+            try {
+              await supabase.from("orders").update({ stock_deducted: true }).eq("id", id);
+            } catch {}
+          } else if (stockRes.actionTaken === "restored") {
+            try {
+              await supabase.from("orders").update({ stock_deducted: false }).eq("id", id);
+            } catch {}
+          }
+        } catch (stockErr) {
+          console.warn("Stock sync warning:", stockErr);
+        }
+      }
     }
 
     const data = res.data;

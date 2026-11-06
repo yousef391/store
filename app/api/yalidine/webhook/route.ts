@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import crypto from "crypto";
+import { adjustStockForOrderStatus } from "@/lib/stock";
 
 function getAdminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -226,7 +227,9 @@ export async function POST(request: Request) {
       }
 
       // Find the order
-      let orderQuery = supabase.from("orders").select("id, order_number, status, name, note, tracking_id");
+      let orderQuery = supabase
+        .from("orders")
+        .select("id, order_number, status, name, note, tracking_id, item, size, quantity, stock_deducted");
       if (tracking) {
         orderQuery = orderQuery.eq("tracking_id", tracking);
       } else if (orderRef) {
@@ -280,6 +283,36 @@ export async function POST(request: Request) {
         console.error(`Failed to update order ${order.id}:`, updateRes.error);
         results.push({ tracking, order_id: order.order_number, success: false, message: updateRes.error.message });
         continue;
+      }
+
+      // Adjust stock if order transitioned to expedie or retourne
+      if (mapping.status === "expedie" || mapping.status === "retourne") {
+        try {
+          const stockRes = await adjustStockForOrderStatus({
+            orderId: order.id,
+            orderNumber: order.order_number,
+            itemName: order.item,
+            size: order.size,
+            quantity: order.quantity,
+            previousStatus: order.status,
+            newStatus: mapping.status,
+            isDeducted: order.stock_deducted,
+            orderNote: order.note,
+            userEmail: "Yalidine Webhook",
+          });
+
+          if (stockRes.actionTaken === "deducted") {
+            try {
+              await supabase.from("orders").update({ stock_deducted: true }).eq("id", order.id);
+            } catch {}
+          } else if (stockRes.actionTaken === "restored") {
+            try {
+              await supabase.from("orders").update({ stock_deducted: false }).eq("id", order.id);
+            } catch {}
+          }
+        } catch (stockErr) {
+          console.warn("Stock sync warning in webhook:", stockErr);
+        }
       }
 
       // Record activity in histories

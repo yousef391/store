@@ -22,3 +22,4 @@ ALTER TABLE public.orders ADD CONSTRAINT orders_status_check CHECK (
     'echoue'
   )
 );
+
