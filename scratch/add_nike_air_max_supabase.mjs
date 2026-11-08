@@ -15,10 +15,16 @@ async function main() {
     description: "Ensemble Nike Air Max premium. Hoodie à capuche avec logo géant au dos et pantalon jogger assorti. Tissu molletonné ultra-doux pour un confort optimal.",
     price: 5900,
     bundle_price: 9900,
-    images: ["/products/nike_air_max_grey.jpg"],
+    images: [
+      "/products/nike_air_max_black.jpg",
+      "/products/nike_air_max_grey.jpg"
+    ],
     category: "ensembles",
     sizes: ["S", "M", "L", "XL"],
-    colors: [{ name: "Gris", hex: "#9ca3af" }],
+    colors: [
+      { name: "Noir", hex: "#111111" },
+      { name: "Gris", hex: "#9ca3af" }
+    ],
     tag: "Swoosh Oversize",
     status: "active",
     is_featured: true,
@@ -47,14 +53,27 @@ async function main() {
       product_id: 24,
       name: "Ensemble Nike Air Max",
       bg: "#0a0a0a",
-      tag: "Gris",
-      swatch: "#9ca3af",
+      tag: "Noir",
+      swatch: "#111111",
       description: "Ensemble Nike Air Max en coton molletonné d'exception. Hoodie avec logo Swoosh oversize au dos et pantalon assorti avec détails Air Max. Style streetwear ultra-confortable.",
       review: '"طقم نايك خيالي، القماش والفينيسيون بزاف شابين" — وليد ب.',
       product_type: "set",
+      image: "/products/nike_air_max_black.jpg",
+      color_name: "Noir",
+      sort_order: 1
+    },
+    {
+      product_id: 24,
+      name: "Ensemble Nike Air Max",
+      bg: "#0a0a0a",
+      tag: "Gris",
+      swatch: "#9ca3af",
+      description: "Ensemble Nike Air Max en coton molletonné d'exception. Hoodie avec logo Swoosh oversize au dos et pantalon assorti avec détails Air Max. Style streetwear ultra-confortable.",
+      review: '"الرمادي بزاف كلاس وأنيق، تفاصيل Air Max طوب" — أمين ك.',
+      product_type: "set",
       image: "/products/nike_air_max_grey.jpg",
       color_name: "Gris",
-      sort_order: 1
+      sort_order: 2
     }
   ];
 
