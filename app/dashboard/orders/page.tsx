@@ -1140,14 +1140,14 @@ export default function OrdersPage() {
                         <span>{formatOrderDateTime(order.created_at)}</span>
                       </div>
                       <div className="flex items-center gap-1">
-                        {order.source === "meta" && (
+                        {order.source?.startsWith("meta") && (
                           <span className="text-[9px] font-bold text-blue-400 bg-blue-400/10 border border-blue-400/20 px-1.5 py-0.5 rounded">
-                            Meta
+                            {order.source.includes(":") ? `Meta (${order.source.split(":")[1]})` : "Meta"}
                           </span>
                         )}
-                        {order.source === "tiktok" && (
+                        {order.source?.startsWith("tiktok") && (
                           <span className="text-[9px] font-bold text-pink-400 bg-pink-400/10 border border-pink-400/20 px-1.5 py-0.5 rounded">
-                            TikTok
+                            {order.source.includes(":") ? `TikTok (${order.source.split(":")[1]})` : "TikTok"}
                           </span>
                         )}
                       </div>
@@ -1419,14 +1419,14 @@ export default function OrdersPage() {
                             <span className="text-[10px] font-bold text-accent bg-accent/10 px-1.5 py-0.5 rounded">
                               #{order.order_number}
                             </span>
-                            {order.source === "meta" && (
+                            {order.source?.startsWith("meta") && (
                               <span className="text-[9px] font-bold text-blue-400 bg-blue-400/10 px-1.5 py-0.5 rounded">
-                                Meta
+                                {order.source.includes(":") ? `Meta (${order.source.split(":")[1]})` : "Meta"}
                               </span>
                             )}
-                            {order.source === "tiktok" && (
+                            {order.source?.startsWith("tiktok") && (
                               <span className="text-[9px] font-bold text-pink-400 bg-pink-400/10 px-1.5 py-0.5 rounded">
-                                TikTok
+                                {order.source.includes(":") ? `TikTok (${order.source.split(":")[1]})` : "TikTok"}
                               </span>
                             )}
                           </div>

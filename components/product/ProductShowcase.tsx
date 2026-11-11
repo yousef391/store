@@ -20,11 +20,14 @@ const getOrderSource = () => {
   const fbclid = searchParams.get('fbclid');
   const ttclid = searchParams.get('ttclid');
   const utm_source = searchParams.get('utm_source');
+  const utm_campaign = searchParams.get('utm_campaign');
   
   if (fbclid || utm_source === 'meta' || utm_source === 'facebook' || utm_source === 'ig') {
-    return 'meta';
+    return utm_campaign ? `meta:${utm_campaign}` : 'meta';
   } else if (ttclid || utm_source === 'tiktok') {
-    return 'tiktok';
+    return utm_campaign ? `tiktok:${utm_campaign}` : 'tiktok';
+  } else if (utm_campaign) {
+    return utm_campaign;
   }
   return 'organic';
 };
