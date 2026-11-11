@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import crypto from "crypto";
+import { sendServerEvent } from "@/lib/meta-capi";
 
 function getAdminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -228,7 +229,7 @@ export async function POST(request: Request) {
       // Find the order
       let orderQuery = supabase
         .from("orders")
-        .select("id, order_number, status, name, note, tracking_id, item, size, quantity, stock_deducted");
+        .select("id, order_number, status, name, phone, wilaya, commune, total, price, note, tracking_id, item, size, quantity, stock_deducted");
       if (tracking) {
         orderQuery = orderQuery.eq("tracking_id", tracking);
       } else if (orderRef) {
@@ -282,6 +283,43 @@ export async function POST(request: Request) {
         console.error(`Failed to update order ${order.id}:`, updateRes.error);
         results.push({ tracking, order_id: order.order_number, success: false, message: updateRes.error.message });
         continue;
+      }
+
+      // If order newly transitioned to truly delivered, fire Meta CAPI "Order_Delivered" event
+      if (mapping.status === "livre" && order.status !== "livre") {
+        try {
+          const rawPhone = order.phone || "";
+          const digits = rawPhone.replace(/\D/g, "");
+          let formattedPhone = rawPhone;
+          if (digits.startsWith("0") && digits.length === 10) {
+            formattedPhone = "+213" + digits.slice(1);
+          } else if (digits.startsWith("213") && digits.length === 12) {
+            formattedPhone = "+" + digits;
+          } else if (digits.length === 9) {
+            formattedPhone = "+213" + digits;
+          }
+
+          const parsedTotal = typeof order.total === "number" ? order.total : parseFloat(String(order.total || order.price || 0)) || 0;
+
+          await sendServerEvent({
+            eventName: "Order_Delivered",
+            eventId: `delivered_${order.id}`,
+            userData: {
+              phone: formattedPhone,
+              firstName: order.name?.split(" ")[0] || order.name || undefined,
+              lastName: order.name?.split(" ").slice(1).join(" ") || undefined,
+            },
+            customData: {
+              value: parsedTotal,
+              currency: "DZD",
+              orderId: String(order.order_number),
+              contentName: order.item,
+            },
+            actionSource: "other",
+          });
+        } catch (capiErr) {
+          console.warn("[Meta CAPI] Error sending Order_Delivered:", capiErr);
+        }
       }
 
       // Record activity in histories

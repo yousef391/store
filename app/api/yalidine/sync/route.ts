@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getYalidineAccountsFromSettings, YalidineAccount } from "@/lib/yalidine";
+import { sendServerEvent } from "@/lib/meta-capi";
 
 function getAdminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -141,7 +142,7 @@ export async function POST(request: Request) {
     // 3. Fetch orders from Supabase for local matching
     const { data: existingOrders } = await supabase
       .from("orders")
-      .select("id, order_number, tracking_id, status, note");
+      .select("id, order_number, tracking_id, status, note, phone, name, wilaya, total, price, item");
 
     interface ExistingOrder {
       id: string;
@@ -149,6 +150,12 @@ export async function POST(request: Request) {
       tracking_id?: string | null;
       status: string;
       note?: string | null;
+      phone?: string | null;
+      name?: string | null;
+      wilaya?: string | null;
+      total?: number | string | null;
+      price?: number | string | null;
+      item?: string | null;
     }
 
     const ordersByTracking = new Map<string, ExistingOrder>();
@@ -262,6 +269,13 @@ export async function POST(request: Request) {
     // 5. Match and Update Supabase Orders
     interface PendingUpdate {
       orderId: string;
+      orderNumber: number;
+      phone?: string | null;
+      name?: string | null;
+      total?: number | string | null;
+      price?: number | string | null;
+      item?: string | null;
+      isNowLivre: boolean;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       updates: Record<string, any>;
       rawStatus: string;
@@ -334,8 +348,17 @@ export async function POST(request: Request) {
           updates.note = newNote;
         }
 
+        const isNowLivre = statusNeedsUpdate && mapping.status === "livre";
+
         pendingUpdates.push({
           orderId: matchedOrder.id,
+          orderNumber: matchedOrder.order_number,
+          phone: matchedOrder.phone,
+          name: matchedOrder.name,
+          total: matchedOrder.total,
+          price: matchedOrder.price,
+          item: matchedOrder.item,
+          isNowLivre,
           updates,
           rawStatus,
           reason: p.reason,
@@ -370,6 +393,42 @@ export async function POST(request: Request) {
 
           if (!updateRes.error) {
             updatedCount++;
+
+            if (isNowLivre) {
+              try {
+                const rawPhone = phone || "";
+                const digits = rawPhone.replace(/\D/g, "");
+                let formattedPhone = rawPhone;
+                if (digits.startsWith("0") && digits.length === 10) {
+                  formattedPhone = "+213" + digits.slice(1);
+                } else if (digits.startsWith("213") && digits.length === 12) {
+                  formattedPhone = "+" + digits;
+                } else if (digits.length === 9) {
+                  formattedPhone = "+213" + digits;
+                }
+
+                const parsedTotal = typeof total === "number" ? total : parseFloat(String(total || price || 0)) || 0;
+
+                await sendServerEvent({
+                  eventName: "Order_Delivered",
+                  eventId: `delivered_${orderId}`,
+                  userData: {
+                    phone: formattedPhone,
+                    firstName: name?.split(" ")[0] || name || undefined,
+                    lastName: name?.split(" ").slice(1).join(" ") || undefined,
+                  },
+                  customData: {
+                    value: parsedTotal,
+                    currency: "DZD",
+                    orderId: String(orderNumber),
+                    contentName: item || undefined,
+                  },
+                  actionSource: "other",
+                });
+              } catch (capiErr) {
+                console.warn("[Meta CAPI] Sync delivery event error:", capiErr);
+              }
+            }
           }
         })
       );
