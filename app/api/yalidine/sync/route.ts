@@ -377,7 +377,7 @@ export async function POST(request: Request) {
     for (let i = 0; i < pendingUpdates.length; i += CONCURRENCY_LIMIT) {
       const batch = pendingUpdates.slice(i, i + CONCURRENCY_LIMIT);
       await Promise.all(
-        batch.map(async ({ orderId, updates, rawStatus, reason, currentNote }) => {
+        batch.map(async ({ orderId, orderNumber, phone, name, total, price, item, isNowLivre, updates, rawStatus, reason, currentNote }) => {
           let updateRes = await supabase.from("orders").update(updates).eq("id", orderId);
 
           // Graceful fallback if check constraint orders_status_check blocks status
