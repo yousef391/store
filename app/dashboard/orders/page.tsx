@@ -142,23 +142,53 @@ export default function OrdersPage() {
     await loadOrders();
   }, [loadOrders]);
 
-  // Load cached filters from localStorage on mount
+  // Load cached filters from localStorage or URL params on mount
   useEffect(() => {
     try {
-      const cached = localStorage.getItem("orders_filters_cache");
-      if (cached) {
-        const f = JSON.parse(cached);
-        if (typeof f.statusFilter === "string") setStatusFilter(f.statusFilter);
-        if (typeof f.productFilter === "string") setProductFilter(f.productFilter);
-        if (typeof f.dateFilter === "string") setDateFilter(f.dateFilter);
-        if (typeof f.searchQuery === "string") setSearchQuery(f.searchQuery);
-        if (typeof f.currentPage === "number" && f.currentPage > 0) setCurrentPage(f.currentPage);
+      const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+      const urlQuery = params?.get("search") || params?.get("phone");
+
+      if (urlQuery) {
+        setSearchQuery(urlQuery);
+        setDateFilter("all");
+        setStatusFilter("all");
+        setProductFilter("all");
+        setCurrentPage(1);
+      } else {
+        const cached = localStorage.getItem("orders_filters_cache");
+        if (cached) {
+          const f = JSON.parse(cached);
+          if (typeof f.statusFilter === "string") setStatusFilter(f.statusFilter);
+          if (typeof f.productFilter === "string") setProductFilter(f.productFilter);
+          if (typeof f.dateFilter === "string") setDateFilter(f.dateFilter);
+          if (typeof f.searchQuery === "string") setSearchQuery(f.searchQuery);
+          if (typeof f.currentPage === "number" && f.currentPage > 0) setCurrentPage(f.currentPage);
+        }
       }
     } catch (e) {
       console.warn("Failed to load cached filters:", e);
     } finally {
       setFiltersLoaded(true);
     }
+  }, []);
+
+  // Listen to browser Back/Forward (popstate) to keep URL search in sync
+  useEffect(() => {
+    const handlePopState = () => {
+      if (typeof window !== "undefined") {
+        const params = new URLSearchParams(window.location.search);
+        const urlQuery = params.get("search") || params.get("phone");
+        if (urlQuery) {
+          setSearchQuery(urlQuery);
+          setDateFilter("all");
+          setStatusFilter("all");
+          setProductFilter("all");
+          setCurrentPage(1);
+        }
+      }
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
   // Save filters to localStorage whenever they change
@@ -256,6 +286,31 @@ export default function OrdersPage() {
       setCopiedPhone(phone);
       setTimeout(() => setCopiedPhone(null), 1500);
     });
+  };
+
+  const filterByPhone = (phone: string) => {
+    if (searchQuery === phone) {
+      setSearchQuery("");
+      setDateFilter("today");
+      setCurrentPage(1);
+      if (typeof window !== "undefined") {
+        const url = new URL(window.location.href);
+        url.searchParams.delete("search");
+        url.searchParams.delete("phone");
+        window.history.pushState({}, "", url.toString());
+      }
+    } else {
+      setSearchQuery(phone);
+      setDateFilter("all");
+      setStatusFilter("all");
+      setProductFilter("all");
+      setCurrentPage(1);
+      if (typeof window !== "undefined") {
+        const url = new URL(window.location.href);
+        url.searchParams.set("search", phone);
+        window.history.pushState({}, "", url.toString());
+      }
+    }
   };
 
   // Format exact date & time
@@ -1155,12 +1210,13 @@ export default function OrdersPage() {
 
                     {/* Phone + Direct Call Button */}
                     <div className="flex items-center justify-between gap-2 bg-white/[0.02] p-2.5 rounded-xl border border-white/5">
-                      <div className="flex items-center gap-2 min-w-0">
+                      <div className="flex items-center gap-1.5 min-w-0">
                         <button
                           type="button"
                           onClick={() => copyPhone(order.phone)}
                           className="flex items-center gap-1 text-xs text-blue-400 font-mono font-bold"
                           dir="ltr"
+                          title="Copier le numéro"
                         >
                           <span>{order.phone}</span>
                           {copiedPhone === order.phone ? (
@@ -1169,13 +1225,27 @@ export default function OrdersPage() {
                             <Copy size={12} className="text-gray-500 hover:text-gray-300" />
                           )}
                         </button>
+                        <button
+                          type="button"
+                          onClick={() => filterByPhone(order.phone)}
+                          className={`p-1 rounded transition-colors ${
+                            searchQuery === order.phone
+                              ? "bg-accent/20 text-accent border border-accent/40"
+                              : "hover:bg-white/10 text-gray-400 hover:text-accent"
+                          }`}
+                          title={searchQuery === order.phone ? "Effacer le filtre" : "Voir toutes les commandes de ce numéro"}
+                        >
+                          <Filter size={12} />
+                        </button>
                         {phoneCounts[order.phone] > 1 && (
-                          <span
-                            className="text-[9px] font-bold text-red-400 bg-red-400/10 border border-red-400/20 px-1.5 py-0.5 rounded-full"
-                            title={`${phoneCounts[order.phone]} orders with this phone number`}
+                          <button
+                            type="button"
+                            onClick={() => filterByPhone(order.phone)}
+                            className="text-[9px] font-bold text-red-400 bg-red-400/10 border border-red-400/20 px-1.5 py-0.5 rounded-full hover:bg-red-400/20 transition-colors cursor-pointer"
+                            title={`${phoneCounts[order.phone]} commandes avec ce numéro (cliquer pour filtrer)`}
                           >
                             {phoneCounts[order.phone]}
-                          </span>
+                          </button>
                         )}
                       </div>
 
@@ -1431,18 +1501,32 @@ export default function OrdersPage() {
                             )}
                           </div>
 
-                          <div className="flex items-center gap-2 mt-1">
+                          <div className="flex items-center gap-1.5 mt-1">
                             <button
                               onClick={() => copyPhone(order.phone)}
                               className="flex items-center gap-1 text-xs text-blue-400 font-mono"
                               dir="ltr"
+                              title="Copier le numéro"
                             >
                               <span>{order.phone}</span>
                               {copiedPhone === order.phone ? (
                                 <Check size={11} className="text-emerald-400" />
                               ) : (
-                                <Copy size={11} className="text-gray-600" />
+                                <Copy size={11} className="text-gray-600 hover:text-gray-300" />
                               )}
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => filterByPhone(order.phone)}
+                              className={`p-1 rounded transition-colors ${
+                                searchQuery === order.phone
+                                  ? "bg-accent/20 text-accent border border-accent/40"
+                                  : "hover:bg-white/10 text-gray-500 hover:text-accent"
+                              }`}
+                              title={searchQuery === order.phone ? "Effacer le filtre" : "Voir toutes les commandes de ce numéro"}
+                            >
+                              <Filter size={11} />
                             </button>
 
                             {/* Direct Call Button (Desktop) */}
@@ -1456,12 +1540,14 @@ export default function OrdersPage() {
                             </a>
 
                             {phoneCounts[order.phone] > 1 && (
-                              <span
-                                className="text-[10px] font-bold text-red-400 bg-red-400/10 border border-red-400/20 px-1.5 py-0.5 rounded-full"
-                                title={`${phoneCounts[order.phone]} orders with this phone number`}
+                              <button
+                                type="button"
+                                onClick={() => filterByPhone(order.phone)}
+                                className="text-[10px] font-bold text-red-400 bg-red-400/10 border border-red-400/20 px-1.5 py-0.5 rounded-full hover:bg-red-400/20 transition-colors cursor-pointer"
+                                title={`${phoneCounts[order.phone]} commandes avec ce numéro (cliquer pour filtrer)`}
                               >
                                 {phoneCounts[order.phone]}
-                              </span>
+                              </button>
                             )}
                           </div>
 
@@ -1687,6 +1773,10 @@ export default function OrdersPage() {
           }}
           onUpdateRecall={handleTriggerRecall}
           statusColors={statusColors}
+          onFilterPhone={(phone) => {
+            setSelectedDetailOrder(null);
+            filterByPhone(phone);
+          }}
         />
       )}
 

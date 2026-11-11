@@ -3,8 +3,11 @@
 export const dynamic = 'force-dynamic';
 
 import { useEffect, useState } from 'react';
-import { Search, Phone, Copy, Check, X, UserX, RefreshCw, MessageCircle, Tag, ArrowRightLeft } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Search, Phone, Copy, Check, X, UserX, RefreshCw, MessageCircle, Tag, ArrowRightLeft, Filter } from 'lucide-react';
 import RoleGuard from '@/components/dashboard/RoleGuard';
+import { useAuth } from '@/components/dashboard/AuthGuard';
+import { matchesAssignedProduct } from '@/lib/auth';
 
 type Lead = {
   id: string;
@@ -44,6 +47,8 @@ const getStatusStyle = (s: string) => {
 };
 
 export default function AbandonedLeadsPage() {
+  const router = useRouter();
+  const { role, assignedProducts } = useAuth();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -60,7 +65,11 @@ export default function AbandonedLeadsPage() {
       const res = await fetch('/api/abandoned-leads');
       const data = await res.json();
       if (res.ok) {
-        setLeads(data || []);
+        let list: Lead[] = data || [];
+        if (role === "sub_admin" && assignedProducts && assignedProducts.length > 0) {
+          list = list.filter((l) => matchesAssignedProduct(l.item, assignedProducts));
+        }
+        setLeads(list);
       } else {
         console.error("Error fetching abandoned leads", data.error);
       }
@@ -73,12 +82,16 @@ export default function AbandonedLeadsPage() {
 
   useEffect(() => {
     fetchLeads();
-  }, []);
+  }, [role, assignedProducts]);
 
   const copyPhone = (phone: string) => {
     navigator.clipboard.writeText(phone);
     setCopiedPhone(phone);
     setTimeout(() => setCopiedPhone(null), 1500);
+  };
+
+  const viewOrdersForPhone = (phone: string) => {
+    router.push(`/dashboard/orders?search=${encodeURIComponent(phone)}`);
   };
 
   const updateStatus = async (id: string, status: string) => {
@@ -170,7 +183,7 @@ export default function AbandonedLeadsPage() {
   };
 
   return (
-    <RoleGuard allowedRoles={["admin"]}>
+    <RoleGuard allowedRoles={["admin", "sub_admin"]}>
     <div className="flex flex-col gap-4 lg:gap-6 w-full max-w-7xl mx-auto pb-10">
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -248,11 +261,19 @@ export default function AbandonedLeadsPage() {
                     <span className="text-sm font-bold text-white">{lead.name}</span>
                     <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${getStatusStyle(lead.status)}`}>{lead.status.replace('_', ' ')}</span>
                   </div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <button onClick={() => copyPhone(lead.phone)} className="flex items-center gap-1">
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <button onClick={() => copyPhone(lead.phone)} className="flex items-center gap-1" title="Copier le numéro">
                       <Phone size={12} className="text-gray-600" />
                       <span className="text-xs text-accent font-mono">{lead.phone}</span>
                       {copiedPhone === lead.phone ? <Check size={10} className="text-emerald-400" /> : <Copy size={10} className="text-gray-600" />}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => viewOrdersForPhone(lead.phone)}
+                      className="p-1 hover:bg-white/10 text-gray-500 hover:text-accent rounded transition-colors"
+                      title="Voir toutes les commandes de ce numéro"
+                    >
+                      <Filter size={11} />
                     </button>
                   </div>
                   <div className="text-[11px] text-gray-500 mb-2">
@@ -276,7 +297,9 @@ export default function AbandonedLeadsPage() {
                     </select>
                     <button onClick={() => openReduceModal(lead)} className="bg-amber-500/15 text-amber-400 text-[10px] font-bold px-2 py-1.5 rounded whitespace-nowrap">Reduce</button>
                     {!lead.converted && <button onClick={() => convertToOrder(lead)} className="bg-emerald-500/15 text-emerald-400 text-[10px] font-bold px-2 py-1.5 rounded whitespace-nowrap">Convert</button>}
-                    <button onClick={() => deleteLead(lead.id)} className="bg-white/5 hover:bg-red-500/20 text-gray-600 hover:text-red-400 p-1.5 rounded transition-colors"><X size={12} /></button>
+                    {role === "admin" && (
+                      <button onClick={() => deleteLead(lead.id)} className="bg-white/5 hover:bg-red-500/20 text-gray-600 hover:text-red-400 p-1.5 rounded transition-colors" title="Supprimer"><X size={12} /></button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -303,10 +326,20 @@ export default function AbandonedLeadsPage() {
                       <td className="py-4 px-4 text-xs text-gray-500">{new Date(lead.created_at).toLocaleDateString()}</td>
                       <td className="py-4 px-4">
                         <div className="text-sm font-bold text-white">{lead.name}</div>
-                        <button onClick={() => copyPhone(lead.phone)} className="flex items-center gap-1.5 mt-1 group/p">
-                          <span className="text-xs text-accent font-mono">{lead.phone}</span>
-                          {copiedPhone === lead.phone ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} className="text-gray-600 group-hover/p:text-accent" />}
-                        </button>
+                        <div className="flex items-center gap-1.5 mt-1">
+                          <button onClick={() => copyPhone(lead.phone)} className="flex items-center gap-1.5 group/p" title="Copier le numéro">
+                            <span className="text-xs text-accent font-mono">{lead.phone}</span>
+                            {copiedPhone === lead.phone ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} className="text-gray-600 group-hover/p:text-accent" />}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => viewOrdersForPhone(lead.phone)}
+                            className="p-1 hover:bg-white/10 text-gray-500 hover:text-accent rounded transition-colors"
+                            title="Voir toutes les commandes de ce numéro"
+                          >
+                            <Filter size={11} />
+                          </button>
+                        </div>
                       </td>
                       <td className="py-4 px-4">
                         <div className="text-sm text-gray-300">{lead.wilaya || '---'}</div>
@@ -334,8 +367,10 @@ export default function AbandonedLeadsPage() {
                             <button onClick={() => convertToOrder(lead)} title="Convert to order"
                               className="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 p-2 rounded-lg transition-colors"><ArrowRightLeft size={16} /></button>
                           )}
-                          <button onClick={() => deleteLead(lead.id)} title="Delete"
-                            className="bg-white/5 hover:bg-red-500/20 text-gray-500 hover:text-red-400 p-2 rounded-lg transition-colors"><X size={16} /></button>
+                          {role === "admin" && (
+                            <button onClick={() => deleteLead(lead.id)} title="Delete"
+                              className="bg-white/5 hover:bg-red-500/20 text-gray-500 hover:text-red-400 p-2 rounded-lg transition-colors"><X size={16} /></button>
+                          )}
                         </div>
                       </td>
                     </tr>

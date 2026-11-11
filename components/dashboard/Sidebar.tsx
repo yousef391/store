@@ -18,7 +18,7 @@ const navItems = [
   { href: "/dashboard/stats",       icon: Truck,       label: "Stats Livraison", roles: ["admin", "sub_admin"] },
   { href: "/dashboard/stock",       icon: Boxes,       label: "Stock",          roles: ["admin", "sub_admin"] },
   { href: "/dashboard/products",    icon: Package,    label: "Products",       roles: ["admin"] },
-  { href: "/dashboard/abandoned",   icon: UserX,      label: "Abandoned",      roles: ["admin"] },
+  { href: "/dashboard/abandoned",   icon: UserX,      label: "Abandoned",      roles: ["admin", "sub_admin"] },
   { href: "/dashboard/histories",   icon: Clock,      label: "Histories",      roles: ["admin"] },
   { href: "/dashboard/sub-accounts", icon: Users,     label: "Sub Accounts",   roles: ["admin"] },
   { href: "/dashboard/settings",    icon: Settings,   label: "Settings",       roles: ["admin"] },

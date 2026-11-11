@@ -18,7 +18,7 @@ export const ROLE_ALLOWED_PATHS: Record<UserRole, string[]> = {
     "/dashboard/sub-accounts",
     "/dashboard/settings",
   ],
-  sub_admin: ["/dashboard", "/dashboard/orders", "/dashboard/stats", "/dashboard/stock"],
+  sub_admin: ["/dashboard", "/dashboard/orders", "/dashboard/stats", "/dashboard/stock", "/dashboard/abandoned"],
 };
 
 /** Return true if a role is allowed to visit a given pathname. */

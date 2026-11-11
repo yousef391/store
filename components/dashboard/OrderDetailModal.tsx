@@ -16,6 +16,7 @@ import {
   RotateCcw,
   Pencil,
   CheckCircle2,
+  Filter,
 } from "lucide-react";
 import type { Order, RecallRecord } from "./EditOrderModal";
 
@@ -25,6 +26,7 @@ interface OrderDetailModalProps {
   onEdit: (order: Order) => void;
   onUpdateRecall: (orderId: string, recallNumber: number) => Promise<void>;
   statusColors: Record<string, { bg: string; text: string; border: string; dot: string; label: string }>;
+  onFilterPhone?: (phone: string) => void;
 }
 
 export default function OrderDetailModal({
@@ -33,6 +35,7 @@ export default function OrderDetailModal({
   onEdit,
   onUpdateRecall,
   statusColors,
+  onFilterPhone,
 }: OrderDetailModalProps) {
   const [copiedPhone, setCopiedPhone] = useState(false);
   const [copiedTracking, setCopiedTracking] = useState(false);
@@ -166,7 +169,7 @@ export default function OrderDetailModal({
             <div className="flex items-center justify-between flex-wrap gap-3">
               <div>
                 <p className="text-base font-bold text-white">{order.name}</p>
-                <div className="flex items-center gap-2 mt-1">
+                <div className="flex items-center gap-1.5 mt-1">
                   <span className="text-sm font-mono text-blue-400 font-bold" dir="ltr">
                     {order.phone}
                   </span>
@@ -177,6 +180,16 @@ export default function OrderDetailModal({
                   >
                     {copiedPhone ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
                   </button>
+                  {onFilterPhone && (
+                    <button
+                      type="button"
+                      onClick={() => onFilterPhone(order.phone)}
+                      className="p-1 hover:bg-white/10 rounded text-gray-500 hover:text-accent transition-colors"
+                      title="Voir toutes les commandes de ce numéro"
+                    >
+                      <Filter size={12} />
+                    </button>
+                  )}
                 </div>
               </div>
 
