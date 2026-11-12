@@ -13,6 +13,7 @@ import {
   Check
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { getOrderSource } from "@/lib/attribution";
 
 function UpsellContent() {
   const router = useRouter();
@@ -57,6 +58,7 @@ function UpsellContent() {
             delivery: 0,
             total: 2500,
             isUpsell: true,
+            source: getOrderSource(),
           }),
         });
       }

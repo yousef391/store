@@ -40,6 +40,7 @@ export const metadata: Metadata = {
 
 import { Suspense } from "react";
 import PixelScripts from "@/components/PixelScripts";
+import AttributionTracker from "@/components/AttributionTracker";
 
 export const revalidate = 60; // Revalidate layout data every 60 seconds
 
@@ -73,6 +74,7 @@ export default function RootLayout({
         </I18nProvider>
         <Suspense fallback={null}>
           <PixelScripts />
+          <AttributionTracker />
         </Suspense>
       </body>
     </html>

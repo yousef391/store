@@ -13,24 +13,7 @@ import Image from "next/image";
 import { ShieldCheck, PackageOpen, Truck, Banknote, Ruler, Globe2, CheckCircle2, Eye, ArrowLeft, Sparkles, Building2, Home, Star, Flame, Zap, RotateCw, MapPin, Lightbulb, Check, ShoppingBag, X, Tag } from "lucide-react";
 import Reviews from "@/components/home/Reviews";
 import SizeGuide from "@/components/home/SizeGuide";
-
-const getOrderSource = () => {
-  if (typeof window === 'undefined') return 'organic';
-  const searchParams = new URLSearchParams(window.location.search);
-  const fbclid = searchParams.get('fbclid');
-  const ttclid = searchParams.get('ttclid');
-  const utm_source = searchParams.get('utm_source');
-  const utm_campaign = searchParams.get('utm_campaign');
-  
-  if (fbclid || utm_source === 'meta' || utm_source === 'facebook' || utm_source === 'ig') {
-    return utm_campaign ? `meta:${utm_campaign}` : 'meta';
-  } else if (ttclid || utm_source === 'tiktok') {
-    return utm_campaign ? `tiktok:${utm_campaign}` : 'tiktok';
-  } else if (utm_campaign) {
-    return utm_campaign;
-  }
-  return 'organic';
-};
+import { getOrderSource, initAttribution } from "@/lib/attribution";
 
 interface ProductShowcaseProps {
   variants: ShowcaseProduct[];
@@ -162,6 +145,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
 
   // ── Track ViewContent on page load ──
   useEffect(() => {
+    initAttribution();
     const trackingId = productId ?? productSlug ?? String(variants[0]?.id);
     const trackingName = productName ?? variants[0]?.name;
     const trackingCategory = productCategory ?? variants[0]?.productType;
