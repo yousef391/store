@@ -76,6 +76,7 @@ export default function OrdersPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [productFilter, setProductFilter] = useState("all");
+  const [platformFilter, setPlatformFilter] = useState<"all" | "meta" | "meta_lal" | "meta_broad" | "tiktok" | "organic">("all");
   const [dateFilter, setDateFilter] = useState<"today" | "yesterday" | "week" | "month" | "all">("today");
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -153,6 +154,7 @@ export default function OrdersPage() {
         setDateFilter("all");
         setStatusFilter("all");
         setProductFilter("all");
+        setPlatformFilter("all");
         setCurrentPage(1);
       } else {
         const cached = localStorage.getItem("orders_filters_cache");
@@ -160,6 +162,7 @@ export default function OrdersPage() {
           const f = JSON.parse(cached);
           if (typeof f.statusFilter === "string") setStatusFilter(f.statusFilter);
           if (typeof f.productFilter === "string") setProductFilter(f.productFilter);
+          if (typeof f.platformFilter === "string") setPlatformFilter(f.platformFilter);
           if (typeof f.dateFilter === "string") setDateFilter(f.dateFilter);
           if (typeof f.searchQuery === "string") setSearchQuery(f.searchQuery);
           if (typeof f.currentPage === "number" && f.currentPage > 0) setCurrentPage(f.currentPage);
@@ -183,6 +186,7 @@ export default function OrdersPage() {
           setDateFilter("all");
           setStatusFilter("all");
           setProductFilter("all");
+          setPlatformFilter("all");
           setCurrentPage(1);
         }
       }
@@ -200,6 +204,7 @@ export default function OrdersPage() {
         JSON.stringify({
           statusFilter,
           productFilter,
+          platformFilter,
           dateFilter,
           searchQuery,
           currentPage,
@@ -208,17 +213,18 @@ export default function OrdersPage() {
     } catch (e) {
       console.warn("Failed to cache filters:", e);
     }
-  }, [statusFilter, productFilter, dateFilter, searchQuery, currentPage, filtersLoaded]);
+  }, [statusFilter, productFilter, platformFilter, dateFilter, searchQuery, currentPage, filtersLoaded]);
 
-  // Reset page when user actively changes search, status, product, or date
+  // Reset page when user actively changes search, status, product, platform, or date
   useEffect(() => {
     if (!filtersLoaded) return;
     setCurrentPage(1);
-  }, [searchQuery, statusFilter, productFilter, dateFilter, filtersLoaded]);
+  }, [searchQuery, statusFilter, productFilter, platformFilter, dateFilter, filtersLoaded]);
 
   const handleResetFilters = () => {
     setStatusFilter("all");
     setProductFilter("all");
+    setPlatformFilter("all");
     setDateFilter("today");
     setSearchQuery("");
     setCurrentPage(1);
@@ -304,6 +310,7 @@ export default function OrdersPage() {
       setDateFilter("all");
       setStatusFilter("all");
       setProductFilter("all");
+      setPlatformFilter("all");
       setCurrentPage(1);
       if (typeof window !== "undefined") {
         const url = new URL(window.location.href);
@@ -364,6 +371,30 @@ export default function OrdersPage() {
     return counts;
   }, [orders]);
 
+  const platformCounts = useMemo(() => {
+    let meta = 0;
+    let metaLal = 0;
+    let metaBroad = 0;
+    let tiktok = 0;
+    let organic = 0;
+    for (const o of orders) {
+      const src = (o.source || "").toLowerCase();
+      if (src.startsWith("meta")) {
+        meta++;
+        if (src.includes("lal")) {
+          metaLal++;
+        } else {
+          metaBroad++;
+        }
+      } else if (src.startsWith("tiktok")) {
+        tiktok++;
+      } else {
+        organic++;
+      }
+    }
+    return { meta, metaLal, metaBroad, tiktok, organic };
+  }, [orders]);
+
   const { startOfToday, startOfYesterday, startOfWeek, startOfMonth } = useMemo(() => {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -420,7 +451,21 @@ export default function OrdersPage() {
       o.item === productFilter ||
       o.item?.toLowerCase().includes(productFilter.toLowerCase());
 
-    return matchesSearch && matchesStatus && matchesProduct && matchesDate;
+    let matchesPlatform = true;
+    const src = (o.source || "").toLowerCase();
+    if (platformFilter === "meta") {
+      matchesPlatform = src.startsWith("meta");
+    } else if (platformFilter === "meta_lal") {
+      matchesPlatform = src.startsWith("meta") && src.includes("lal");
+    } else if (platformFilter === "meta_broad") {
+      matchesPlatform = src.startsWith("meta") && !src.includes("lal");
+    } else if (platformFilter === "tiktok") {
+      matchesPlatform = src.startsWith("tiktok");
+    } else if (platformFilter === "organic") {
+      matchesPlatform = !o.source || src === "organic";
+    }
+
+    return matchesSearch && matchesStatus && matchesProduct && matchesPlatform && matchesDate;
   });
 
   const totalPages = Math.ceil(filteredOrders.length / rowsPerPage);
@@ -962,11 +1007,11 @@ export default function OrdersPage() {
           )}
         </div>
 
-        <div className="grid grid-cols-2 sm:flex sm:items-center gap-2">
+        <div className="grid grid-cols-3 sm:flex sm:items-center gap-2">
           <select
             value={productFilter}
             onChange={(e) => setProductFilter(e.target.value)}
-            className="bg-surface border border-white/10 rounded-xl px-3 py-2 text-xs font-bold text-gray-300 focus:outline-none appearance-none cursor-pointer truncate"
+            className="bg-surface border border-white/10 rounded-xl px-2.5 sm:px-3 py-2 text-[11px] sm:text-xs font-bold text-gray-300 focus:outline-none appearance-none cursor-pointer truncate"
           >
             <option value="all">All Products</option>
             {productOptions.map((p) => (
@@ -977,9 +1022,22 @@ export default function OrdersPage() {
           </select>
 
           <select
+            value={platformFilter}
+            onChange={(e) => setPlatformFilter(e.target.value as "all" | "meta" | "meta_lal" | "meta_broad" | "tiktok" | "organic")}
+            className="bg-surface border border-white/10 rounded-xl px-2.5 sm:px-3 py-2 text-[11px] sm:text-xs font-bold text-gray-300 focus:outline-none appearance-none cursor-pointer truncate"
+          >
+            <option value="all">All Platforms</option>
+            <option value="meta">🔵 Meta ({platformCounts.meta})</option>
+            <option value="meta_lal">↳ 🎯 Lookalike ({platformCounts.metaLal})</option>
+            <option value="meta_broad">↳ ⚡ Broad ({platformCounts.metaBroad})</option>
+            <option value="tiktok">🎵 TikTok ({platformCounts.tiktok})</option>
+            <option value="organic">🌱 Organic ({platformCounts.organic})</option>
+          </select>
+
+          <select
             value={dateFilter}
             onChange={(e) => setDateFilter(e.target.value as "today" | "yesterday" | "week" | "month" | "all")}
-            className="bg-surface border border-white/10 rounded-xl px-3 py-2 text-xs font-bold text-gray-300 focus:outline-none appearance-none cursor-pointer truncate"
+            className="bg-surface border border-white/10 rounded-xl px-2.5 sm:px-3 py-2 text-[11px] sm:text-xs font-bold text-gray-300 focus:outline-none appearance-none cursor-pointer truncate"
           >
             <option value="today">Today</option>
             <option value="yesterday">Yesterday</option>
@@ -1058,7 +1116,7 @@ export default function OrdersPage() {
         </div>
 
         {/* Reset Active Filters Button */}
-        {(productFilter !== "all" || statusFilter !== "all" || searchQuery || dateFilter !== "today") && (
+        {(productFilter !== "all" || platformFilter !== "all" || statusFilter !== "all" || searchQuery || dateFilter !== "today") && (
           <button
             onClick={handleResetFilters}
             className="self-start sm:self-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-medium hover:bg-red-500/20 transition-colors cursor-pointer"
