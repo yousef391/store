@@ -17,13 +17,15 @@ async function main() {
     bundle_price: 9900,
     images: [
       "/products/nike_air_max_black.jpg",
-      "/products/nike_air_max_grey.jpg"
+      "/products/nike_air_max_grey_light.jpg",
+      "/products/nike_air_max_grey_dark.jpg"
     ],
     category: "ensembles",
     sizes: ["S", "M", "L", "XL"],
     colors: [
       { name: "Noir", hex: "#111111" },
-      { name: "Gris", hex: "#9ca3af" }
+      { name: "Grey Light", hex: "#d1d5db" },
+      { name: "Grey Dark", hex: "#6b7280" }
     ],
     tag: "Swoosh Oversize",
     status: "active",
@@ -31,7 +33,7 @@ async function main() {
     rating: 4.9,
     review_count: 45,
     date_added: "2026-09-22",
-    showcase_type: "nocta"
+    showcase_type: "nike_air_max"
   };
 
   const { data: prodData, error: prodErr } = await supabase
@@ -66,14 +68,27 @@ async function main() {
       product_id: 24,
       name: "Ensemble Nike Air Max",
       bg: "#0a0a0a",
-      tag: "Gris",
-      swatch: "#9ca3af",
+      tag: "Grey Light",
+      swatch: "#d1d5db",
       description: "Ensemble Nike Air Max en coton molletonné d'exception. Hoodie avec logo Swoosh oversize au dos et pantalon assorti avec détails Air Max. Style streetwear ultra-confortable.",
-      review: '"الرمادي بزاف كلاس وأنيق، تفاصيل Air Max طوب" — أمين ك.',
+      review: '"الرمادي الفاتح بزاف كلاس وأنيق، تفاصيل Air Max طوب" — أمين ك.',
       product_type: "set",
-      image: "/products/nike_air_max_grey.jpg",
-      color_name: "Gris",
+      image: "/products/nike_air_max_grey_light.jpg",
+      color_name: "Grey Light",
       sort_order: 2
+    },
+    {
+      product_id: 24,
+      name: "Ensemble Nike Air Max",
+      bg: "#0a0a0a",
+      tag: "Grey Dark",
+      swatch: "#6b7280",
+      description: "Ensemble Nike Air Max en coton molletonné d'exception. Hoodie avec logo Swoosh oversize au dos et pantalon assorti avec détails Air Max. Style streetwear ultra-confortable.",
+      review: '"الرمادي الغامق طالع واعر وقماش ملتون ممتاز" — سليم خ.',
+      product_type: "set",
+      image: "/products/nike_air_max_grey_dark.jpg",
+      color_name: "Grey Dark",
+      sort_order: 3
     }
   ];
 
