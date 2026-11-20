@@ -1217,7 +1217,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                   <span className="text-[15px] font-black" style={{ fontFamily: "var(--font-heading)" }}>{effectiveBundlePrice.toLocaleString("en")} DA</span>
                   <span className={`text-[9px] font-bold flex items-center gap-0.5 ${selectedQuantity === 2 ? "text-black/60" : "text-amber-400"}`} style={{ fontFamily: "var(--font-dm)" }}>
                     <Tag className="w-2.5 h-2.5 inline" />
-                    وفّر 700 دج!
+                    وفّر {((singlePrice * 2) - effectiveBundlePrice).toLocaleString("en")} دج!
                   </span>
                 </button>
                 {effectiveTriplePrice && (
@@ -1227,7 +1227,7 @@ const ProductShowcase: React.FC<ProductShowcaseProps> = ({
                   <span className="text-[15px] font-black" style={{ fontFamily: "var(--font-heading)" }}>{effectiveTriplePrice.toLocaleString("en")} DA</span>
                   <span className={`text-[9px] font-bold flex items-center gap-0.5 ${selectedQuantity === 3 ? "text-white/70" : "text-emerald-400"}`} style={{ fontFamily: "var(--font-dm)" }}>
                     <Tag className="w-2.5 h-2.5 inline" />
-                    وفّر 2200 دج!
+                    وفّر {((singlePrice * 3) - effectiveTriplePrice).toLocaleString("en")} دج!
                   </span>
                 </button>
                 )}

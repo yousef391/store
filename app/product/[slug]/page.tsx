@@ -20,6 +20,7 @@ import {
   nikeAirMaxProducts,
   stussyHoodieProducts,
   bmwTracksuitProducts,
+  nikeHalfZipProducts,
   ShowcaseProduct,
 } from "@/data/products";
 import { supabase } from "@/lib/supabase";
@@ -115,6 +116,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
               if (params.slug === "nike-nocta-tshirt-pantalon-ensemble" || type === "nocta_tee") return noctaTeeEnsembleProducts;
               if (params.slug === "tshirt-oversize-jordan-minimalist" || type === "jordan") return jordanProducts;
               if (type === "debardeur" || params.slug === "debardeur-nike-dri-fit") return debardeurProducts;
+              if (type === "nike_halfzip" || params.slug === "nike-dri-fit-half-zip") return nikeHalfZipProducts;
               if (type === "bmw_tracksuit" || params.slug === "ensemble-bmw-m-tracksuit") return bmwTracksuitProducts;
               if (type === "bmw" || params.slug === "bmw-motorsport-ensemble") return bmwProducts;
               if (type === "nike_air_max" || params.slug === "nike-air-max-ensemble") return nikeAirMaxProducts;
@@ -193,6 +195,8 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
       ? jordanProducts
       : params.slug === "debardeur-nike-dri-fit" || productData.showcaseType === "debardeur"
       ? debardeurProducts
+      : params.slug === "nike-dri-fit-half-zip" || productData.showcaseType === "nike_halfzip"
+      ? nikeHalfZipProducts
       : productData.showcaseType === "bmw_tracksuit" || params.slug === "ensemble-bmw-m-tracksuit"
       ? bmwTracksuitProducts
       : productData.showcaseType === "bmw"

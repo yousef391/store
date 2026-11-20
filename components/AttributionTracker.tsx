@@ -10,3 +10,4 @@ export default function AttributionTracker() {
 
   return null;
 }
+

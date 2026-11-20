@@ -527,6 +527,21 @@ export const bmwTracksuitProducts: ShowcaseProduct[] = [
   },
 ];
 
+export const nikeHalfZipProducts: ShowcaseProduct[] = [
+  {
+    id: 3100,
+    name: "Haut Nike Dri-FIT Demi-Zip",
+    bg: "#050505",
+    tag: "Full Black",
+    swatch: "#111111",
+    desc: "Haut d'entraînement Nike Dri-FIT col montant et demi-zip. Tissu technique extensible, respirant et séchage rapide. Coupe athlétique ajustée idéale pour le sport, la musculation et le quotidien.",
+    review: '"القماش والقصة روعة، بزاف خفيف ومريح فاللونترينمون" — أنيس م.',
+    productType: "top",
+    image: "/products/nike_halfzip_1.jpg",
+    colorName: "Full Black",
+  },
+];
+
 // Simple product list for shop page and other components
 export interface Product {
   id: number;
@@ -548,11 +563,35 @@ export interface Product {
   reviewCount: number;
   stock: number;
   dateAdded: string;
-  showcaseType: "nocta" | "nocta_sweat" | "nocta_tee" | "nocta_hoodie" | "polo" | "bmw" | "jordan" | "jordan_paris" | "debardeur" | "ny" | "nike_jogger" | "adidas_snap" | "chinese_jacket" | "nike_air_max" | "stussy_hoodie" | "bmw_tracksuit";
+  showcaseType: "nocta" | "nocta_sweat" | "nocta_tee" | "nocta_hoodie" | "polo" | "bmw" | "jordan" | "jordan_paris" | "debardeur" | "ny" | "nike_jogger" | "adidas_snap" | "chinese_jacket" | "nike_air_max" | "stussy_hoodie" | "bmw_tracksuit" | "nike_halfzip";
   upsellPrice?: number;
 }
 
 export const products: Product[] = [
+  {
+    id: 31,
+    slug: "nike-dri-fit-half-zip",
+    name: "Haut Nike Dri-FIT Demi-Zip",
+    description: "Haut d'entraînement Nike Dri-FIT col montant et demi-zip. Tissu technique extensible, respirant et séchage rapide. Coupe athlétique ajustée pour le sport, la musculation et le quotidien. Finitions premium avec logo Swoosh sur la poitrine.",
+    price: 2900,
+    originalPrice: 3900,
+    bundlePrice: 4800,
+    triplePrice: 6900,
+    images: [
+      "/products/nike_halfzip_1.jpg",
+    ],
+    category: "tshirts",
+    sizes: ["S", "M", "L", "XL", "XXL"],
+    colors: [{ name: "Full Black", hex: "#111111" }],
+    tag: "Dri-FIT Pro",
+    status: "active",
+    isFeatured: true,
+    rating: 4.9,
+    reviewCount: 78,
+    stock: 60,
+    dateAdded: "2026-11-20",
+    showcaseType: "nike_halfzip",
+  },
   {
     id: 26,
     slug: "ensemble-bmw-m-tracksuit",
