@@ -8,6 +8,12 @@ import { fetchProducts, updateProduct as apiUpdateProduct, deleteProduct, create
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
 
+interface ProductColor {
+  name: string;
+  hex: string;
+  image?: string;
+}
+
 interface Product {
   id: number;
   slug: string;
@@ -18,9 +24,25 @@ interface Product {
   images: string[];
   category: string;
   sizes: string[];
+  colors?: ProductColor[];
   status: string;
   stock: number;
 }
+
+const PRESET_COLORS: { name: string; hex: string }[] = [
+  { name: "Noir", hex: "#111111" },
+  { name: "Blanc", hex: "#ffffff" },
+  { name: "Gris Clair", hex: "#d1d5db" },
+  { name: "Gris Foncé", hex: "#4b5563" },
+  { name: "Bleu Nuit", hex: "#0f172a" },
+  { name: "Bleu Roi", hex: "#1d4ed8" },
+  { name: "Marron", hex: "#4a2e1b" },
+  { name: "Beige", hex: "#d4b996" },
+  { name: "Kaki", hex: "#556b2f" },
+  { name: "Rouge", hex: "#dc2626" },
+  { name: "Bordeaux", hex: "#881337" },
+  { name: "Vert", hex: "#059669" },
+];
 
 export default function EditProductPage({ params }: { params: { id: string } }) {
   const router = useRouter();
@@ -35,10 +57,13 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
   const [price, setPrice] = useState(0);
   const [bundlePrice, setBundlePrice] = useState(0);
   const [sizes, setSizes] = useState<string[]>([]);
+  const [colors, setColors] = useState<ProductColor[]>([]);
   const [images, setImages] = useState<string[]>([]);
   const [stock, setStock] = useState(0);
   const [status, setStatus] = useState<string>("active");
   const [newSize, setNewSize] = useState("");
+  const [newColorName, setNewColorName] = useState("");
+  const [newColorHex, setNewColorHex] = useState("#111111");
   const [newImageUrl, setNewImageUrl] = useState("");
   const [saved, setSaved] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -54,8 +79,9 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
         setDescription(p.description);
         setPrice(p.price);
         setBundlePrice(p.bundle_price);
-        setSizes([...p.sizes]);
-        setImages([...p.images]);
+        setSizes(Array.isArray(p.sizes) ? [...p.sizes] : []);
+        setColors(Array.isArray(p.colors) ? (p.colors as ProductColor[]).map((c: ProductColor) => ({ name: c.name || "Noir", hex: c.hex || "#111111", image: c.image })) : []);
+        setImages(Array.isArray(p.images) ? [...p.images] : []);
         setStock(p.stock);
         setStatus(p.status);
       }
@@ -96,6 +122,7 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
         price,
         bundle_price: bundlePrice,
         sizes,
+        colors,
         images,
         stock,
         status,
@@ -103,7 +130,7 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
       await createHistory({
         action: "product_updated",
         description: `Product "${name}" updated`,
-        details: `Price: ${price} DA, Bundle: ${bundlePrice} DA, Sizes: ${sizes.join(", ")}`,
+        details: `Price: ${price} DA, Bundle: ${bundlePrice} DA, Sizes: ${sizes.join(", ")}, Colors: ${colors.map((c) => c.name).join(", ")}`,
       });
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
@@ -151,6 +178,24 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
   };
 
   const removeSize = (size: string) => setSizes(sizes.filter((s) => s !== size));
+
+  const addColor = (nameToAdd?: string, hexToAdd?: string) => {
+    const cName = (nameToAdd || newColorName).trim();
+    const cHex = (hexToAdd || newColorHex).trim() || "#111111";
+    if (!cName) return;
+    if (colors.some((c) => c.name.toLowerCase() === cName.toLowerCase())) return;
+    setColors([...colors, { name: cName, hex: cHex }]);
+    setNewColorName("");
+    setNewColorHex("#111111");
+  };
+
+  const removeColor = (index: number) => {
+    setColors(colors.filter((_, i) => i !== index));
+  };
+
+  const updateColor = (index: number, updates: Partial<ProductColor>) => {
+    setColors(colors.map((c, i) => (i === index ? { ...c, ...updates } : c)));
+  };
 
   const addImage = () => {
     const url = newImageUrl.trim();
@@ -267,6 +312,142 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
                 <input type="text" value={newSize} onChange={(e) => setNewSize(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addSize()} placeholder="Add..." className="w-20 bg-white/5 border border-dashed border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-accent/50 transition-all" />
                 <button onClick={addSize} className="p-2.5 bg-white/5 hover:bg-accent/20 border border-dashed border-white/10 rounded-xl text-gray-500 hover:text-accent transition-all"><Plus size={14} /></button>
               </div>
+            </div>
+          </div>
+
+          {/* Colors */}
+          <div className="bg-surface rounded-2xl border border-white/5 p-5 md:p-6 flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-pink-400" /> Available Colors / Couleurs
+                <span className="text-[10px] text-gray-500 font-normal ml-1">({colors.length} {colors.length === 1 ? "couleur" : "couleurs"})</span>
+              </h3>
+            </div>
+
+            {/* Existing Colors List */}
+            {colors.length > 0 ? (
+              <div className="flex flex-col gap-2.5">
+                {colors.map((color, idx) => (
+                  <div key={idx} className="flex flex-wrap items-center gap-2.5 bg-white/[0.03] hover:bg-white/[0.05] border border-white/10 rounded-xl p-2.5 transition-all">
+                    {/* Visual Color Swatch & Native Color Picker */}
+                    <div
+                      className="relative w-8 h-8 rounded-full border border-white/30 shadow-md shrink-0 overflow-hidden cursor-pointer group"
+                      style={{ backgroundColor: color.hex }}
+                    >
+                      <input
+                        type="color"
+                        value={color.hex}
+                        onChange={(e) => updateColor(idx, { hex: e.target.value })}
+                        title="Cliquer pour changer la couleur"
+                        className="opacity-0 absolute inset-0 cursor-pointer w-full h-full"
+                      />
+                    </div>
+
+                    {/* Color Name */}
+                    <input
+                      type="text"
+                      value={color.name}
+                      onChange={(e) => updateColor(idx, { name: e.target.value })}
+                      placeholder="Nom (ex: Noir, Blanc, Gris)"
+                      className="flex-1 min-w-[120px] bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-sm text-white font-medium focus:outline-none focus:border-accent/50 transition-all"
+                    />
+
+                    {/* Hex Code */}
+                    <div className="flex items-center gap-1 bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-gray-300 font-mono">
+                      <span>#</span>
+                      <input
+                        type="text"
+                        value={color.hex.replace("#", "")}
+                        onChange={(e) => updateColor(idx, { hex: e.target.value.startsWith("#") ? e.target.value : `#${e.target.value}` })}
+                        className="w-16 bg-transparent text-xs text-gray-200 font-mono focus:outline-none"
+                      />
+                    </div>
+
+                    {/* Image Link (Optional) */}
+                    {images.length > 0 && (
+                      <select
+                        value={color.image || ""}
+                        onChange={(e) => updateColor(idx, { image: e.target.value || undefined })}
+                        className="bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-gray-300 focus:outline-none focus:border-accent/50 max-w-[130px] truncate"
+                      >
+                        <option value="" className="bg-[#111]">Image par défaut</option>
+                        {images.map((img, i) => (
+                          <option key={img} value={img} className="bg-[#111]">
+                            Image {i + 1}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+
+                    {/* Delete Color */}
+                    <button
+                      type="button"
+                      onClick={() => removeColor(idx)}
+                      className="p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                      title="Supprimer la couleur"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-gray-500 italic">Aucune couleur configurée. Ajoute une couleur ci-dessous.</p>
+            )}
+
+            {/* Quick Add Presets */}
+            <div className="flex flex-col gap-2 pt-2 border-t border-white/5">
+              <span className="text-[11px] font-semibold text-gray-400">Couleurs populaires (clic rapide) :</span>
+              <div className="flex flex-wrap gap-1.5">
+                {PRESET_COLORS.map((preset) => {
+                  const isAdded = colors.some((c) => c.name.toLowerCase() === preset.name.toLowerCase());
+                  return (
+                    <button
+                      key={preset.name}
+                      type="button"
+                      onClick={() => addColor(preset.name, preset.hex)}
+                      disabled={isAdded}
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border transition-all ${
+                        isAdded
+                          ? "bg-white/5 text-gray-500 border-white/5 opacity-50 cursor-not-allowed"
+                          : "bg-white/[0.04] hover:bg-white/[0.08] text-gray-300 border-white/10 hover:border-white/20 active:scale-95"
+                      }`}
+                    >
+                      <span className="w-2.5 h-2.5 rounded-full border border-white/20 shrink-0" style={{ backgroundColor: preset.hex }} />
+                      <span>{preset.name}</span>
+                      {isAdded && <Check size={11} className="text-emerald-400 ml-0.5" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Custom Color Add Row */}
+            <div className="flex flex-wrap items-center gap-2 pt-2">
+              <div className="relative w-9 h-9 rounded-xl border border-white/20 shadow-md shrink-0 overflow-hidden cursor-pointer" style={{ backgroundColor: newColorHex }}>
+                <input
+                  type="color"
+                  value={newColorHex}
+                  onChange={(e) => setNewColorHex(e.target.value)}
+                  title="Choisir couleur"
+                  className="opacity-0 absolute inset-0 cursor-pointer w-full h-full"
+                />
+              </div>
+              <input
+                type="text"
+                value={newColorName}
+                onChange={(e) => setNewColorName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && addColor()}
+                placeholder="Nom personnalisé (ex: Bleu Ciel)..."
+                className="flex-1 min-w-[140px] bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-accent/50 transition-all"
+              />
+              <button
+                type="button"
+                onClick={() => addColor()}
+                className="px-4 py-2 bg-white/5 hover:bg-accent/20 border border-white/10 rounded-xl text-gray-300 hover:text-accent text-sm font-bold transition-all flex items-center gap-1.5 shrink-0"
+              >
+                <Plus size={14} /> Ajouter
+              </button>
             </div>
           </div>
 

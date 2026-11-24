@@ -126,10 +126,27 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
             const baseVariants = getBaseVariants(currentProduct.showcaseType);
 
             const dbImages: string[] = data.images || [];
+            const dbColors: { name: string; hex: string; image?: string }[] = data.colors || [];
             const dbName: string = data.name || currentProduct.name;
             const dbDesc: string = data.description || currentProduct.description;
 
-            if (dbImages.length > 0) {
+            if (dbColors.length > 0) {
+              const built: ShowcaseProduct[] = dbColors.map((col, idx) => {
+                const base = baseVariants[idx] || baseVariants[0];
+                const matchedImage = col.image || dbImages[idx] || dbImages[0] || base?.image || "";
+                return {
+                  ...base,
+                  id: (base?.id || 1000) + idx * 100,
+                  name: dbName,
+                  desc: dbDesc,
+                  image: matchedImage,
+                  colorName: col.name,
+                  tag: col.name,
+                  swatch: col.hex,
+                };
+              });
+              setDynamicVariants(built);
+            } else if (dbImages.length > 0) {
               const built: ShowcaseProduct[] = dbImages.map((img, idx) => {
                 const base = baseVariants[idx] || baseVariants[0];
                 return {
@@ -229,14 +246,18 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
       }
       sizes={productData.sizes}
       hasColorSelector={
-        productData.slug !== "nike-nocta-zip-hoodie-ensemble" &&
-        productData.slug !== "ensemble-stussy-hoodie" &&
-        productData.slug !== "ensemble-stussy-hoodie-marron" &&
-        productData.showcaseType !== "stussy_hoodie" &&
-        productData.slug !== "ensemble-ny-yankees-heavy-fleece" &&
-        productData.showcaseType !== "ny" &&
-        productData.slug !== "ensemble-bmw-m-tracksuit" &&
-        productData.showcaseType !== "bmw_tracksuit"
+        (productData.colors && productData.colors.length > 1) ||
+        (
+          !productData.colors &&
+          productData.slug !== "nike-nocta-zip-hoodie-ensemble" &&
+          productData.slug !== "ensemble-stussy-hoodie" &&
+          productData.slug !== "ensemble-stussy-hoodie-marron" &&
+          productData.showcaseType !== "stussy_hoodie" &&
+          productData.slug !== "ensemble-ny-yankees-heavy-fleece" &&
+          productData.showcaseType !== "ny" &&
+          productData.slug !== "ensemble-bmw-m-tracksuit" &&
+          productData.showcaseType !== "bmw_tracksuit"
+        )
       }
       hasSizeSelector={true}
       zonePrices={zonePrices}

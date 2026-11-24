@@ -20,6 +20,7 @@ interface Product {
   images: string[];
   category: string;
   sizes: string[];
+  colors?: { name: string; hex: string }[];
   status: string;
   stock: number;
 }
@@ -142,6 +143,21 @@ export default function ProductsPage() {
                     </span>
                   </div>
                 )}
+                {product.colors && product.colors.length > 0 && (
+                  <div className="flex items-center gap-1 mt-2 flex-wrap">
+                    {product.colors.map((c, i) => (
+                      <span
+                        key={i}
+                        className="w-3.5 h-3.5 rounded-full border border-white/20 inline-block shadow-sm"
+                        style={{ backgroundColor: c.hex }}
+                        title={c.name}
+                      />
+                    ))}
+                    <span className="text-[10px] text-gray-500 ml-1">
+                      {product.colors.length} {product.colors.length === 1 ? "couleur" : "couleurs"}
+                    </span>
+                  </div>
+                )}
                 <div className="flex items-center gap-1.5 mt-3 pt-3 border-t border-white/5">
                   <Link href={`/dashboard/products/${product.id}`} className="flex-1 flex items-center justify-center gap-1.5 py-1.5 bg-white/5 hover:bg-blue-500/10 text-gray-400 hover:text-blue-400 rounded-lg text-[11px] font-bold transition-colors">
                     <Pencil size={12} /> Edit
@@ -196,7 +212,21 @@ export default function ProductsPage() {
                     </td>
                     <td className="px-4 py-3 text-sm text-white font-bold tabular-nums">{product.price.toLocaleString()} DA</td>
                     <td className="px-4 py-3 text-sm text-amber-400 font-bold tabular-nums">{product.bundle_price.toLocaleString()} DA</td>
-                    <td className="px-4 py-3 text-sm text-gray-400">{product.sizes.join(", ")}</td>
+                    <td className="px-4 py-3 text-sm text-gray-400">
+                      <div>{product.sizes.join(", ")}</div>
+                      {product.colors && product.colors.length > 0 && (
+                        <div className="flex items-center gap-1 mt-1 flex-wrap">
+                          {product.colors.map((c, i) => (
+                            <span
+                              key={i}
+                              className="w-3 h-3 rounded-full border border-white/20 inline-block shrink-0 shadow-sm"
+                              style={{ backgroundColor: c.hex }}
+                              title={c.name}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-sm text-gray-400 tabular-nums">{product.stock}</td>
                     <td className="px-4 py-3"><Badge variant={product.status as "active" | "out_of_stock" | "draft"}>{product.status.replace("_", " ")}</Badge></td>
                     <td className="px-4 py-3 text-right">
